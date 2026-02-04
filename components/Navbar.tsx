@@ -5,7 +5,7 @@ import { useAuth } from "../src/lib/firebase/AuthContext";
 import { logout } from "../src/lib/firebase/auth";
 
 export default function Navbar() {
-  const user = useAuth();
+  const { user, isLoading } = useAuth();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-white/10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
@@ -42,7 +42,13 @@ export default function Navbar() {
 
         {/* Right actions */}
         <div className="flex items-center gap-4">
-          {!user ? (
+          {isLoading ? (
+            // Skeleton loader while auth state is being determined
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block w-16 h-5 bg-white/10 rounded animate-pulse" />
+              <div className="w-24 h-9 bg-white/10 rounded-lg animate-pulse" />
+            </div>
+          ) : !user ? (
             <>
               <Link
                 href="/login"
