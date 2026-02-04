@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #4725f4;
+  --color-primary-hover: #3a1dc2;
+  --color-background-light: #f6f5f8;
+  --color-background-dark: #0a0a0c;
+  --color-surface-dark: #131022;
+  --color-border-dark: #2b2839;
+
+  --font-display: var(--font-inter), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+
+  --background-image-grid-pattern: linear-gradient(to right, #1f1d2b 1px, transparent 1px), linear-gradient(to bottom, #1f1d2b 1px, transparent 1px);
+}
+
+@layer utilities {
+  .hero-perspective {
+    perspective: 2000px;
+  }
+
+  .hero-rotate {
+    transform: rotateX(20deg) scale(0.9);
+    transition: transform 0.5s ease-out;
+    box-shadow: 0 25px 50px -12px rgba(71, 37, 244, 0.25);
+  }
+
+  .hero-rotate:hover {
+    transform: rotateX(10deg) scale(0.95) translateY(-10px);
+    box-shadow: 0 35px 60px -15px rgba(71, 37, 244, 0.4);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  .bg-grid {
+    background-size: 50px 50px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+}
