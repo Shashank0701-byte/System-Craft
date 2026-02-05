@@ -14,6 +14,18 @@
   --font-body: var(--font-inter), sans-serif;
 
   --background-image-grid-pattern: linear-gradient(to right, #1f1d2b 1px, transparent 1px), linear-gradient(to bottom, #1f1d2b 1px, transparent 1px);
+
+  --color-dashboard-bg: #131022;
+  --color-dashboard-surface: #1e1b2e;
+  --color-dashboard-card: #2b2839;
+
+  --color-sidebar-bg-dark: #121118;
+  --color-text-muted-dark: #a19cba;
+  --color-text-label-dark: #5f5b7a;
+  --color-text-placeholder-dark: #6b6687;
+  --color-text-card-footer-dark: #8b86a8;
+  --color-surface-highlight-dark: #3f3b54;
+  --color-text-input-dark: #e0e0e0;
 }
 
 @layer utilities {
