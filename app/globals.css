@@ -54,3 +54,25 @@
     -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
   }
 }
+
+/* Dot grid pattern for the canvas */
+.bg-grid-pattern {
+  background-size: 24px 24px;
+  background-image: radial-gradient(circle, #3f3b54 1px, transparent 1px);
+}
+
+/* Custom scrollbar for panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3b54;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f4b64;
+}
