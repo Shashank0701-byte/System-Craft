@@ -17,11 +17,11 @@ const missingVars = Object.entries(firebaseConfig)
     .map(([key]) => key);
 
 if (missingVars.length > 0) {
-    throw new Error(
-        `Missing required Firebase config values: ${missingVars.join(", ")}\n\nPlease check your .env file has all NEXT_PUBLIC_FIREBASE_* variables set.`
+    console.warn(
+        `Missing required Firebase config values: ${missingVars.join(", ")}\n\nPlease check your .env file has all NEXT_PUBLIC_FIREBASE_* variables set. Firebase features will be disabled.`
     );
 }
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : (missingVars.length === 0 ? initializeApp(firebaseConfig) : undefined);
 
-export const auth = getAuth(app);
+export const auth = app ? getAuth(app) : undefined;
