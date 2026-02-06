@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 
 type ComponentItem = {
@@ -74,6 +76,15 @@ export function ComponentPalette() {
               {section.items.map((item) => (
                 <div
                   key={item.name}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                      type: item.name,
+                      icon: item.icon,
+                      color: item.color,
+                    }));
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
                   className="group flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-[#2b2839] border border-transparent hover:border-slate-200 dark:hover:border-[#3f3b54] cursor-grab active:cursor-grabbing transition-all"
                 >
                   <div className={`size-8 flex items-center justify-center rounded ${item.bgClass} ${item.textClass} ${item.darkTextClass} ${item.groupHoverBg} group-hover:text-white transition-colors`}>
