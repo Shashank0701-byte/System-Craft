@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import React from 'react';
+
 
 export function CanvasHeader() {
   return (
-    <header className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
+    <header className="relative h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
       {/* Left: Logo & Breadcrumb */}
       <div className="flex items-center gap-6">
         <Link href="/" className="flex items-center gap-2 text-primary dark:text-white group">

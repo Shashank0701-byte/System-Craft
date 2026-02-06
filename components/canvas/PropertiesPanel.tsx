@@ -1,6 +1,10 @@
-import React from 'react';
+'use client';
+
+import { useState } from 'react';
 
 export function PropertiesPanel() {
+  const [nodeCount, setNodeCount] = useState(3);
+
   return (
     <aside className="w-80 flex flex-col border-l border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-20 shadow-xl flex-shrink-0">
       {/* Header */}
@@ -31,14 +35,15 @@ export function PropertiesPanel() {
           <div className="bg-slate-50 dark:bg-[#121118] p-3 rounded-lg border border-slate-200 dark:border-[#2b2839]">
             <div className="flex justify-between mb-2">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Nodes</span>
-              <span className="text-sm font-bold text-primary">3</span>
+              <span className="text-sm font-bold text-primary">{nodeCount}</span>
             </div>
             <input
               className="w-full h-1.5 bg-slate-200 dark:bg-[#2b2839] rounded-lg appearance-none cursor-pointer accent-primary"
               max="10"
               min="1"
               type="range"
-              defaultValue="3"
+              value={nodeCount}
+              onChange={(e) => setNodeCount(Number(e.target.value))}
             />
             <div className="flex justify-between mt-1 text-[10px] text-slate-400">
               <span>1</span>
