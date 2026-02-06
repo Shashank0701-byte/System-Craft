@@ -1,0 +1,15 @@
+
+> app_root@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1037ms
+○ Compiling /canvas ...
+Missing required Firebase config values: apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId
+
+Please check your .env file has all NEXT_PUBLIC_FIREBASE_* variables set. Firebase features will be disabled.
+ GET /canvas 200 in 4.7s (compile: 4.3s, render: 448ms)
