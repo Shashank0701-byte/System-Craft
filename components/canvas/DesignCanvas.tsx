@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useId, useCallback, useEffect } from 'react';
+import { useState, useRef, useId, useCallback, useEffect, useReducer } from 'react';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
@@ -36,6 +36,17 @@ type CanvasState = {
   connections: Connection[];
 };
 
+type HistoryState = {
+  past: CanvasState[];
+  present: CanvasState;
+  future: CanvasState[];
+};
+
+type HistoryAction =
+  | { type: 'SET'; payload: CanvasState }
+  | { type: 'UNDO' }
+  | { type: 'REDO' };
+
 type ToolMode = 'select' | 'pan';
 
 // Initial demo nodes
@@ -57,14 +68,63 @@ const INITIAL_CONNECTIONS: Connection[] = [
 
 const MAX_HISTORY = 50;
 
+// History reducer - handles undo/redo atomically
+function historyReducer(state: HistoryState, action: HistoryAction): HistoryState {
+  switch (action.type) {
+    case 'SET': {
+      const newPast = [...state.past, state.present];
+      // Trim if exceeding max history
+      if (newPast.length > MAX_HISTORY) {
+        newPast.shift();
+      }
+      return {
+        past: newPast,
+        present: action.payload,
+        future: [], // Clear future on new action
+      };
+    }
+    case 'UNDO': {
+      if (state.past.length === 0) return state;
+      const previous = state.past[state.past.length - 1];
+      const newPast = state.past.slice(0, -1);
+      return {
+        past: newPast,
+        present: previous,
+        future: [state.present, ...state.future],
+      };
+    }
+    case 'REDO': {
+      if (state.future.length === 0) return state;
+      const next = state.future[0];
+      const newFuture = state.future.slice(1);
+      return {
+        past: [...state.past, state.present],
+        present: next,
+        future: newFuture,
+      };
+    }
+    default:
+      return state;
+  }
+}
+
 export function DesignCanvas() {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Canvas state
-  const [nodes, setNodes] = useState<CanvasNode[]>(INITIAL_NODES);
-  const [connections, setConnections] = useState<Connection[]>(INITIAL_CONNECTIONS);
+  // History state with reducer (atomic updates)
+  const [historyState, dispatch] = useReducer(historyReducer, {
+    past: [],
+    present: { nodes: INITIAL_NODES, connections: INITIAL_CONNECTIONS },
+    future: [],
+  });
+
+  const { nodes, connections } = historyState.present;
+  const canUndo = historyState.past.length > 0;
+  const canRedo = historyState.future.length > 0;
+
+  // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>('5');
 
   // Tool mode
@@ -79,6 +139,7 @@ export function DesignCanvas() {
   // Drag state for moving nodes
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [tempNodes, setTempNodes] = useState<CanvasNode[] | null>(null);
 
   // Drop from palette
   const [isDragOver, setIsDragOver] = useState(false);
@@ -88,50 +149,29 @@ export function DesignCanvas() {
   const [connectionStart, setConnectionStart] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // History for undo/redo
-  const [history, setHistory] = useState<CanvasState[]>([{ nodes: INITIAL_NODES, connections: INITIAL_CONNECTIONS }]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  // Use tempNodes while dragging, otherwise use history nodes
+  const displayNodes = tempNodes ?? nodes;
 
   // Generate unique ID
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  // Save state to history
+  // Save to history
   const saveToHistory = useCallback((newNodes: CanvasNode[], newConnections: Connection[]) => {
-    setHistory(prev => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push({ nodes: newNodes, connections: newConnections });
-      if (newHistory.length > MAX_HISTORY) {
-        newHistory.shift();
-        return newHistory;
-      }
-      return newHistory;
-    });
-    setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
-  }, [historyIndex]);
+    dispatch({ type: 'SET', payload: { nodes: newNodes, connections: newConnections } });
+  }, []);
 
-  // Undo
+  // Undo/Redo handlers
   const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      const prevState = history[newIndex];
-      setNodes(prevState.nodes);
-      setConnections(prevState.connections);
-      setHistoryIndex(newIndex);
-      setSelectedNodeId(null);
-    }
-  }, [historyIndex, history]);
+    dispatch({ type: 'UNDO' });
+    setSelectedNodeId(null);
+    setTempNodes(null);
+  }, []);
 
-  // Redo
   const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      const nextState = history[newIndex];
-      setNodes(nextState.nodes);
-      setConnections(nextState.connections);
-      setHistoryIndex(newIndex);
-      setSelectedNodeId(null);
-    }
-  }, [historyIndex, history]);
+    dispatch({ type: 'REDO' });
+    setSelectedNodeId(null);
+    setTempNodes(null);
+  }, []);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -147,10 +187,11 @@ export function DesignCanvas() {
     return COLOR_MAP[type] || { text: 'text-slate-500', darkText: 'dark:text-slate-400' };
   };
 
-  // Calculate path between two nodes (adjusted for zoom)
+  // Calculate path between two nodes
   const getConnectionPath = (fromId: string, toId: string): string => {
-    const fromNode = nodes.find((n) => n.id === fromId);
-    const toNode = nodes.find((n) => n.id === toId);
+    const nodeList = displayNodes;
+    const fromNode = nodeList.find((n) => n.id === fromId);
+    const toNode = nodeList.find((n) => n.id === toId);
     if (!fromNode || !toNode) return '';
 
     const fromX = fromNode.x + 60;
@@ -165,7 +206,7 @@ export function DesignCanvas() {
   // Get path for connection being drawn
   const getDrawingPath = (): string => {
     if (!connectionStart) return '';
-    const fromNode = nodes.find((n) => n.id === connectionStart);
+    const fromNode = displayNodes.find((n) => n.id === connectionStart);
     if (!fromNode) return '';
 
     const scale = zoom / 100;
@@ -205,9 +246,8 @@ export function DesignCanvas() {
       };
 
       const newNodes = [...nodes, newNode];
-      setNodes(newNodes);
-      setSelectedNodeId(newNode.id);
       saveToHistory(newNodes, connections);
+      setSelectedNodeId(newNode.id);
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
@@ -248,12 +288,13 @@ export function DesignCanvas() {
       return;
     }
 
-    // Normal click to drag node
+    // Normal click to select and prepare for drag
+    setSelectedNodeId(nodeId);
     const node = nodes.find((n) => n.id === nodeId);
     if (!node) return;
 
     setDraggedNodeId(nodeId);
-    setSelectedNodeId(nodeId);
+    setTempNodes([...nodes]); // Start with current nodes for dragging
 
     const scale = zoom / 100;
     setDragOffset({
@@ -279,20 +320,20 @@ export function DesignCanvas() {
           to: nodeId,
         };
         const newConnections = [...connections, newConnection];
-        setConnections(newConnections);
         saveToHistory(nodes, newConnections);
       }
     }
 
-    // Save node position if we were dragging
-    if (draggedNodeId) {
-      saveToHistory(nodes, connections);
+    // Save dragged node position
+    if (draggedNodeId && tempNodes) {
+      saveToHistory(tempNodes, connections);
+      setTempNodes(null);
     }
 
     setIsDrawingConnection(false);
     setConnectionStart(null);
     setDraggedNodeId(null);
-  }, [isDrawingConnection, connectionStart, connections, nodes, draggedNodeId, saveToHistory]);
+  }, [isDrawingConnection, connectionStart, connections, nodes, draggedNodeId, tempNodes, saveToHistory]);
 
   // Handle mouse move
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -313,38 +354,43 @@ export function DesignCanvas() {
       setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     }
 
-    // Handle node dragging
-    if (draggedNodeId && toolMode === 'select') {
+    // Handle node dragging - update tempNodes
+    if (draggedNodeId && toolMode === 'select' && tempNodes) {
       const scale = zoom / 100;
       const newX = e.clientX / scale - dragOffset.x;
       const newY = e.clientY / scale - dragOffset.y;
 
-      setNodes((prev) =>
-        prev.map((node) =>
+      setTempNodes(
+        tempNodes.map((node) =>
           node.id === draggedNodeId
             ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
             : node
         )
       );
     }
-  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom]);
+  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, tempNodes]);
 
   // Handle mouse up on canvas
   const handleMouseUp = useCallback(() => {
-    if (draggedNodeId) {
-      saveToHistory(nodes, connections);
+    // Save dragged node position to history
+    if (draggedNodeId && tempNodes) {
+      saveToHistory(tempNodes, connections);
+      setTempNodes(null);
     }
     setDraggedNodeId(null);
     setIsDrawingConnection(false);
     setConnectionStart(null);
     setIsPanning(false);
-  }, [draggedNodeId, nodes, connections, saveToHistory]);
+  }, [draggedNodeId, tempNodes, connections, saveToHistory]);
 
-  // Handle canvas click to deselect
+  // Handle canvas click to deselect - but not if clicking on a node
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('[data-canvas-content]')) {
-      setSelectedNodeId(null);
+    // Only deselect if clicking on canvas background, not on nodes
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-node]')) {
+      return; // Don't deselect when clicking on nodes
     }
+    setSelectedNodeId(null);
   }, []);
 
   // Keyboard shortcuts
@@ -354,20 +400,18 @@ export function DesignCanvas() {
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId && document.activeElement === canvasRef.current) {
         const newNodes = nodes.filter((n) => n.id !== selectedNodeId);
         const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
-        setNodes(newNodes);
-        setConnections(newConnections);
-        setSelectedNodeId(null);
         saveToHistory(newNodes, newConnections);
+        setSelectedNodeId(null);
       }
 
       // Undo: Ctrl+Z
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         handleUndo();
       }
 
-      // Redo: Ctrl+Shift+Z or Ctrl+Y
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      // Redo: Ctrl+Shift+Z or Ctrl+Y (fixed: use toLowerCase for shift+z)
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
         handleRedo();
       }
@@ -376,9 +420,6 @@ export function DesignCanvas() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedNodeId, nodes, connections, saveToHistory, handleUndo, handleRedo]);
-
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
 
   return (
     <main
@@ -427,8 +468,11 @@ export function DesignCanvas() {
           transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom / 100})`,
         }}
       >
-        {/* Connecting Lines (SVG Layer) */}
-        <svg className="absolute inset-0 pointer-events-none w-[2000px] h-[2000px] z-0">
+        {/* Connecting Lines (SVG Layer) - using overflow visible for unlimited canvas */}
+        <svg
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{ width: '100%', height: '100%', overflow: 'visible' }}
+        >
           <defs>
             <marker id={arrowId} markerHeight="7" markerWidth="10" orient="auto" refX="9" refY="3.5">
               <polygon fill="#4f4b64" points="0 0, 10 3.5, 0 7"></polygon>
@@ -463,13 +507,14 @@ export function DesignCanvas() {
 
         {/* Canvas Nodes */}
         <div className="absolute inset-0 z-10">
-          {nodes.map((node) => {
+          {displayNodes.map((node) => {
             const colors = getColorClasses(node.type);
             const isSelected = node.id === selectedNodeId;
 
             return (
               <div
                 key={node.id}
+                data-node
                 style={{ left: node.x, top: node.y }}
                 className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow ${isSelected
                     ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
