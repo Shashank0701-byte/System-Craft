@@ -1,7 +1,10 @@
 import Link from 'next/link';
 
+interface CanvasHeaderProps {
+  onRunAIReview?: () => void;
+}
 
-export function CanvasHeader() {
+export function CanvasHeader({ onRunAIReview }: CanvasHeaderProps) {
   return (
     <header className="relative h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
       {/* Left: Logo & Breadcrumb */}
@@ -29,7 +32,10 @@ export function CanvasHeader() {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
-        <button className="hidden md:flex h-9 items-center justify-center rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors shadow-lg shadow-primary/20 cursor-pointer">
+        <button
+          onClick={onRunAIReview}
+          className="hidden md:flex h-9 items-center justify-center rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors shadow-lg shadow-primary/20 cursor-pointer"
+        >
           <span className="material-symbols-outlined mr-2" style={{ fontSize: '18px' }}>auto_awesome</span>
           <span>Run AI Review</span>
         </button>

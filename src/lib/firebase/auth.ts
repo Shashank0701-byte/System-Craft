@@ -11,6 +11,7 @@ const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
 
 export const signInWithGoogle = async () => {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
     try {
         const res = await signInWithPopup(auth, googleProvider);
         return res.user;
@@ -25,6 +26,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const signInWithGitHub = async () => {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
     try {
         const res = await signInWithPopup(auth, githubProvider);
         return res.user;
@@ -39,6 +41,7 @@ export const signInWithGitHub = async () => {
 };
 
 export const logout = async () => {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
     try {
         await signOut(auth);
     } catch (error) {
