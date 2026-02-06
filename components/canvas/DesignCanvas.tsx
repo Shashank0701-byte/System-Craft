@@ -1,23 +1,27 @@
+'use client';
 
+import { useId } from 'react';
 
 export function DesignCanvas() {
+  const arrowId = useId();
+
   return (
     <main className="flex-1 relative bg-white dark:bg-[#0f1115] bg-grid-pattern overflow-hidden cursor-crosshair">
       {/* Connecting Lines (SVG Layer) */}
       <svg className="absolute inset-0 pointer-events-none w-full h-full z-0 opacity-50">
         <defs>
-          <marker id="arrowhead" markerHeight="7" markerWidth="10" orient="auto" refX="9" refY="3.5">
+          <marker id={arrowId} markerHeight="7" markerWidth="10" orient="auto" refX="9" refY="3.5">
             <polygon fill="#4f4b64" points="0 0, 10 3.5, 0 7"></polygon>
           </marker>
         </defs>
         {/* Line from Client to LB */}
-        <path d="M 220 180 C 220 180, 420 180, 420 180" fill="none" markerEnd="url(#arrowhead)" stroke="#4f4b64" strokeWidth="2"></path>
+        <path d="M 220 180 C 220 180, 420 180, 420 180" fill="none" markerEnd={`url(#${arrowId})`} stroke="#4f4b64" strokeWidth="2"></path>
         {/* Line from LB to API */}
-        <path d="M 480 180 C 580 180, 580 180, 680 180" fill="none" markerEnd="url(#arrowhead)" stroke="#4f4b64" strokeWidth="2"></path>
+        <path d="M 480 180 C 580 180, 580 180, 680 180" fill="none" markerEnd={`url(#${arrowId})`} stroke="#4f4b64" strokeWidth="2"></path>
         {/* Line from API to DB */}
-        <path d="M 740 180 C 790 180, 790 320, 840 320" fill="none" markerEnd="url(#arrowhead)" stroke="#4f4b64" strokeWidth="2"></path>
+        <path d="M 740 180 C 790 180, 790 320, 840 320" fill="none" markerEnd={`url(#${arrowId})`} stroke="#4f4b64" strokeWidth="2"></path>
         {/* Line from API to Cache */}
-        <path d="M 740 180 C 790 180, 790 80, 840 80" fill="none" markerEnd="url(#arrowhead)" stroke="#4f4b64" strokeWidth="2"></path>
+        <path d="M 740 180 C 790 180, 790 80, 840 80" fill="none" markerEnd={`url(#${arrowId})`} stroke="#4f4b64" strokeWidth="2"></path>
       </svg>
 
       {/* Canvas Nodes */}

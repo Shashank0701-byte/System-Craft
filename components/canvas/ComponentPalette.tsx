@@ -1,17 +1,21 @@
-
+import Link from 'next/link';
 
 type ComponentItem = {
   name: string;
   icon: string;
   color: string;
-  colorDark: string;
   bgClass: string;
   textClass: string;
   darkTextClass: string;
   groupHoverBg: string;
 };
 
-const SECTIONS = [
+type Section = {
+  title: string;
+  items: ComponentItem[];
+};
+
+const SECTIONS: Section[] = [
   {
     title: 'Compute',
     items: [
@@ -87,7 +91,7 @@ export function ComponentPalette() {
       <div className="p-4 border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-[#121118]">
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
           <span>Library v2.4</span>
-          <span className="cursor-pointer hover:text-primary">Docs</span>
+          <Link href="/docs" className="hover:text-primary transition-colors">Docs</Link>
         </div>
       </div>
     </aside>

@@ -43,7 +43,7 @@ export function CanvasHeader() {
         <div className="ml-2 relative group cursor-pointer">
           <div
             className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#2b2839] ring-2 ring-primary/20"
-            style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuD51YGf7jfym8PrgMPCN7m4NF1-y15D1REWvF8uP3qJIqZGnd9xI3HQw0egDULywzOrKpdejE0mSjydJ_AKlFRFdbkQQhxuItKJV-Ar_b_Zw4oI_gEq7Mj8CzSCvc2XCUFxN2k63cvStC9vaFbubUQZEp01Dq_6Tn4lpb_begxZkxUa2pyVxOGR_1KfPld0Q-HsSavdTLyIO6X6HgdfSBAsYrEdIjGDwdbanYjqZhwY_cHaJNZ8uPZQ2dXUu53TQ8zAoLK2r5aOUmD5")' }}
+            style={{ backgroundImage: 'url("https://ui-avatars.com/api/?name=User&background=4725f4&color=fff&size=36")' }}
           >
           </div>
           <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white dark:border-sidebar-bg-dark rounded-full"></div>

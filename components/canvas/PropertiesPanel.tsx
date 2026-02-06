@@ -81,9 +81,9 @@ export function PropertiesPanel() {
 
           {/* Dropdown: Sharding */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-900 dark:text-white">Sharding Strategy</label>
+            <label htmlFor="sharding-strategy" className="text-sm font-medium text-slate-900 dark:text-white">Sharding Strategy</label>
             <div className="relative">
-              <select className="w-full appearance-none bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2.5 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+              <select id="sharding-strategy" className="w-full appearance-none bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2.5 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
                 <option>Consistent Hashing</option>
                 <option>Range Based</option>
                 <option>Directory Based</option>
@@ -94,9 +94,9 @@ export function PropertiesPanel() {
 
           {/* Dropdown: Consistency */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-900 dark:text-white">Consistency Model</label>
+            <label htmlFor="consistency-model" className="text-sm font-medium text-slate-900 dark:text-white">Consistency Model</label>
             <div className="relative">
-              <select className="w-full appearance-none bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2.5 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
+              <select id="consistency-model" className="w-full appearance-none bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2.5 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none">
                 <option>Strong Consistency</option>
                 <option>Eventual Consistency</option>
                 <option>Causal Consistency</option>
