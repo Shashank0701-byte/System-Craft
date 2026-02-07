@@ -1,10 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithGoogle, signInWithGitHub } from "../src/lib/firebase/auth";
+import { User } from "firebase/auth";
+
+// Sync Firebase user with MongoDB
+async function syncUserWithDB(user: User, provider: 'google' | 'github') {
+    const response = await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            firebaseUid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            provider,
+        }),
+    });
+
+    if (!response.ok) {
+        console.error('Failed to sync user with database');
+    }
+
+    return response.json();
+}
 
 export default function AuthCard() {
+    const router = useRouter();
     const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
     const [isLoadingGitHub, setIsLoadingGitHub] = useState(false);
     const [signInError, setSignInError] = useState<string | null>(null);
@@ -13,7 +37,11 @@ export default function AuthCard() {
         setSignInError(null);
         setIsLoadingGoogle(true);
         try {
-            await signInWithGoogle();
+            const user = await signInWithGoogle();
+            if (user) {
+                await syncUserWithDB(user, 'google');
+                router.push('/dashboard');
+            }
         } catch (error) {
             setSignInError(
                 error instanceof Error
@@ -29,7 +57,11 @@ export default function AuthCard() {
         setSignInError(null);
         setIsLoadingGitHub(true);
         try {
-            await signInWithGitHub();
+            const user = await signInWithGitHub();
+            if (user) {
+                await syncUserWithDB(user, 'github');
+                router.push('/dashboard');
+            }
         } catch (error) {
             setSignInError(
                 error instanceof Error
@@ -49,7 +81,7 @@ export default function AuthCard() {
                 Welcome Back
             </h1>
             <p className="text-slate-400 text-center mt-2">
-                Sign in to continue your interview prep.
+                Sign in to start designing system architectures.
             </p>
 
             {/* Error message */}

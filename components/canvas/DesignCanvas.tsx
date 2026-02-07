@@ -49,22 +49,15 @@ type HistoryAction =
 
 type ToolMode = 'select' | 'pan';
 
-// Initial demo nodes
-const INITIAL_NODES: CanvasNode[] = [
-  { id: '1', type: 'Client', icon: 'smartphone', x: 160, y: 150, label: 'Mobile App' },
-  { id: '2', type: 'LB', icon: 'alt_route', x: 420, y: 150, label: 'Nginx LB' },
-  { id: '3', type: 'Server', icon: 'dns', x: 680, y: 150, label: 'API Cluster' },
-  { id: '4', type: 'Cache', icon: 'bolt', x: 840, y: 50, label: 'Redis' },
-  { id: '5', type: 'SQL', icon: 'database', x: 840, y: 290, label: 'PostgreSQL' },
-];
+// Default empty canvas
+const DEFAULT_NODES: CanvasNode[] = [];
+const DEFAULT_CONNECTIONS: Connection[] = [];
 
-// Initial connections
-const INITIAL_CONNECTIONS: Connection[] = [
-  { id: 'c1', from: '1', to: '2' },
-  { id: 'c2', from: '2', to: '3' },
-  { id: 'c3', from: '3', to: '4' },
-  { id: 'c4', from: '3', to: '5' },
-];
+interface DesignCanvasProps {
+  initialNodes?: CanvasNode[];
+  initialConnections?: Connection[];
+  onSave?: (nodes: CanvasNode[], connections: Connection[]) => void;
+}
 
 const MAX_HISTORY = 50;
 
@@ -108,15 +101,20 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
   }
 }
 
-export function DesignCanvas() {
+export function DesignCanvas({
+  initialNodes = DEFAULT_NODES,
+  initialConnections = DEFAULT_CONNECTIONS,
+  onSave
+}: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // History state with reducer (atomic updates)
   const [historyState, dispatch] = useReducer(historyReducer, {
     past: [],
-    present: { nodes: INITIAL_NODES, connections: INITIAL_CONNECTIONS },
+    present: { nodes: initialNodes, connections: initialConnections },
     future: [],
   });
 
@@ -159,6 +157,27 @@ export function DesignCanvas() {
   const saveToHistory = useCallback((newNodes: CanvasNode[], newConnections: Connection[]) => {
     dispatch({ type: 'SET', payload: { nodes: newNodes, connections: newConnections } });
   }, []);
+
+  // Debounced auto-save to database
+  useEffect(() => {
+    if (!onSave) return;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce save by 2 seconds
+    saveTimeoutRef.current = setTimeout(() => {
+      onSave(nodes, connections);
+    }, 2000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [nodes, connections, onSave]);
 
   // Undo/Redo handlers
   const handleUndo = useCallback(() => {
@@ -308,9 +327,9 @@ export function DesignCanvas() {
     e.stopPropagation();
 
     if (isDrawingConnection && connectionStart && connectionStart !== nodeId) {
+      // Only check for exact same connection (same direction), allow bidirectional connections
       const exists = connections.some(
-        (c) => (c.from === connectionStart && c.to === nodeId) ||
-          (c.from === nodeId && c.to === connectionStart)
+        (c) => c.from === connectionStart && c.to === nodeId
       );
 
       if (!exists) {
@@ -517,8 +536,8 @@ export function DesignCanvas() {
                 data-node
                 style={{ left: node.x, top: node.y }}
                 className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow ${isSelected
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
-                    : 'border-2 border-transparent hover:border-primary'
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
+                  : 'border-2 border-transparent hover:border-primary'
                   }`}
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                 onMouseUp={(e) => handleNodeMouseUp(e, node.id)}
@@ -537,16 +556,6 @@ export function DesignCanvas() {
               </div>
             );
           })}
-        </div>
-
-        {/* Live Cursor (Simulated) */}
-        <div className="absolute left-[520px] top-[240px] z-50 pointer-events-none transition-all duration-700 ease-in-out">
-          <svg fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z" fill="#F43F5E" stroke="white" strokeWidth="2"></path>
-          </svg>
-          <div className="absolute left-4 top-4 bg-[#F43F5E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm whitespace-nowrap">
-            Alex M.
-          </div>
         </div>
       </div>
 
@@ -579,8 +588,8 @@ export function DesignCanvas() {
           onClick={handleUndo}
           disabled={!canUndo}
           className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canUndo
-              ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-              : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
             }`}
           title="Undo (Ctrl+Z)"
         >
@@ -592,8 +601,8 @@ export function DesignCanvas() {
           onClick={handleRedo}
           disabled={!canRedo}
           className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canRedo
-              ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-              : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
             }`}
           title="Redo (Ctrl+Y)"
         >
@@ -607,8 +616,8 @@ export function DesignCanvas() {
           onClick={handleZoomOut}
           disabled={zoom <= 25}
           className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${zoom > 25
-              ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-              : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
             }`}
           title="Zoom Out"
         >
@@ -623,8 +632,8 @@ export function DesignCanvas() {
           onClick={handleZoomIn}
           disabled={zoom >= 200}
           className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${zoom < 200
-              ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-              : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
             }`}
           title="Zoom In"
         >
