@@ -17,9 +17,18 @@ interface DesignData {
     connections: Connection[];
 }
 
+interface PendingSave {
+    nodes: CanvasNode[];
+    connections: Connection[];
+    retryCount: number;
+}
+
 interface PageProps {
     params: Promise<{ id: string }>;
 }
+
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 1000;
 
 export default function CanvasPage({ params }: PageProps) {
     const { id } = use(params);
@@ -31,10 +40,14 @@ export default function CanvasPage({ params }: PageProps) {
 
     // Ref-based save tracking to prevent dropped saves
     const isSavingRef = useRef(false);
-    const pendingSaveRef = useRef<{ nodes: CanvasNode[]; connections: Connection[] } | null>(null);
+    const pendingSaveRef = useRef<PendingSave | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const statusResetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isMountedRef = useRef(true);
+
+    // Track latest debounced data so it can be flushed on unmount
+    const latestDebouncedDataRef = useRef<{ nodes: CanvasNode[]; connections: Connection[] } | null>(null);
 
     // Fetch design data
     const fetchDesign = useCallback(async () => {
@@ -70,8 +83,8 @@ export default function CanvasPage({ params }: PageProps) {
         }
     }, [isAuthenticated, user, fetchDesign]);
 
-    // Perform save with retry for pending changes
-    const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[]) => {
+    // Perform save with retry logic and exponential backoff
+    const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[], retryCount = 0) => {
         if (!isMountedRef.current) return;
 
         isSavingRef.current = true;
@@ -88,6 +101,21 @@ export default function CanvasPage({ params }: PageProps) {
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
                 console.error('Save failed:', data.error);
+
+                // Schedule retry with exponential backoff if under limit
+                if (retryCount < MAX_RETRIES && isMountedRef.current) {
+                    const delay = BASE_RETRY_DELAY_MS * Math.pow(2, retryCount);
+                    console.log(`Retrying save in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+
+                    retryTimeoutRef.current = setTimeout(() => {
+                        if (isMountedRef.current) {
+                            performSave(nodes, connections, retryCount + 1);
+                        }
+                    }, delay);
+                    return; // Don't set isSavingRef to false yet
+                }
+
+                // Max retries exceeded
                 setSaveStatus('error');
             } else {
                 setSaveStatus('saved');
@@ -104,38 +132,73 @@ export default function CanvasPage({ params }: PageProps) {
             }
         } catch (err) {
             console.error('Error saving design:', err);
+
+            // Schedule retry with exponential backoff if under limit
+            if (retryCount < MAX_RETRIES && isMountedRef.current) {
+                const delay = BASE_RETRY_DELAY_MS * Math.pow(2, retryCount);
+                console.log(`Retrying save in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+
+                retryTimeoutRef.current = setTimeout(() => {
+                    if (isMountedRef.current) {
+                        performSave(nodes, connections, retryCount + 1);
+                    }
+                }, delay);
+                return; // Don't set isSavingRef to false yet
+            }
+
             if (isMountedRef.current) {
                 setSaveStatus('error');
             }
         } finally {
-            isSavingRef.current = false;
+            // Only mark as not saving if we're not retrying
+            if (!retryTimeoutRef.current || retryCount >= MAX_RETRIES) {
+                isSavingRef.current = false;
+            }
 
-            // Check if there's a pending save
-            if (pendingSaveRef.current && isMountedRef.current) {
+            // Process pending save if there is one (new edits during save)
+            if (pendingSaveRef.current && isMountedRef.current && !retryTimeoutRef.current) {
                 const pending = pendingSaveRef.current;
                 pendingSaveRef.current = null;
-                // Schedule the pending save
-                performSave(pending.nodes, pending.connections);
+                // Use setTimeout to break potential tight loop
+                setTimeout(() => {
+                    if (isMountedRef.current) {
+                        performSave(pending.nodes, pending.connections, 0);
+                    }
+                }, 100);
             }
         }
     }, [id]);
 
-    // Save design with queue for pending changes
+    // Save design with debounce and queue for pending changes
     const saveDesign = useCallback((nodes: CanvasNode[], connections: Connection[]) => {
         // Clear any pending debounce timeout
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
         }
 
-        // If already saving, queue this save
+        // Always store latest data for potential unmount flush
+        latestDebouncedDataRef.current = { nodes, connections };
+
+        // If already saving, queue this save with reset retry count
         if (isSavingRef.current) {
-            pendingSaveRef.current = { nodes, connections };
+            pendingSaveRef.current = { nodes, connections, retryCount: 0 };
             return;
         }
 
+        // Also store in pendingSaveRef so unmount can detect pending debounced saves
+        pendingSaveRef.current = { nodes, connections, retryCount: 0 };
+
         // Debounce by 1.5 seconds
         saveTimeoutRef.current = setTimeout(() => {
-            performSave(nodes, connections);
+            saveTimeoutRef.current = null;
+            latestDebouncedDataRef.current = null;
+
+            if (pendingSaveRef.current) {
+                const data = pendingSaveRef.current;
+                pendingSaveRef.current = null;
+                performSave(data.nodes, data.connections, 0);
+            }
         }, 1500);
     }, [performSave]);
 
@@ -149,20 +212,30 @@ export default function CanvasPage({ params }: PageProps) {
             // Clear all timeouts
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
+            }
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current);
+                retryTimeoutRef.current = null;
             }
             if (statusResetTimeoutRef.current) {
                 clearTimeout(statusResetTimeoutRef.current);
+                statusResetTimeoutRef.current = null;
             }
 
-            // Flush pending save on unmount (fire-and-forget)
-            if (pendingSaveRef.current) {
-                const pending = pendingSaveRef.current;
+            // Flush any pending/debounced save on unmount (fire-and-forget)
+            const dataToFlush = pendingSaveRef.current ||
+                (latestDebouncedDataRef.current ? { ...latestDebouncedDataRef.current, retryCount: 0 } : null);
+
+            if (dataToFlush) {
                 authFetch(`/api/designs/${id}`, {
                     method: 'PUT',
-                    body: JSON.stringify(pending),
+                    body: JSON.stringify({ nodes: dataToFlush.nodes, connections: dataToFlush.connections }),
                 }).catch(() => {
                     // Silently fail - component is unmounting
                 });
+                pendingSaveRef.current = null;
+                latestDebouncedDataRef.current = null;
             }
         };
     }, [id]);
