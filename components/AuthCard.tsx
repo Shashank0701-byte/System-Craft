@@ -5,15 +5,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithGoogle, signInWithGitHub } from "../src/lib/firebase/auth";
 import { User } from "firebase/auth";
+import { authFetch } from "../src/lib/firebase/authClient";
 
-// Sync Firebase user with MongoDB
+// Sync Firebase user with MongoDB - throws on failure
 async function syncUserWithDB(user: User, provider: 'google' | 'github') {
+    // Need to get fresh token after sign-in
+    const token = await user.getIdToken();
+
     const response = await fetch('/api/user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
-            firebaseUid: user.uid,
-            email: user.email,
             displayName: user.displayName,
             photoURL: user.photoURL,
             provider,
@@ -21,7 +26,8 @@ async function syncUserWithDB(user: User, provider: 'google' | 'github') {
     });
 
     if (!response.ok) {
-        console.error('Failed to sync user with database');
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || 'Failed to sync user with database');
     }
 
     return response.json();

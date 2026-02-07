@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/src/lib/db/mongoose';
+import dbConnect, { isValidObjectId } from '@/src/lib/db/mongoose';
 import Design from '@/src/lib/db/models/Design';
 import User from '@/src/lib/db/models/User';
+import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
+
+// Valid status values
+const VALID_STATUSES = ['draft', 'reviewed', 'completed'] as const;
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -10,20 +14,30 @@ interface RouteParams {
 // GET: Fetch a specific design
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
-        await dbConnect();
-
         const { id } = await params;
-        const { searchParams } = new URL(request.url);
-        const firebaseUid = searchParams.get('firebaseUid');
 
-        if (!firebaseUid) {
+        // Validate ObjectId format
+        if (!isValidObjectId(id)) {
             return NextResponse.json(
-                { error: 'Missing firebaseUid parameter' },
+                { error: 'Invalid design ID format' },
                 { status: 400 }
             );
         }
 
-        const user = await User.findOne({ firebaseUid });
+        // Verify Firebase ID token
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
+
+        if (!authenticatedUser) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        await dbConnect();
+
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
@@ -58,22 +72,43 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT: Update a design (auto-save)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
     try {
-        await dbConnect();
-
         const { id } = await params;
-        const body = await request.json();
-        const { firebaseUid, title, description, status, nodes, connections, thumbnail } = body;
 
-        if (!firebaseUid) {
+        // Validate ObjectId format
+        if (!isValidObjectId(id)) {
             return NextResponse.json(
-                { error: 'Missing firebaseUid' },
+                { error: 'Invalid design ID format' },
                 { status: 400 }
             );
         }
 
-        const user = await User.findOne({ firebaseUid });
+        // Verify Firebase ID token
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
+
+        if (!authenticatedUser) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        await dbConnect();
+
+        const body = await request.json();
+        const { title, description, status, nodes, connections, thumbnail } = body;
+
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        // Validate status if provided
+        if (status !== undefined && !VALID_STATUSES.includes(status)) {
+            return NextResponse.json(
+                { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+                { status: 400 }
+            );
         }
 
         const updateData: Record<string, unknown> = {};
@@ -115,20 +150,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE: Delete a design
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
-        await dbConnect();
-
         const { id } = await params;
-        const { searchParams } = new URL(request.url);
-        const firebaseUid = searchParams.get('firebaseUid');
 
-        if (!firebaseUid) {
+        // Validate ObjectId format
+        if (!isValidObjectId(id)) {
             return NextResponse.json(
-                { error: 'Missing firebaseUid parameter' },
+                { error: 'Invalid design ID format' },
                 { status: 400 }
             );
         }
 
-        const user = await User.findOne({ firebaseUid });
+        // Verify Firebase ID token
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
+
+        if (!authenticatedUser) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        await dbConnect();
+
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }

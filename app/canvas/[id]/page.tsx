@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback, use, useRef } from 'react';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
+import { authFetch } from '@/src/lib/firebase/authClient';
 import { CanvasHeader } from '@/components/canvas/CanvasHeader';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
@@ -26,7 +27,12 @@ export default function CanvasPage({ params }: PageProps) {
     const [design, setDesign] = useState<DesignData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+    // Ref-based save tracking to prevent dropped saves
+    const isSavingRef = useRef(false);
+    const pendingSaveRef = useRef<{ nodes: CanvasNode[]; connections: Connection[] } | null>(null);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch design data
     const fetchDesign = useCallback(async () => {
@@ -34,11 +40,14 @@ export default function CanvasPage({ params }: PageProps) {
 
         try {
             setIsLoading(true);
-            const response = await fetch(`/api/designs/${id}?firebaseUid=${user.uid}`);
+            const response = await authFetch(`/api/designs/${id}`);
 
             if (!response.ok) {
                 if (response.status === 404) {
                     throw new Error('Design not found');
+                }
+                if (response.status === 400) {
+                    throw new Error('Invalid design ID');
                 }
                 throw new Error('Failed to load design');
             }
@@ -59,27 +68,69 @@ export default function CanvasPage({ params }: PageProps) {
         }
     }, [isAuthenticated, user, fetchDesign]);
 
-    // Auto-save function
-    const saveDesign = useCallback(async (nodes: CanvasNode[], connections: Connection[]) => {
-        if (!user?.uid || !id || isSaving) return;
+    // Perform save with retry for pending changes
+    const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[]) => {
+        isSavingRef.current = true;
+        setSaveStatus('saving');
 
         try {
-            setIsSaving(true);
-            await fetch(`/api/designs/${id}`, {
+            const response = await authFetch(`/api/designs/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    firebaseUid: user.uid,
-                    nodes,
-                    connections,
-                }),
+                body: JSON.stringify({ nodes, connections }),
             });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                console.error('Save failed:', data.error);
+                setSaveStatus('error');
+            } else {
+                setSaveStatus('saved');
+                // Reset to idle after 2 seconds
+                setTimeout(() => setSaveStatus('idle'), 2000);
+            }
         } catch (err) {
             console.error('Error saving design:', err);
+            setSaveStatus('error');
         } finally {
-            setIsSaving(false);
+            isSavingRef.current = false;
+
+            // Check if there's a pending save
+            if (pendingSaveRef.current) {
+                const pending = pendingSaveRef.current;
+                pendingSaveRef.current = null;
+                // Schedule the pending save
+                performSave(pending.nodes, pending.connections);
+            }
         }
-    }, [user?.uid, id, isSaving]);
+    }, [id]);
+
+    // Save design with queue for pending changes
+    const saveDesign = useCallback((nodes: CanvasNode[], connections: Connection[]) => {
+        // Clear any pending debounce timeout
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        // If already saving, queue this save
+        if (isSavingRef.current) {
+            pendingSaveRef.current = { nodes, connections };
+            return;
+        }
+
+        // Debounce by 1.5 seconds
+        saveTimeoutRef.current = setTimeout(() => {
+            performSave(nodes, connections);
+        }, 1500);
+    }, [performSave]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Loading state
     if (authLoading || isLoading) {
@@ -126,7 +177,7 @@ export default function CanvasPage({ params }: PageProps) {
         <div className="flex flex-col h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display">
             <CanvasHeader
                 title={design?.title || 'Untitled Design'}
-                isSaving={isSaving}
+                saveStatus={saveStatus}
             />
             <div className="flex flex-1 overflow-hidden">
                 <ComponentPalette />

@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
 import User from '@/src/lib/db/models/User';
+import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 
 // POST: Create or update user after Firebase auth
 export async function POST(request: NextRequest) {
     try {
+        // Verify Firebase ID token from Authorization header
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
+
+        if (!authenticatedUser) {
+            return NextResponse.json(
+                { error: 'Unauthorized - Invalid or missing token' },
+                { status: 401 }
+            );
+        }
+
         await dbConnect();
 
         const body = await request.json();
-        const { firebaseUid, email, displayName, photoURL, provider } = body;
+        const { displayName, photoURL, provider } = body;
 
-        if (!firebaseUid || !email) {
+        // Use UID from verified token, not from request body
+        const firebaseUid = authenticatedUser.uid;
+        const email = authenticatedUser.email;
+
+        if (!email) {
             return NextResponse.json(
-                { error: 'Missing required fields: firebaseUid and email' },
+                { error: 'Email not found in token' },
                 { status: 400 }
             );
         }
@@ -55,22 +71,23 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET: Get user by Firebase UID
+// GET: Get current authenticated user
 export async function GET(request: NextRequest) {
     try {
-        await dbConnect();
+        // Verify Firebase ID token from Authorization header
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
 
-        const { searchParams } = new URL(request.url);
-        const firebaseUid = searchParams.get('firebaseUid');
-
-        if (!firebaseUid) {
+        if (!authenticatedUser) {
             return NextResponse.json(
-                { error: 'Missing firebaseUid parameter' },
-                { status: 400 }
+                { error: 'Unauthorized - Invalid or missing token' },
+                { status: 401 }
             );
         }
 
-        const user = await User.findOne({ firebaseUid });
+        await dbConnect();
+
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
 
         if (!user) {
             return NextResponse.json(
