@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
                 description: design.description,
                 status: design.status,
                 thumbnail: design.thumbnail,
-                nodeCount: design.nodes.length,
+                nodeCount: (design.nodes || []).length,
                 createdAt: design.createdAt,
                 updatedAt: design.updatedAt,
             })),
@@ -58,6 +58,18 @@ export async function GET(request: NextRequest) {
 // POST: Create a new design
 export async function POST(request: NextRequest) {
     try {
+        // Parse body first - return 400 for malformed JSON
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                { error: 'Invalid JSON body' },
+                { status: 400 }
+            );
+        }
+        const { title, description } = body;
+
         // Verify Firebase ID token
         const authHeader = request.headers.get('Authorization');
         const authenticatedUser = await getAuthenticatedUser(authHeader);
@@ -70,9 +82,6 @@ export async function POST(request: NextRequest) {
         }
 
         await dbConnect();
-
-        const body = await request.json();
-        const { title, description } = body;
 
         // Find user by verified Firebase UID
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });

@@ -33,6 +33,8 @@ export default function CanvasPage({ params }: PageProps) {
     const isSavingRef = useRef(false);
     const pendingSaveRef = useRef<{ nodes: CanvasNode[]; connections: Connection[] } | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const statusResetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isMountedRef = useRef(true);
 
     // Fetch design data
     const fetchDesign = useCallback(async () => {
@@ -70,6 +72,8 @@ export default function CanvasPage({ params }: PageProps) {
 
     // Perform save with retry for pending changes
     const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[]) => {
+        if (!isMountedRef.current) return;
+
         isSavingRef.current = true;
         setSaveStatus('saving');
 
@@ -79,23 +83,35 @@ export default function CanvasPage({ params }: PageProps) {
                 body: JSON.stringify({ nodes, connections }),
             });
 
+            if (!isMountedRef.current) return;
+
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
                 console.error('Save failed:', data.error);
                 setSaveStatus('error');
             } else {
                 setSaveStatus('saved');
+                // Clear previous status reset timeout
+                if (statusResetTimeoutRef.current) {
+                    clearTimeout(statusResetTimeoutRef.current);
+                }
                 // Reset to idle after 2 seconds
-                setTimeout(() => setSaveStatus('idle'), 2000);
+                statusResetTimeoutRef.current = setTimeout(() => {
+                    if (isMountedRef.current) {
+                        setSaveStatus('idle');
+                    }
+                }, 2000);
             }
         } catch (err) {
             console.error('Error saving design:', err);
-            setSaveStatus('error');
+            if (isMountedRef.current) {
+                setSaveStatus('error');
+            }
         } finally {
             isSavingRef.current = false;
 
             // Check if there's a pending save
-            if (pendingSaveRef.current) {
+            if (pendingSaveRef.current && isMountedRef.current) {
                 const pending = pendingSaveRef.current;
                 pendingSaveRef.current = null;
                 // Schedule the pending save
@@ -123,14 +139,33 @@ export default function CanvasPage({ params }: PageProps) {
         }, 1500);
     }, [performSave]);
 
-    // Cleanup timeout on unmount
+    // Track mounted state and cleanup all timeouts
     useEffect(() => {
+        isMountedRef.current = true;
+
         return () => {
+            isMountedRef.current = false;
+
+            // Clear all timeouts
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
+            if (statusResetTimeoutRef.current) {
+                clearTimeout(statusResetTimeoutRef.current);
+            }
+
+            // Flush pending save on unmount (fire-and-forget)
+            if (pendingSaveRef.current) {
+                const pending = pendingSaveRef.current;
+                authFetch(`/api/designs/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(pending),
+                }).catch(() => {
+                    // Silently fail - component is unmounting
+                });
+            }
         };
-    }, []);
+    }, [id]);
 
     // Loading state
     if (authLoading || isLoading) {

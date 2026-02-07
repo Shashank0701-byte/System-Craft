@@ -91,11 +91,23 @@ export default function DashboardPage() {
     }
   };
 
-  // Format relative time
+  // Format relative time - handles invalid and future dates
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
+
+    // Handle invalid dates
+    if (isNaN(date.getTime())) {
+      return 'Unknown';
+    }
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
+
+    // Handle future dates
+    if (diffMs < 0) {
+      return 'Just now';
+    }
+
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
