@@ -2,24 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
 import Design from '@/src/lib/db/models/Design';
 import User from '@/src/lib/db/models/User';
+import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 
-// GET: Fetch all designs for a user
+// GET: Fetch all designs for authenticated user
 export async function GET(request: NextRequest) {
     try {
-        await dbConnect();
+        // Verify Firebase ID token
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
 
-        const { searchParams } = new URL(request.url);
-        const firebaseUid = searchParams.get('firebaseUid');
-
-        if (!firebaseUid) {
+        if (!authenticatedUser) {
             return NextResponse.json(
-                { error: 'Missing firebaseUid parameter' },
-                { status: 400 }
+                { error: 'Unauthorized' },
+                { status: 401 }
             );
         }
 
-        // Find user by Firebase UID
-        const user = await User.findOne({ firebaseUid });
+        await dbConnect();
+
+        // Find user by verified Firebase UID
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
             return NextResponse.json(
                 { error: 'User not found' },
@@ -56,20 +58,24 @@ export async function GET(request: NextRequest) {
 // POST: Create a new design
 export async function POST(request: NextRequest) {
     try {
-        await dbConnect();
+        // Verify Firebase ID token
+        const authHeader = request.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
 
-        const body = await request.json();
-        const { firebaseUid, title, description } = body;
-
-        if (!firebaseUid) {
+        if (!authenticatedUser) {
             return NextResponse.json(
-                { error: 'Missing firebaseUid' },
-                { status: 400 }
+                { error: 'Unauthorized' },
+                { status: 401 }
             );
         }
 
-        // Find user by Firebase UID
-        const user = await User.findOne({ firebaseUid });
+        await dbConnect();
+
+        const body = await request.json();
+        const { title, description } = body;
+
+        // Find user by verified Firebase UID
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
             return NextResponse.json(
                 { error: 'User not found' },

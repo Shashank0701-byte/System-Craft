@@ -5,14 +5,42 @@ import { useAuth } from '@/src/lib/firebase/AuthContext';
 
 interface CanvasHeaderProps {
   title?: string;
-  isSaving?: boolean;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onRunAIReview?: () => void;
 }
 
-export function CanvasHeader({ title = 'Untitled Design', isSaving = false, onRunAIReview }: CanvasHeaderProps) {
+export function CanvasHeader({ title = 'Untitled Design', saveStatus = 'idle', onRunAIReview }: CanvasHeaderProps) {
   const { user } = useAuth();
 
   const avatarUrl = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=4725f4&color=fff&size=36`;
+
+  const renderSaveStatus = () => {
+    switch (saveStatus) {
+      case 'saving':
+        return (
+          <span className="ml-2 text-xs text-yellow-500 flex items-center gap-1">
+            <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+            Saving...
+          </span>
+        );
+      case 'saved':
+        return (
+          <span className="ml-2 text-xs text-green-500 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+            Saved
+          </span>
+        );
+      case 'error':
+        return (
+          <span className="ml-2 text-xs text-red-500 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">error</span>
+            Save failed
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <header className="relative h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
@@ -31,12 +59,7 @@ export function CanvasHeader({ title = 'Untitled Design', isSaving = false, onRu
           </Link>
           <span className="text-slate-600 dark:text-slate-600">/</span>
           <span className="text-slate-900 dark:text-white font-medium">{title}</span>
-          {isSaving && (
-            <span className="ml-2 text-xs text-slate-400 flex items-center gap-1">
-              <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-              Saving...
-            </span>
-          )}
+          {renderSaveStatus()}
         </div>
       </div>
 

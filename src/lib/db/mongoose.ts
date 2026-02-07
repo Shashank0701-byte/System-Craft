@@ -1,11 +1,5 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URL = process.env.MONGODB_URL;
-
-if (!MONGODB_URL) {
-    throw new Error('Please define the MONGODB_URL environment variable');
-}
-
 interface MongooseCache {
     conn: typeof mongoose | null;
     promise: Promise<typeof mongoose> | null;
@@ -24,6 +18,13 @@ if (!global.mongooseCache) {
 }
 
 async function dbConnect(): Promise<typeof mongoose> {
+    // Validate at runtime, not at module load time
+    const MONGODB_URL = process.env.MONGODB_URL;
+
+    if (!MONGODB_URL) {
+        throw new Error('Please define the MONGODB_URL environment variable');
+    }
+
     if (cached.conn) {
         return cached.conn;
     }
@@ -33,7 +34,7 @@ async function dbConnect(): Promise<typeof mongoose> {
             bufferCommands: false,
         };
 
-        cached.promise = mongoose.connect(MONGODB_URL!, opts).then((mongooseInstance) => {
+        cached.promise = mongoose.connect(MONGODB_URL, opts).then((mongooseInstance) => {
             console.log('MongoDB connected successfully');
             return mongooseInstance;
         });
@@ -47,6 +48,12 @@ async function dbConnect(): Promise<typeof mongoose> {
     }
 
     return cached.conn;
+}
+
+// Helper to validate MongoDB ObjectId
+export function isValidObjectId(id: string): boolean {
+    return mongoose.Types.ObjectId.isValid(id) &&
+        new mongoose.Types.ObjectId(id).toString() === id;
 }
 
 export default dbConnect;

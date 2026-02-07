@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
+import { authFetch } from '@/src/lib/firebase/authClient';
 import { Header } from '@/components/dashboard/Header';
 import { Hero } from '@/components/dashboard/Hero';
 import { DesignCard } from '@/components/dashboard/DesignCard';
@@ -26,52 +27,58 @@ export default function DashboardPage() {
   const [isLoadingDesigns, setIsLoadingDesigns] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const hasFetched = useRef(false);
 
-  // Fetch designs
+  // Fetch designs with authenticated request
   const fetchDesigns = useCallback(async () => {
     if (!user?.uid) return;
 
     try {
       setIsLoadingDesigns(true);
-      const response = await fetch(`/api/designs?firebaseUid=${user.uid}`);
+      setError(null);
+
+      const response = await authFetch('/api/designs');
 
       if (!response.ok) {
-        throw new Error('Failed to fetch designs');
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to fetch designs');
       }
 
       const data = await response.json();
       setDesigns(data.designs || []);
     } catch (err) {
       console.error('Error fetching designs:', err);
-      setError('Failed to load designs');
+      setError(err instanceof Error ? err.message : 'Failed to load designs');
     } finally {
       setIsLoadingDesigns(false);
     }
   }, [user?.uid]);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !hasFetched.current) {
+      hasFetched.current = true;
       fetchDesigns();
     }
   }, [isAuthenticated, user, fetchDesigns]);
 
-  // Create new design
+  // Create new design with authenticated request
   const handleCreateDesign = async () => {
     if (!user?.uid || isCreating) return;
 
     try {
       setIsCreating(true);
-      const response = await fetch('/api/designs', {
+      setError(null);
+
+      const response = await authFetch('/api/designs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firebaseUid: user.uid,
           title: 'Untitled Design',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create design');
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to create design');
       }
 
       const data = await response.json();
@@ -79,7 +86,7 @@ export default function DashboardPage() {
       router.push(`/canvas/${data.design.id}`);
     } catch (err) {
       console.error('Error creating design:', err);
-      setError('Failed to create design');
+      setError(err instanceof Error ? err.message : 'Failed to create design');
       setIsCreating(false);
     }
   };
@@ -156,7 +163,7 @@ export default function DashboardPage() {
             <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
               {error}
               <button
-                onClick={() => { setError(null); fetchDesigns(); }}
+                onClick={() => { setError(null); hasFetched.current = false; fetchDesigns(); }}
                 className="ml-2 underline hover:no-underline"
               >
                 Retry
