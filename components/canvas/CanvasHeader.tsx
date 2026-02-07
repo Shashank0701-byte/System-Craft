@@ -1,15 +1,73 @@
+'use client';
+
 import Link from 'next/link';
+import { useAuth } from '@/src/lib/firebase/AuthContext';
 
 interface CanvasHeaderProps {
+  title?: string;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onRunAIReview?: () => void;
 }
 
-export function CanvasHeader({ onRunAIReview }: CanvasHeaderProps) {
+export function CanvasHeader({ title = 'Untitled Design', saveStatus = 'idle', onRunAIReview }: CanvasHeaderProps) {
+  const { user } = useAuth();
+
+  // Sanitize avatar URL to prevent CSS injection
+  const getSafeAvatarUrl = () => {
+    const photoURL = user?.photoURL;
+    if (photoURL) {
+      try {
+        const url = new URL(photoURL);
+        // Only allow https URLs from trusted domains
+        if (url.protocol === 'https:' &&
+          (url.hostname.endsWith('googleusercontent.com') ||
+            url.hostname.endsWith('githubusercontent.com') ||
+            url.hostname.endsWith('ui-avatars.com'))) {
+          return photoURL;
+        }
+      } catch {
+        // Invalid URL, fall through to default
+      }
+    }
+    // Default fallback
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=4725f4&color=fff&size=36`;
+  };
+
+  const avatarUrl = getSafeAvatarUrl();
+
+  const renderSaveStatus = () => {
+    switch (saveStatus) {
+      case 'saving':
+        return (
+          <span className="ml-2 text-xs text-yellow-500 flex items-center gap-1">
+            <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+            Saving...
+          </span>
+        );
+      case 'saved':
+        return (
+          <span className="ml-2 text-xs text-green-500 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+            Saved
+          </span>
+        );
+      case 'error':
+        return (
+          <span className="ml-2 text-xs text-red-500 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">error</span>
+            Save failed
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <header className="relative h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
       {/* Left: Logo & Breadcrumb */}
       <div className="flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2 text-primary dark:text-white group">
+        <Link href="/dashboard" className="flex items-center gap-2 text-primary dark:text-white group">
           <div className="p-1.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
             <span className="material-symbols-outlined text-primary" style={{ fontSize: '24px' }}>hub</span>
           </div>
@@ -17,18 +75,16 @@ export function CanvasHeader({ onRunAIReview }: CanvasHeaderProps) {
         </Link>
         <div className="h-6 w-px bg-slate-200 dark:bg-border-dark hidden md:block"></div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-400 font-medium">Projects</span>
+          <Link href="/dashboard" className="text-slate-400 font-medium hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+            Projects
+          </Link>
           <span className="text-slate-600 dark:text-slate-600">/</span>
-          <span className="text-slate-900 dark:text-white font-medium">E-Commerce Architecture</span>
+          <span className="text-slate-900 dark:text-white font-medium">{title}</span>
+          {renderSaveStatus()}
         </div>
       </div>
 
-      {/* Center: Timer */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden lg:flex items-center gap-3 bg-slate-100 dark:bg-[#2b2839] px-4 py-1.5 rounded-full border border-transparent dark:border-[#3f3b54]">
-        <span className="material-symbols-outlined text-slate-500 dark:text-slate-400" style={{ fontSize: '20px' }}>timer</span>
-        <span className="font-mono text-lg font-bold text-red-500">34:12</span>
-        <span className="text-xs text-slate-500 uppercase tracking-wider font-medium mt-0.5">remaining</span>
-      </div>
+      {/* Center: Placeholder for future features like interview mode timer */}
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
@@ -49,7 +105,7 @@ export function CanvasHeader({ onRunAIReview }: CanvasHeaderProps) {
         <div className="ml-2 relative group cursor-pointer">
           <div
             className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#2b2839] ring-2 ring-primary/20"
-            style={{ backgroundImage: 'url("https://ui-avatars.com/api/?name=User&background=4725f4&color=fff&size=36")' }}
+            style={{ backgroundImage: `url("${avatarUrl}")` }}
           >
           </div>
           <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white dark:border-sidebar-bg-dark rounded-full"></div>
