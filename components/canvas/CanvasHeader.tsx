@@ -12,7 +12,28 @@ interface CanvasHeaderProps {
 export function CanvasHeader({ title = 'Untitled Design', saveStatus = 'idle', onRunAIReview }: CanvasHeaderProps) {
   const { user } = useAuth();
 
-  const avatarUrl = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=4725f4&color=fff&size=36`;
+  // Sanitize avatar URL to prevent CSS injection
+  const getSafeAvatarUrl = () => {
+    const photoURL = user?.photoURL;
+    if (photoURL) {
+      try {
+        const url = new URL(photoURL);
+        // Only allow https URLs from trusted domains
+        if (url.protocol === 'https:' &&
+          (url.hostname.endsWith('googleusercontent.com') ||
+            url.hostname.endsWith('githubusercontent.com') ||
+            url.hostname.endsWith('ui-avatars.com'))) {
+          return photoURL;
+        }
+      } catch {
+        // Invalid URL, fall through to default
+      }
+    }
+    // Default fallback
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=4725f4&color=fff&size=36`;
+  };
+
+  const avatarUrl = getSafeAvatarUrl();
 
   const renderSaveStatus = () => {
     switch (saveStatus) {

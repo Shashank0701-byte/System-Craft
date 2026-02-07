@@ -21,8 +21,9 @@ function getFirebaseAdmin() {
                         credential: cert(credentials),
                         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
                     });
-                } catch (error) {
-                    console.error('Failed to parse Firebase service account:', error);
+                } catch {
+                    // Don't log the error - it may contain fragments of the service account key
+                    console.error('Failed to parse Firebase service account key - check FIREBASE_SERVICE_ACCOUNT_KEY format');
                     throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY');
                 }
             } else {
@@ -31,8 +32,8 @@ function getFirebaseAdmin() {
                     app = initializeApp({
                         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
                     });
-                } catch (error) {
-                    console.error('Failed to initialize Firebase Admin:', error);
+                } catch {
+                    console.error('Firebase Admin SDK not configured - set FIREBASE_SERVICE_ACCOUNT_KEY');
                     throw new Error('Firebase Admin SDK not configured');
                 }
             }
@@ -65,8 +66,8 @@ export async function getAuthenticatedUser(authHeader: string | null) {
             uid: decodedToken.uid,
             email: decodedToken.email,
         };
-    } catch (error) {
-        console.error('Error verifying token:', error);
+    } catch {
+        console.error('Token verification failed');
         return null;
     }
 }

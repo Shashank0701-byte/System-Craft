@@ -82,6 +82,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             );
         }
 
+        // Parse body before dbConnect - return 400 for malformed JSON
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                { error: 'Invalid JSON body' },
+                { status: 400 }
+            );
+        }
+        const { title, description, status, nodes, connections, thumbnail } = body;
+
         // Verify Firebase ID token
         const authHeader = request.headers.get('Authorization');
         const authenticatedUser = await getAuthenticatedUser(authHeader);
@@ -94,9 +106,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         await dbConnect();
-
-        const body = await request.json();
-        const { title, description, status, nodes, connections, thumbnail } = body;
 
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
