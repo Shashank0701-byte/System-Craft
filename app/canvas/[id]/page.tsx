@@ -242,7 +242,10 @@ export default function CanvasPage({ params }: PageProps) {
 
     // Handle title change
     const handleTitleChange = useCallback(async (newTitle: string) => {
-        if (!design) return;
+        if (!design || !isMountedRef.current) return;
+
+        // Store previous title for revert (avoid stale closure)
+        const previousTitle = design.title;
 
         // Optimistically update local state
         setDesign(prev => prev ? { ...prev, title: newTitle } : null);
@@ -254,6 +257,8 @@ export default function CanvasPage({ params }: PageProps) {
                 method: 'PUT',
                 body: JSON.stringify({ title: newTitle }),
             });
+
+            if (!isMountedRef.current) return;
 
             if (!response.ok) {
                 throw new Error('Failed to update title');
@@ -270,9 +275,11 @@ export default function CanvasPage({ params }: PageProps) {
             }, 2000);
         } catch (err) {
             console.error('Error updating title:', err);
+            if (!isMountedRef.current) return;
+
             setSaveStatus('error');
-            // Revert on error
-            setDesign(prev => prev ? { ...prev, title: design.title } : null);
+            // Revert on error using captured previousTitle (not stale closure)
+            setDesign(prev => prev ? { ...prev, title: previousTitle } : null);
         }
     }, [design, id]);
 
