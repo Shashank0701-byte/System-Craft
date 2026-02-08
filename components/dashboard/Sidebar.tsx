@@ -39,17 +39,6 @@ export function Sidebar() {
           Settings
         </Link>
       </nav>
-      <div className="p-4 border-t border-slate-200 dark:border-border-dark">
-        <Link href="#" className="flex items-center gap-3 group">
-          <div className="size-9 rounded-full bg-cover bg-center ring-2 ring-slate-200 dark:ring-border-dark group-hover:ring-primary transition-all relative overflow-hidden">
-             <div className="w-full h-full bg-slate-300 dark:bg-slate-700" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDsX9HBmAzXRPhf_-WPWua5XtOsw6U54PS1DCQ0vBMMbbzrAc0u3NJor7QBxzVM7I4UvbQEhXN404ASRsP9lBRiW7iKwI4eAtStOuJXzrX0QW01yORmah7iiuJqKs5TYiWWOAJJIwyxuDXVNz6k6Plik6rovlpaQlXmf85lxXB5Up13S7fGO7wROUq0hEIFaOkm-MhPH7pj3i6pFlGXscZ55xBMcIWfMd-XIg_s8Ag8Jg4muIqOOVFGxnooIEQFY9X7N0z3phwwZTmr")' }}></div>
-          </div>
-          <div className="flex flex-col">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">Alex Chen</p>
-            <p className="text-xs text-slate-500 dark:text-text-muted-dark">Pro Plan</p>
-          </div>
-        </Link>
-      </div>
     </aside>
   );
 }
