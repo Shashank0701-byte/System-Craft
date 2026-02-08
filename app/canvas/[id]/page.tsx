@@ -240,6 +240,42 @@ export default function CanvasPage({ params }: PageProps) {
         };
     }, [id]);
 
+    // Handle title change
+    const handleTitleChange = useCallback(async (newTitle: string) => {
+        if (!design) return;
+
+        // Optimistically update local state
+        setDesign(prev => prev ? { ...prev, title: newTitle } : null);
+
+        // Save to API
+        setSaveStatus('saving');
+        try {
+            const response = await authFetch(`/api/designs/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ title: newTitle }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update title');
+            }
+
+            setSaveStatus('saved');
+            if (statusResetTimeoutRef.current) {
+                clearTimeout(statusResetTimeoutRef.current);
+            }
+            statusResetTimeoutRef.current = setTimeout(() => {
+                if (isMountedRef.current) {
+                    setSaveStatus('idle');
+                }
+            }, 2000);
+        } catch (err) {
+            console.error('Error updating title:', err);
+            setSaveStatus('error');
+            // Revert on error
+            setDesign(prev => prev ? { ...prev, title: design.title } : null);
+        }
+    }, [design, id]);
+
     // Loading state
     if (authLoading || isLoading) {
         return (
@@ -286,6 +322,7 @@ export default function CanvasPage({ params }: PageProps) {
             <CanvasHeader
                 title={design?.title || 'Untitled Design'}
                 saveStatus={saveStatus}
+                onTitleChange={handleTitleChange}
             />
             <div className="flex flex-1 overflow-hidden">
                 <ComponentPalette />
@@ -299,3 +336,4 @@ export default function CanvasPage({ params }: PageProps) {
         </div>
     );
 }
+
