@@ -21,6 +21,7 @@ export function CanvasHeader({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isCancellingRef = useRef(false);
 
   // Sync editValue when title prop changes
   useEffect(() => {
@@ -61,11 +62,18 @@ export function CanvasHeader({
   const avatarUrl = getSafeAvatarUrl();
 
   const handleStartEditing = () => {
+    isCancellingRef.current = false;
     setIsEditing(true);
     setEditValue(title);
   };
 
   const handleSave = () => {
+    // Skip save if cancel was triggered (Escape key sets this flag)
+    if (isCancellingRef.current) {
+      isCancellingRef.current = false;
+      return;
+    }
+
     const trimmed = editValue.trim();
     if (trimmed && trimmed !== title && onTitleChange) {
       onTitleChange(trimmed);
@@ -74,16 +82,28 @@ export function CanvasHeader({
   };
 
   const handleCancel = () => {
+    isCancellingRef.current = true;
     setEditValue(title);
     setIsEditing(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleSave();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       handleCancel();
     }
+  };
+
+  const handleBlur = () => {
+    // Small delay to let cancel flag be checked
+    setTimeout(() => {
+      if (!isCancellingRef.current && isEditing) {
+        handleSave();
+      }
+    }, 0);
   };
 
   const renderSaveStatus = () => {
@@ -140,7 +160,7 @@ export function CanvasHeader({
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onBlur={handleSave}
+                onBlur={handleBlur}
                 className="bg-slate-100 dark:bg-surface-highlight-dark text-slate-900 dark:text-white font-medium px-2 py-1 rounded border border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[150px] max-w-[300px]"
                 maxLength={100}
               />
