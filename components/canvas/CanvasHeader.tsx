@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/lib/firebase/AuthContext';
+import { logout } from '@/src/lib/firebase/auth';
 
 interface CanvasHeaderProps {
   title?: string;
@@ -17,10 +19,14 @@ export function CanvasHeader({
   onTitleChange,
   onRunAIReview
 }: CanvasHeaderProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const isCancellingRef = useRef(false);
 
   // Sync editValue when title prop changes
@@ -38,13 +44,43 @@ export function CanvasHeader({
     }
   }, [isEditing]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  // Close dropdown on Escape
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isDropdownOpen) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isDropdownOpen]);
+
   // Sanitize avatar URL to prevent CSS injection
   const getSafeAvatarUrl = () => {
     const photoURL = user?.photoURL;
     if (photoURL) {
       try {
         const url = new URL(photoURL);
-        // Only allow https URLs from trusted domains
         if (url.protocol === 'https:' &&
           (url.hostname.endsWith('googleusercontent.com') ||
             url.hostname.endsWith('githubusercontent.com') ||
@@ -55,7 +91,6 @@ export function CanvasHeader({
         // Invalid URL, fall through to default
       }
     }
-    // Default fallback
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=4725f4&color=fff&size=36`;
   };
 
@@ -68,7 +103,6 @@ export function CanvasHeader({
   };
 
   const handleSave = () => {
-    // Skip save if cancel was triggered (Escape key sets this flag)
     if (isCancellingRef.current) {
       isCancellingRef.current = false;
       return;
@@ -98,12 +132,22 @@ export function CanvasHeader({
   };
 
   const handleBlur = () => {
-    // Small delay to let cancel flag be checked
     setTimeout(() => {
       if (!isCancellingRef.current && isEditing) {
         handleSave();
       }
     }, 0);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setIsLoggingOut(false);
+    }
   };
 
   const renderSaveStatus = () => {
@@ -182,8 +226,6 @@ export function CanvasHeader({
         </div>
       </div>
 
-      {/* Center: Placeholder for future features like interview mode timer */}
-
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
         <button
@@ -200,13 +242,58 @@ export function CanvasHeader({
         <button className="flex items-center justify-center size-9 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400 transition-colors cursor-pointer">
           <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>save</span>
         </button>
-        <div className="ml-2 relative group cursor-pointer">
-          <div
-            className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#2b2839] ring-2 ring-primary/20"
-            style={{ backgroundImage: `url("${avatarUrl}")` }}
+
+        {/* User Dropdown */}
+        <div className="ml-2 relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="relative cursor-pointer"
           >
-          </div>
-          <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white dark:border-sidebar-bg-dark rounded-full"></div>
+            <div
+              className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#2b2839] ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
+              style={{ backgroundImage: `url("${avatarUrl}")` }}
+            />
+            <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white dark:border-sidebar-bg-dark rounded-full"></div>
+          </button>
+
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dashboard-card rounded-xl shadow-xl border border-slate-200 dark:border-border-dark overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* User Info */}
+              <div className="p-3 border-b border-slate-200 dark:border-border-dark">
+                <p className="font-medium text-slate-900 dark:text-white truncate text-sm">
+                  {user?.displayName || 'User'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-text-muted-dark truncate">
+                  {user?.email || ''}
+                </p>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-1">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="w-full px-3 py-2 flex items-center gap-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-highlight-dark transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  <span>Dashboard</span>
+                </Link>
+              </div>
+
+              {/* Logout */}
+              <div className="border-t border-slate-200 dark:border-border-dark py-1">
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full px-3 py-2 flex items-center gap-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
