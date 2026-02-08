@@ -1,16 +1,41 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/src/lib/firebase/AuthContext';
 
 interface CanvasHeaderProps {
   title?: string;
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  onTitleChange?: (newTitle: string) => void;
   onRunAIReview?: () => void;
 }
 
-export function CanvasHeader({ title = 'Untitled Design', saveStatus = 'idle', onRunAIReview }: CanvasHeaderProps) {
+export function CanvasHeader({
+  title = 'Untitled Design',
+  saveStatus = 'idle',
+  onTitleChange,
+  onRunAIReview
+}: CanvasHeaderProps) {
   const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync editValue when title prop changes
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(title);
+    }
+  }, [title, isEditing]);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
 
   // Sanitize avatar URL to prevent CSS injection
   const getSafeAvatarUrl = () => {
@@ -34,6 +59,32 @@ export function CanvasHeader({ title = 'Untitled Design', saveStatus = 'idle', o
   };
 
   const avatarUrl = getSafeAvatarUrl();
+
+  const handleStartEditing = () => {
+    setIsEditing(true);
+    setEditValue(title);
+  };
+
+  const handleSave = () => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== title && onTitleChange) {
+      onTitleChange(trimmed);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(title);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
 
   const renderSaveStatus = () => {
     switch (saveStatus) {
@@ -79,7 +130,34 @@ export function CanvasHeader({ title = 'Untitled Design', saveStatus = 'idle', o
             Projects
           </Link>
           <span className="text-slate-600 dark:text-slate-600">/</span>
-          <span className="text-slate-900 dark:text-white font-medium">{title}</span>
+
+          {/* Editable Title */}
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleSave}
+                className="bg-slate-100 dark:bg-surface-highlight-dark text-slate-900 dark:text-white font-medium px-2 py-1 rounded border border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[150px] max-w-[300px]"
+                maxLength={100}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={handleStartEditing}
+              className="group/title flex items-center gap-1 text-slate-900 dark:text-white font-medium hover:text-primary dark:hover:text-primary transition-colors"
+              title="Click to rename"
+            >
+              <span className="max-w-[200px] truncate">{title}</span>
+              <span className="material-symbols-outlined text-[16px] opacity-0 group-hover/title:opacity-60 transition-opacity">
+                edit
+              </span>
+            </button>
+          )}
+
           {renderSaveStatus()}
         </div>
       </div>
