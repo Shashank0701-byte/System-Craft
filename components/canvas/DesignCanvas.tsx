@@ -123,7 +123,7 @@ export function DesignCanvas({
   const canRedo = historyState.future.length > 0;
 
   // Selection state
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>('5');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
 
   // Tool mode
@@ -184,12 +184,14 @@ export function DesignCanvas({
   const handleUndo = useCallback(() => {
     dispatch({ type: 'UNDO' });
     setSelectedNodeId(null);
+    setSelectedConnectionId(null);
     setTempNodes(null);
   }, []);
 
   const handleRedo = useCallback(() => {
     dispatch({ type: 'REDO' });
     setSelectedNodeId(null);
+    setSelectedConnectionId(null);
     setTempNodes(null);
   }, []);
 
@@ -268,6 +270,7 @@ export function DesignCanvas({
       const newNodes = [...nodes, newNode];
       saveToHistory(newNodes, connections);
       setSelectedNodeId(newNode.id);
+      setSelectedConnectionId(null); // Clear connection selection
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
@@ -520,11 +523,12 @@ export function DesignCanvas({
           {/* Existing connections - clickable for selection */}
           {connections.map((conn) => {
             const isSelected = conn.id === selectedConnectionId;
+            const pathD = getConnectionPath(conn.from, conn.to); // Cache path
             return (
               <g key={conn.id} data-connection>
                 {/* Invisible wider path for easier clicking */}
                 <path
-                  d={getConnectionPath(conn.from, conn.to)}
+                  d={pathD}
                   fill="none"
                   stroke="transparent"
                   strokeWidth="20"
@@ -537,7 +541,7 @@ export function DesignCanvas({
                 />
                 {/* Visible connection line */}
                 <path
-                  d={getConnectionPath(conn.from, conn.to)}
+                  d={pathD}
                   fill="none"
                   markerEnd={`url(#${arrowId})`}
                   stroke={isSelected ? '#4725f4' : '#4f4b64'}
