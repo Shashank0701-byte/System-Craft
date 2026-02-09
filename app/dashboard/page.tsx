@@ -93,17 +93,28 @@ export default function DashboardPage() {
 
   // Delete design with authenticated request
   const handleDeleteDesign = async (designId: string) => {
-    const response = await authFetch(`/api/designs/${designId}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to delete design');
+    if (!user?.uid) {
+      setError('You must be logged in to delete designs');
+      throw new Error('Not authenticated');
     }
 
-    // Remove from local state
-    setDesigns(prev => prev.filter(d => d.id !== designId));
+    try {
+      const response = await authFetch(`/api/designs/${designId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete design');
+      }
+
+      // Remove from local state
+      setDesigns(prev => prev.filter(d => d.id !== designId));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete design';
+      setError(message);
+      throw err; // Re-throw so DesignCard knows deletion failed
+    }
   };
 
   // Format relative time - handles invalid and future dates
