@@ -91,6 +91,21 @@ export default function DashboardPage() {
     }
   };
 
+  // Delete design with authenticated request
+  const handleDeleteDesign = async (designId: string) => {
+    const response = await authFetch(`/api/designs/${designId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to delete design');
+    }
+
+    // Remove from local state
+    setDesigns(prev => prev.filter(d => d.id !== designId));
+  };
+
   // Format relative time - handles invalid and future dates
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -204,6 +219,7 @@ export default function DashboardPage() {
                   editedTime={formatRelativeTime(design.updatedAt)}
                   imageUrl={design.thumbnail}
                   nodeCount={design.nodeCount}
+                  onDelete={handleDeleteDesign}
                 />
               ))}
 
