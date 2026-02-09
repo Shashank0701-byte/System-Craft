@@ -379,20 +379,21 @@ export function DesignCanvas({
     }
 
     // Handle node dragging - update tempNodes
-    if (draggedNodeId && toolMode === 'select' && tempNodes) {
+    if (draggedNodeId && toolMode === 'select') {
       const scale = zoom / 100;
       const newX = e.clientX / scale - dragOffset.x;
       const newY = e.clientY / scale - dragOffset.y;
 
-      setTempNodes(
-        tempNodes.map((node) =>
+      // Use functional updater to avoid stale closure
+      setTempNodes((prev) =>
+        prev?.map((node) =>
           node.id === draggedNodeId
             ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
             : node
-        )
+        ) ?? null
       );
     }
-  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, tempNodes]);
+  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom]);
 
   // Handle mouse up on canvas
   const handleMouseUp = useCallback(() => {
