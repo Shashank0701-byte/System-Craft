@@ -91,6 +91,32 @@ export default function DashboardPage() {
     }
   };
 
+  // Delete design with authenticated request
+  const handleDeleteDesign = async (designId: string) => {
+    if (!user?.uid) {
+      setError('You must be logged in to delete designs');
+      throw new Error('Not authenticated');
+    }
+
+    try {
+      const response = await authFetch(`/api/designs/${designId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete design');
+      }
+
+      // Remove from local state
+      setDesigns(prev => prev.filter(d => d.id !== designId));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete design';
+      setError(message);
+      throw err; // Re-throw so DesignCard knows deletion failed
+    }
+  };
+
   // Format relative time - handles invalid and future dates
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -204,6 +230,7 @@ export default function DashboardPage() {
                   editedTime={formatRelativeTime(design.updatedAt)}
                   imageUrl={design.thumbnail}
                   nodeCount={design.nodeCount}
+                  onDelete={handleDeleteDesign}
                 />
               ))}
 
