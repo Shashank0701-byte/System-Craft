@@ -53,6 +53,7 @@ export function Header() {
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
       setIsLoggingOut(false);
     }
   };
