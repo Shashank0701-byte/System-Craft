@@ -123,7 +123,8 @@ export function DesignCanvas({
   const canRedo = historyState.future.length > 0;
 
   // Selection state
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>('5');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
 
   // Tool mode
   const [toolMode, setToolMode] = useState<ToolMode>('select');
@@ -183,12 +184,14 @@ export function DesignCanvas({
   const handleUndo = useCallback(() => {
     dispatch({ type: 'UNDO' });
     setSelectedNodeId(null);
+    setSelectedConnectionId(null);
     setTempNodes(null);
   }, []);
 
   const handleRedo = useCallback(() => {
     dispatch({ type: 'REDO' });
     setSelectedNodeId(null);
+    setSelectedConnectionId(null);
     setTempNodes(null);
   }, []);
 
@@ -267,6 +270,7 @@ export function DesignCanvas({
       const newNodes = [...nodes, newNode];
       saveToHistory(newNodes, connections);
       setSelectedNodeId(newNode.id);
+      setSelectedConnectionId(null); // Clear connection selection
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
@@ -309,6 +313,7 @@ export function DesignCanvas({
 
     // Normal click to select and prepare for drag
     setSelectedNodeId(nodeId);
+    setSelectedConnectionId(null); // Clear connection selection
     const node = nodes.find((n) => n.id === nodeId);
     if (!node) return;
 
@@ -374,20 +379,21 @@ export function DesignCanvas({
     }
 
     // Handle node dragging - update tempNodes
-    if (draggedNodeId && toolMode === 'select' && tempNodes) {
+    if (draggedNodeId && toolMode === 'select') {
       const scale = zoom / 100;
       const newX = e.clientX / scale - dragOffset.x;
       const newY = e.clientY / scale - dragOffset.y;
 
-      setTempNodes(
-        tempNodes.map((node) =>
+      // Use functional updater to avoid stale closure
+      setTempNodes((prev) =>
+        prev?.map((node) =>
           node.id === draggedNodeId
             ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
             : node
-        )
+        ) ?? null
       );
     }
-  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, tempNodes]);
+  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom]);
 
   // Handle mouse up on canvas
   const handleMouseUp = useCallback(() => {
@@ -406,21 +412,37 @@ export function DesignCanvas({
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
     // Only deselect if clicking on canvas background, not on nodes
     const target = e.target as HTMLElement;
-    if (target.closest('[data-node]')) {
-      return; // Don't deselect when clicking on nodes
+    if (target.closest('[data-node]') || target.closest('[data-connection]')) {
+      return; // Don't deselect when clicking on nodes or connections
     }
     setSelectedNodeId(null);
+    setSelectedConnectionId(null);
   }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Delete selected node
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId && document.activeElement === canvasRef.current) {
-        const newNodes = nodes.filter((n) => n.id !== selectedNodeId);
-        const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
-        saveToHistory(newNodes, newConnections);
-        setSelectedNodeId(null);
+      // Delete selected node or connection
+      if ((e.key === 'Delete' || e.key === 'Backspace')) {
+        // Don't delete if user is typing in an input
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
+          return;
+        }
+
+        if (selectedNodeId) {
+          e.preventDefault();
+          const newNodes = nodes.filter((n) => n.id !== selectedNodeId);
+          // Remove any connections attached to the deleted node
+          const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
+          saveToHistory(newNodes, newConnections);
+          setSelectedNodeId(null);
+        } else if (selectedConnectionId) {
+          e.preventDefault();
+          const newConnections = connections.filter((c) => c.id !== selectedConnectionId);
+          saveToHistory(nodes, newConnections);
+          setSelectedConnectionId(null);
+        }
       }
 
       // Undo: Ctrl+Z
@@ -438,7 +460,7 @@ export function DesignCanvas({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, nodes, connections, saveToHistory, handleUndo, handleRedo]);
+  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, handleUndo, handleRedo]);
 
   return (
     <main
@@ -465,6 +487,7 @@ export function DesignCanvas({
           <li>• Drag from palette to add</li>
           <li>• Click & drag nodes to move</li>
           <li>• <kbd className="bg-white/20 px-1 rounded">Shift</kbd>+Click to draw arrows</li>
+          <li>• <kbd className="bg-white/20 px-1 rounded">Delete</kbd> to remove selected</li>
           <li>• <kbd className="bg-white/20 px-1 rounded">Ctrl+Z</kbd> Undo / <kbd className="bg-white/20 px-1 rounded">Ctrl+Y</kbd> Redo</li>
         </ul>
       </div>
@@ -498,18 +521,37 @@ export function DesignCanvas({
             </marker>
           </defs>
 
-          {/* Existing connections */}
-          {connections.map((conn) => (
-            <path
-              key={conn.id}
-              d={getConnectionPath(conn.from, conn.to)}
-              fill="none"
-              markerEnd={`url(#${arrowId})`}
-              stroke="#4f4b64"
-              strokeWidth="2"
-              className="opacity-60"
-            />
-          ))}
+          {/* Existing connections - clickable for selection */}
+          {connections.map((conn) => {
+            const isSelected = conn.id === selectedConnectionId;
+            const pathD = getConnectionPath(conn.from, conn.to); // Cache path
+            return (
+              <g key={conn.id} data-connection>
+                {/* Invisible wider path for easier clicking */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth="20"
+                  className="cursor-pointer pointer-events-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedConnectionId(conn.id);
+                    setSelectedNodeId(null);
+                  }}
+                />
+                {/* Visible connection line */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  markerEnd={`url(#${arrowId})`}
+                  stroke={isSelected ? '#4725f4' : '#4f4b64'}
+                  strokeWidth={isSelected ? 3 : 2}
+                  className={`pointer-events-none ${isSelected ? 'opacity-100' : 'opacity-60'}`}
+                />
+              </g>
+            );
+          })}
 
           {/* Connection being drawn */}
           {isDrawingConnection && connectionStart && (
