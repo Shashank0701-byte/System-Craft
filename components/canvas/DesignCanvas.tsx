@@ -47,7 +47,7 @@ type HistoryAction =
   | { type: 'UNDO' }
   | { type: 'REDO' };
 
-type ToolMode = 'select' | 'pan';
+type ToolMode = 'select' | 'pan' | 'erase';
 
 // Default empty canvas
 const DEFAULT_NODES: CanvasNode[] = [];
@@ -300,6 +300,16 @@ export function DesignCanvas({
 
     if (toolMode === 'pan') return;
 
+    // Erase mode: immediately delete node on click
+    if (toolMode === 'erase') {
+      const newNodes = nodes.filter((n) => n.id !== nodeId);
+      const newConnections = connections.filter((c) => c.from !== nodeId && c.to !== nodeId);
+      saveToHistory(newNodes, newConnections);
+      setSelectedNodeId(null);
+      setSelectedConnectionId(null);
+      return;
+    }
+
     // Shift+Click to start drawing a connection
     if (e.shiftKey) {
       setIsDrawingConnection(true);
@@ -325,7 +335,7 @@ export function DesignCanvas({
       x: e.clientX / scale - node.x,
       y: e.clientY / scale - node.y,
     });
-  }, [nodes, toolMode, zoom]);
+  }, [nodes, connections, toolMode, zoom, saveToHistory]);
 
   // Handle completing a connection (mouse up on another node)
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -419,6 +429,20 @@ export function DesignCanvas({
     setSelectedConnectionId(null);
   }, []);
 
+  // Delete selected node or connection
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedNodeId) {
+      const newNodes = nodes.filter((n) => n.id !== selectedNodeId);
+      const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
+      saveToHistory(newNodes, newConnections);
+      setSelectedNodeId(null);
+    } else if (selectedConnectionId) {
+      const newConnections = connections.filter((c) => c.id !== selectedConnectionId);
+      saveToHistory(nodes, newConnections);
+      setSelectedConnectionId(null);
+    }
+  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -430,18 +454,9 @@ export function DesignCanvas({
           return;
         }
 
-        if (selectedNodeId) {
+        if (selectedNodeId || selectedConnectionId) {
           e.preventDefault();
-          const newNodes = nodes.filter((n) => n.id !== selectedNodeId);
-          // Remove any connections attached to the deleted node
-          const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
-          saveToHistory(newNodes, newConnections);
-          setSelectedNodeId(null);
-        } else if (selectedConnectionId) {
-          e.preventDefault();
-          const newConnections = connections.filter((c) => c.id !== selectedConnectionId);
-          saveToHistory(nodes, newConnections);
-          setSelectedConnectionId(null);
+          handleDeleteSelected();
         }
       }
 
@@ -460,14 +475,14 @@ export function DesignCanvas({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, handleUndo, handleRedo]);
+  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo]);
 
   return (
     <main
       ref={canvasRef}
       tabIndex={0}
       className={`flex-1 relative bg-white dark:bg-[#0f1115] overflow-hidden transition-colors outline-none ${isDragOver ? 'ring-2 ring-inset ring-primary/50 bg-primary/5' : ''
-        } ${isPanning ? 'cursor-grabbing' : toolMode === 'pan' ? 'cursor-grab' : draggedNodeId ? 'cursor-grabbing' : isDrawingConnection ? 'cursor-crosshair' : 'cursor-default'}`}
+        } ${isPanning ? 'cursor-grabbing' : toolMode === 'pan' ? 'cursor-grab' : toolMode === 'erase' ? 'cursor-crosshair' : draggedNodeId ? 'cursor-grabbing' : isDrawingConnection ? 'cursor-crosshair' : 'cursor-default'}`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -510,7 +525,7 @@ export function DesignCanvas({
           transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom / 100})`,
         }}
       >
-        {/* Connecting Lines (SVG Layer) - using overflow visible for unlimited canvas */}
+        {/* Connecting Lines (SVG Layer) - visible lines below nodes */}
         <svg
           className="absolute inset-0 pointer-events-none z-0"
           style={{ width: '100%', height: '100%', overflow: 'visible' }}
@@ -521,35 +536,20 @@ export function DesignCanvas({
             </marker>
           </defs>
 
-          {/* Existing connections - clickable for selection */}
+          {/* Visible connection lines */}
           {connections.map((conn) => {
             const isSelected = conn.id === selectedConnectionId;
-            const pathD = getConnectionPath(conn.from, conn.to); // Cache path
+            const pathD = getConnectionPath(conn.from, conn.to);
             return (
-              <g key={conn.id} data-connection>
-                {/* Invisible wider path for easier clicking */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth="20"
-                  className="cursor-pointer pointer-events-auto"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedConnectionId(conn.id);
-                    setSelectedNodeId(null);
-                  }}
-                />
-                {/* Visible connection line */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  markerEnd={`url(#${arrowId})`}
-                  stroke={isSelected ? '#4725f4' : '#4f4b64'}
-                  strokeWidth={isSelected ? 3 : 2}
-                  className={`pointer-events-none ${isSelected ? 'opacity-100' : 'opacity-60'}`}
-                />
-              </g>
+              <path
+                key={conn.id}
+                d={pathD}
+                fill="none"
+                markerEnd={`url(#${arrowId})`}
+                stroke={isSelected ? '#4725f4' : '#4f4b64'}
+                strokeWidth={isSelected ? 3 : 2}
+                className={`pointer-events-none ${isSelected ? 'opacity-100' : 'opacity-60'}`}
+              />
             );
           })}
 
@@ -567,7 +567,7 @@ export function DesignCanvas({
         </svg>
 
         {/* Canvas Nodes */}
-        <div className="absolute inset-0 z-10">
+        <div className="absolute inset-0 z-10 pointer-events-none">
           {displayNodes.map((node) => {
             const colors = getColorClasses(node.type);
             const isSelected = node.id === selectedNodeId;
@@ -577,13 +577,27 @@ export function DesignCanvas({
                 key={node.id}
                 data-node
                 style={{ left: node.x, top: node.y }}
-                className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow ${isSelected
+                className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow pointer-events-auto ${isSelected
                   ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
                   : 'border-2 border-transparent hover:border-primary'
                   }`}
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                 onMouseUp={(e) => handleNodeMouseUp(e, node.id)}
               >
+                {/* Delete button - visible when selected */}
+                {isSelected && (
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSelected();
+                    }}
+                    className="absolute -top-3 -right-3 size-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg z-30 cursor-pointer transition-colors"
+                    title="Delete node"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
+                  </button>
+                )}
                 <span
                   className={`material-symbols-outlined ${colors.text} ${colors.darkText}`}
                   style={{ fontSize: '28px' }}
@@ -599,6 +613,38 @@ export function DesignCanvas({
             );
           })}
         </div>
+
+        {/* Connection click targets (between visible lines and nodes so clicks reach them but don't block nodes) */}
+        <svg
+          className="absolute inset-0 pointer-events-none z-[5]"
+          style={{ width: '100%', height: '100%', overflow: 'visible' }}
+        >
+          {connections.map((conn) => {
+            const pathD = getConnectionPath(conn.from, conn.to);
+            return (
+              <path
+                key={conn.id}
+                data-connection
+                d={pathD}
+                fill="none"
+                stroke="transparent"
+                strokeWidth="20"
+                className={`pointer-events-auto ${toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-pointer'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (toolMode === 'erase') {
+                    const newConnections = connections.filter((c) => c.id !== conn.id);
+                    saveToHistory(nodes, newConnections);
+                    setSelectedConnectionId(null);
+                  } else {
+                    setSelectedConnectionId(conn.id);
+                    setSelectedNodeId(null);
+                  }
+                }}
+              />
+            );
+          })}
+        </svg>
       </div>
 
       {/* Floating Canvas Controls */}
@@ -621,6 +667,16 @@ export function DesignCanvas({
           title="Select Tool (click to select, drag to move nodes)"
         >
           <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>near_me</span>
+        </button>
+
+        {/* Erase Tool */}
+        <button
+          onClick={() => setToolMode('erase')}
+          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'erase' ? 'bg-red-500/15 text-red-500' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+            }`}
+          title="Erase Tool (click any node or connection to delete)"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>ink_eraser</span>
         </button>
 
         <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
