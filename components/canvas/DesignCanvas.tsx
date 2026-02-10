@@ -335,7 +335,7 @@ export function DesignCanvas({
       x: e.clientX / scale - node.x,
       y: e.clientY / scale - node.y,
     });
-  }, [nodes, toolMode, zoom]);
+  }, [nodes, connections, toolMode, zoom, saveToHistory]);
 
   // Handle completing a connection (mouse up on another node)
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -567,7 +567,7 @@ export function DesignCanvas({
         </svg>
 
         {/* Canvas Nodes */}
-        <div className="absolute inset-0 z-10">
+        <div className="absolute inset-0 z-10 pointer-events-none">
           {displayNodes.map((node) => {
             const colors = getColorClasses(node.type);
             const isSelected = node.id === selectedNodeId;
@@ -577,7 +577,7 @@ export function DesignCanvas({
                 key={node.id}
                 data-node
                 style={{ left: node.x, top: node.y }}
-                className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow ${isSelected
+                className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow pointer-events-auto ${isSelected
                   ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
                   : 'border-2 border-transparent hover:border-primary'
                   }`}
@@ -614,9 +614,9 @@ export function DesignCanvas({
           })}
         </div>
 
-        {/* Connection click targets (above nodes so clicks reach them) */}
+        {/* Connection click targets (between visible lines and nodes so clicks reach them but don't block nodes) */}
         <svg
-          className="absolute inset-0 pointer-events-none z-20"
+          className="absolute inset-0 pointer-events-none z-[5]"
           style={{ width: '100%', height: '100%', overflow: 'visible' }}
         >
           {connections.map((conn) => {
