@@ -16,17 +16,22 @@ const TIME_LIMITS: Record<string, number> = {
 
 // Check if a week has passed and reset counter if needed
 function getWeeklyUsage(user: { interviewAttempts?: { count: number; weekStart: Date } }) {
-    const attempts = user.interviewAttempts || { count: 0, weekStart: new Date() };
+    const attempts = user.interviewAttempts;
     const now = new Date();
+
+    // Missing field or invalid date → treat as needing reset
+    if (!attempts?.weekStart || isNaN(new Date(attempts.weekStart).getTime())) {
+        return { count: 0, weekStart: now, needsReset: true };
+    }
+
     const weekStart = new Date(attempts.weekStart);
     const daysSinceReset = (now.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24);
 
     if (daysSinceReset >= 7) {
-        // Week has passed, reset
-        return { count: 0, weekStart: now, needsReset: true };
+        return { count: 0, weekStart, needsReset: true };
     }
 
-    return { count: attempts.count, weekStart: weekStart, needsReset: false };
+    return { count: attempts.count ?? 0, weekStart, needsReset: false };
 }
 
 // GET: List user's interview sessions
@@ -48,8 +53,8 @@ export async function GET(request: NextRequest) {
 
         // Parse query params for pagination
         const { searchParams } = new URL(request.url);
-        const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-        const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10')));
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10') || 10));
         const status = searchParams.get('status'); // optional filter
 
         const filter: Record<string, unknown> = { userId: user._id };
@@ -144,18 +149,42 @@ export async function POST(request: NextRequest) {
         if (user.plan === 'free') {
             const usage = getWeeklyUsage(user);
 
-            // If week has passed, reset counter atomically and claim a slot
+            // If week has passed (or first-time user), reset counter atomically and claim a slot
+            // Guard on old weekStart so only one concurrent request wins the reset
             if (usage.needsReset) {
                 const claimed = await User.findOneAndUpdate(
-                    { _id: user._id },
+                    {
+                        _id: user._id,
+                        $or: [
+                            { 'interviewAttempts.weekStart': { $lte: usage.weekStart } },
+                            { 'interviewAttempts.weekStart': { $exists: false } },
+                            { interviewAttempts: { $exists: false } },
+                        ],
+                    },
                     { $set: { 'interviewAttempts.count': 1, 'interviewAttempts.weekStart': new Date() } },
                     { new: true }
                 );
+
+                // If we didn't win the reset, another request already did — fall through to normal increment
                 if (!claimed) {
-                    return NextResponse.json({ error: 'Failed to claim interview slot' }, { status: 500 });
+                    const retried = await User.findOneAndUpdate(
+                        { _id: user._id, 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
+                        { $inc: { 'interviewAttempts.count': 1 } },
+                        { new: true }
+                    );
+                    if (!retried) {
+                        return NextResponse.json(
+                            {
+                                error: 'Weekly interview limit reached',
+                                message: `Free plan allows ${FREE_WEEKLY_LIMIT} interviews per week. Upgrade to Pro for unlimited.`,
+                                usage: { used: FREE_WEEKLY_LIMIT, limit: FREE_WEEKLY_LIMIT },
+                            },
+                            { status: 429 }
+                        );
+                    }
                 }
             } else {
-                // Atomically increment only if count is still below limit
+                // Normal path: atomically increment only if count is below limit
                 const claimed = await User.findOneAndUpdate(
                     { _id: user._id, 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
                     { $inc: { 'interviewAttempts.count': 1 } },
