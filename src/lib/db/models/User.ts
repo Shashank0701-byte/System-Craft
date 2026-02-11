@@ -10,6 +10,10 @@ export interface IUser extends Document {
     updatedAt: Date;
     lastLoginAt: Date;
     plan: 'free' | 'pro' | 'enterprise';
+    interviewAttempts: {
+        count: number;
+        weekStart: Date;
+    };
 }
 
 const UserSchema = new Schema<IUser>(
@@ -49,6 +53,10 @@ const UserSchema = new Schema<IUser>(
             type: String,
             enum: ['free', 'pro', 'enterprise'],
             default: 'free',
+        },
+        interviewAttempts: {
+            count: { type: Number, default: 0 },
+            weekStart: { type: Date, default: Date.now },
         },
     },
     {
