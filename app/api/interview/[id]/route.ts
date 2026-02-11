@@ -86,6 +86,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             );
         }
 
+        // Validate input shapes
+        if (nodes !== undefined && !Array.isArray(nodes)) {
+            return NextResponse.json(
+                { error: 'nodes must be an array' },
+                { status: 400 }
+            );
+        }
+        if (connections !== undefined && !Array.isArray(connections)) {
+            return NextResponse.json(
+                { error: 'connections must be an array' },
+                { status: 400 }
+            );
+        }
+
         const authHeader = request.headers.get('Authorization');
         const authenticatedUser = await getAuthenticatedUser(authHeader);
 
@@ -98,19 +112,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
-
-        const session = await InterviewSession.findOne({ _id: id, userId: user._id });
-        if (!session) {
-            return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
-        }
-
-        // Cannot modify submitted/evaluated sessions
-        if (['submitted', 'evaluating', 'evaluated'].includes(session.status)) {
-            return NextResponse.json(
-                { error: 'Cannot modify a submitted session' },
-                { status: 409 }
-            );
         }
 
         // Build update
@@ -130,14 +131,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             updateData.submittedAt = new Date();
         }
 
+        // Atomic update with status guard: only update if session is still 'in_progress'
+        // This prevents race conditions where a concurrent request submits between our check and update
         const updatedSession = await InterviewSession.findOneAndUpdate(
-            { _id: id, userId: user._id },
+            { _id: id, userId: user._id, status: 'in_progress' },
             { $set: updateData },
             { new: true }
         );
 
         if (!updatedSession) {
-            return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
+            // Distinguish between "not found" and "wrong status"
+            const exists = await InterviewSession.findOne({ _id: id, userId: user._id }).select('status').lean();
+            if (!exists) {
+                return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
+            }
+            return NextResponse.json(
+                { error: 'Cannot modify a submitted session' },
+                { status: 409 }
+            );
         }
 
         return NextResponse.json({

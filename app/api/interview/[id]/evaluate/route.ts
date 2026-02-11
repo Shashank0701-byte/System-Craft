@@ -32,15 +32,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const session = await InterviewSession.findOne({ _id: id, userId: user._id });
-        if (!session) {
-            return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
-        }
+        // Atomic check-and-set: only claim the session if it's currently 'submitted'
+        // This prevents race conditions where two concurrent requests both pass the status check
+        const session = await InterviewSession.findOneAndUpdate(
+            { _id: id, userId: user._id, status: 'submitted' },
+            { $set: { status: 'evaluating' } },
+            { new: false } // return the pre-update doc so we can inspect canvas
+        );
 
-        // Must be submitted to evaluate
-        if (session.status !== 'submitted') {
+        if (!session) {
+            // Distinguish between "not found" and "wrong status"
+            const exists = await InterviewSession.findOne({ _id: id, userId: user._id }).select('status').lean();
+            if (!exists) {
+                return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
+            }
             return NextResponse.json(
-                { error: `Cannot evaluate session with status "${session.status}". Must be "submitted".` },
+                { error: `Cannot evaluate session with status "${exists.status}". Must be "submitted".` },
                 { status: 409 }
             );
         }
@@ -48,17 +55,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         // Check canvas has content
         const nodeCount = session.canvasSnapshot?.nodes?.length || 0;
         if (nodeCount === 0) {
+            // Revert status back to submitted since we can't evaluate
+            await InterviewSession.updateOne({ _id: id }, { $set: { status: 'submitted' } });
             return NextResponse.json(
                 { error: 'Cannot evaluate an empty canvas. Add components before submitting.' },
                 { status: 422 }
             );
         }
-
-        // Set status to evaluating
-        await InterviewSession.updateOne(
-            { _id: id },
-            { $set: { status: 'evaluating' } }
-        );
 
         // TODO: Phase 4 — Run structural rule engine + AI reasoning evaluator
         // For now, return a stub response indicating evaluation is pending
