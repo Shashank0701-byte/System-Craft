@@ -139,28 +139,38 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Check weekly usage limit for free plan
+        // Atomic counter claim for free plan: increment-and-check in one operation
+        // This prevents race conditions where two concurrent requests both pass the limit check
         if (user.plan === 'free') {
             const usage = getWeeklyUsage(user);
 
-            // Reset counter if new week
+            // If week has passed, reset counter atomically and claim a slot
             if (usage.needsReset) {
-                await User.updateOne(
+                const claimed = await User.findOneAndUpdate(
                     { _id: user._id },
-                    { $set: { 'interviewAttempts.count': 0, 'interviewAttempts.weekStart': new Date() } }
+                    { $set: { 'interviewAttempts.count': 1, 'interviewAttempts.weekStart': new Date() } },
+                    { new: true }
                 );
-                usage.count = 0;
-            }
-
-            if (usage.count >= FREE_WEEKLY_LIMIT) {
-                return NextResponse.json(
-                    {
-                        error: 'Weekly interview limit reached',
-                        message: `Free plan allows ${FREE_WEEKLY_LIMIT} interviews per week. Upgrade to Pro for unlimited.`,
-                        usage: { used: usage.count, limit: FREE_WEEKLY_LIMIT },
-                    },
-                    { status: 429 }
+                if (!claimed) {
+                    return NextResponse.json({ error: 'Failed to claim interview slot' }, { status: 500 });
+                }
+            } else {
+                // Atomically increment only if count is still below limit
+                const claimed = await User.findOneAndUpdate(
+                    { _id: user._id, 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
+                    { $inc: { 'interviewAttempts.count': 1 } },
+                    { new: true }
                 );
+                if (!claimed) {
+                    return NextResponse.json(
+                        {
+                            error: 'Weekly interview limit reached',
+                            message: `Free plan allows ${FREE_WEEKLY_LIMIT} interviews per week. Upgrade to Pro for unlimited.`,
+                            usage: { used: usage.count, limit: FREE_WEEKLY_LIMIT },
+                        },
+                        { status: 429 }
+                    );
+                }
             }
         }
 
@@ -184,22 +194,28 @@ export async function POST(request: NextRequest) {
             hints: [],
         };
 
-        // Create the session
-        const session = await InterviewSession.create({
-            userId: user._id,
-            question: placeholderQuestion,
-            difficulty,
-            timeLimit: TIME_LIMITS[difficulty],
-            startedAt: new Date(),
-            status: 'in_progress',
-            canvasSnapshot: { nodes: [], connections: [] },
-        });
-
-        // Increment usage counter
-        await User.updateOne(
-            { _id: user._id },
-            { $inc: { 'interviewAttempts.count': 1 } }
-        );
+        // Create the session (counter already claimed above)
+        let session;
+        try {
+            session = await InterviewSession.create({
+                userId: user._id,
+                question: placeholderQuestion,
+                difficulty,
+                timeLimit: TIME_LIMITS[difficulty],
+                startedAt: new Date(),
+                status: 'in_progress',
+                canvasSnapshot: { nodes: [], connections: [] },
+            });
+        } catch (createError) {
+            // Rollback: decrement counter if session creation failed
+            if (user.plan === 'free') {
+                await User.updateOne(
+                    { _id: user._id },
+                    { $inc: { 'interviewAttempts.count': -1 } }
+                );
+            }
+            throw createError;
+        }
 
         return NextResponse.json({
             success: true,
