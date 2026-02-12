@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
-import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import InterviewSession, { InterviewDifficulty } from '@/src/lib/db/models/InterviewSession';
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
+import { generateInterviewQuestion } from '@/src/lib/ai/questionGenerator';
 
 // Free tier limit
 const FREE_WEEKLY_LIMIT = 2;
@@ -203,32 +204,31 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Placeholder question — Phase 2 will replace this with AI generation
-        const placeholderQuestion = {
-            prompt: `Design a system for a ${difficulty}-level challenge. (AI-generated question coming in Phase 2)`,
-            requirements: [
-                'Handle user authentication',
-                'Support real-time data updates',
-                'Provide data persistence',
-            ],
-            constraints: [
-                difficulty === 'easy' ? 'Handle up to 100K users' :
-                    difficulty === 'medium' ? 'Handle up to 10M users' :
-                        'Handle up to 100M+ users',
-            ],
-            trafficProfile: {
-                users: difficulty === 'easy' ? '100K DAU' : difficulty === 'medium' ? '10M DAU' : '100M+ DAU',
-                rps: difficulty === 'easy' ? '1K RPS' : difficulty === 'medium' ? '50K RPS' : '500K+ RPS',
-            },
-            hints: [],
-        };
+        // Generate AI-powered interview question
+        let question;
+        try {
+            question = await generateInterviewQuestion(difficulty as InterviewDifficulty);
+        } catch (aiError) {
+            console.error('AI question generation failed:', aiError);
+            // Rollback: decrement counter if AI generation failed
+            if (user.plan === 'free') {
+                await User.updateOne(
+                    { _id: user._id },
+                    { $inc: { 'interviewAttempts.count': -1 } }
+                );
+            }
+            return NextResponse.json(
+                { error: 'Failed to generate interview question. Please try again.' },
+                { status: 502 }
+            );
+        }
 
         // Create the session (counter already claimed above)
         let session;
         try {
             session = await InterviewSession.create({
                 userId: user._id,
-                question: placeholderQuestion,
+                question,
                 difficulty,
                 timeLimit: TIME_LIMITS[difficulty],
                 startedAt: new Date(),
