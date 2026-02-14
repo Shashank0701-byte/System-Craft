@@ -169,7 +169,13 @@ export async function POST(request: NextRequest) {
                 // If we didn't win the reset, another request already did — fall through to normal increment
                 if (!claimed) {
                     const retried = await User.findOneAndUpdate(
-                        { _id: user._id, 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
+                        {
+                            _id: user._id,
+                            $or: [
+                                { 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
+                                { 'interviewAttempts.count': { $exists: false } },
+                            ],
+                        },
                         { $inc: { 'interviewAttempts.count': 1 } },
                         { new: true }
                     );
@@ -186,9 +192,20 @@ export async function POST(request: NextRequest) {
                 }
             } else {
                 // Normal path: atomically increment only if count is below limit
+                // Also match documents where the field doesn't exist yet (pre-existing users)
                 const claimed = await User.findOneAndUpdate(
-                    { _id: user._id, 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
-                    { $inc: { 'interviewAttempts.count': 1 } },
+                    {
+                        _id: user._id,
+                        $or: [
+                            { 'interviewAttempts.count': { $lt: FREE_WEEKLY_LIMIT } },
+                            { 'interviewAttempts.count': { $exists: false } },
+                            { interviewAttempts: { $exists: false } },
+                        ],
+                    },
+                    {
+                        $inc: { 'interviewAttempts.count': 1 },
+                        $min: { 'interviewAttempts.weekStart': new Date() },
+                    },
                     { new: true }
                 );
                 if (!claimed) {
@@ -213,7 +230,7 @@ export async function POST(request: NextRequest) {
             // Rollback: decrement counter if AI generation failed
             if (user.plan === 'free') {
                 await User.updateOne(
-                    { _id: user._id },
+                    { _id: user._id, 'interviewAttempts.count': { $gt: 0 } },
                     { $inc: { 'interviewAttempts.count': -1 } }
                 );
             }
@@ -239,7 +256,7 @@ export async function POST(request: NextRequest) {
             // Rollback: decrement counter if session creation failed
             if (user.plan === 'free') {
                 await User.updateOne(
-                    { _id: user._id },
+                    { _id: user._id, 'interviewAttempts.count': { $gt: 0 } },
                     { $inc: { 'interviewAttempts.count': -1 } }
                 );
             }

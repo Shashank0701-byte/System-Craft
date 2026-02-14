@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect, { isValidObjectId } from '@/src/lib/db/mongoose';
 import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import { Types } from 'mongoose';
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 
@@ -132,21 +133,27 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         // Atomic update with status guard: only update if session is still 'in_progress'
-        // This prevents race conditions where a concurrent request submits between our check and update
+        // Explicitly cast IDs to ensure Mongo match
+        const query = {
+            _id: new Types.ObjectId(id),
+            userId: user._id,
+            status: 'in_progress'
+        };
+
         const updatedSession = await InterviewSession.findOneAndUpdate(
-            { _id: id, userId: user._id, status: 'in_progress' },
+            query,
             { $set: updateData },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (!updatedSession) {
             // Distinguish between "not found" and "wrong status"
-            const exists = await InterviewSession.findOne({ _id: id, userId: user._id }).select('status').lean();
+            const exists = await InterviewSession.findOne({ _id: new Types.ObjectId(id), userId: user._id }).select('status').lean();
             if (!exists) {
                 return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
             }
             return NextResponse.json(
-                { error: 'Cannot modify a submitted session' },
+                { error: 'Cannot modify a submitted session', status: exists.status },
                 { status: 409 }
             );
         }
