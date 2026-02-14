@@ -172,10 +172,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     } catch (error) {
         console.error('Error updating interview session:', error);
         return NextResponse.json(
-            {
-                error: 'Failed to update interview session',
-                details: error instanceof Error ? error.message : String(error)
-            },
+            { error: 'Failed to update interview session' },
             { status: 500 }
         );
     }

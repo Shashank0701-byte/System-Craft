@@ -101,7 +101,7 @@ export function InterviewHeader({
                 {isInProgress && (
                     <button
                         onClick={onSubmit}
-                        disabled={isSubmitting || timer.isExpired}
+                        disabled={isSubmitting}
                         className="flex h-9 items-center gap-2 rounded-lg px-5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors shadow-lg shadow-emerald-600/20 cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[18px]">

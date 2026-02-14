@@ -48,6 +48,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showHints, setShowHints] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     // Refs for save logic
     const isSavingRef = useRef(false);
@@ -61,11 +62,10 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         timeLimit: session?.timeLimit || 45,
         startedAt: session?.startedAt || new Date().toISOString(),
         isActive: session?.status === 'in_progress',
-        onTimeUp: useCallback(() => {
+        onTimeUp: () => {
             // Auto-submit when time expires
             handleSubmit();
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, []),
+        },
     });
 
     // Fetch session data
@@ -180,9 +180,10 @@ export default function InterviewCanvasPage({ params }: PageProps) {
 
             // Update local state
             setSession(prev => prev ? { ...prev, status: 'submitted', submittedAt: new Date().toISOString() } : null);
+            setSubmitError(null);
         } catch (err) {
             console.error('Error submitting:', err);
-            setError(err instanceof Error ? err.message : 'Failed to submit');
+            setSubmitError(err instanceof Error ? err.message : 'Failed to submit');
         } finally {
             setIsSubmitting(false);
         }
@@ -259,6 +260,22 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
             />
+
+            {/* Submit Error Banner */}
+            {submitError && (
+                <div className="bg-red-500/10 border-y border-red-500/20 px-6 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-red-400 text-sm">
+                        <span className="material-symbols-outlined text-[18px]">error</span>
+                        <span>Submission failed: {submitError}</span>
+                    </div>
+                    <button
+                        onClick={() => setSubmitError(null)}
+                        className="text-xs text-red-400 underline hover:no-underline font-medium cursor-pointer"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
 
             <div className="flex flex-1 overflow-hidden">
                 {/* Question Panel - left sidebar */}
