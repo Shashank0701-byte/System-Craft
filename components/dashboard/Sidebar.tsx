@@ -23,7 +23,7 @@ export function Sidebar() {
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
           My Designs
         </Link>
-        <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-text-muted-dark hover:bg-slate-100 dark:hover:bg-dashboard-card hover:text-slate-900 dark:hover:text-white transition-colors">
+        <Link href="/interview" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-text-muted-dark hover:bg-slate-100 dark:hover:bg-dashboard-card hover:text-slate-900 dark:hover:text-white transition-colors">
           <span className="material-symbols-outlined">play_circle</span>
           Interview Mode
         </Link>
