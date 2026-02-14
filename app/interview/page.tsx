@@ -119,6 +119,11 @@ export default function InterviewPage() {
             }
 
             const data = await response.json();
+
+            if (!data?.session?.id) {
+                throw new Error('Interview created but no session ID was returned.');
+            }
+
             router.push(`/interview/${data.session.id}`);
         } catch (err) {
             console.error('Error starting interview:', err);

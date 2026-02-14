@@ -46,6 +46,7 @@ export function useInterviewTimer({
 
     const calculateRemaining = useCallback((): number => {
         const start = new Date(startedAt).getTime();
+        if (isNaN(start)) return 0;
         const endTime = start + timeLimit * 60 * 1000;
         const remaining = Math.max(0, endTime - Date.now());
         return Math.ceil(remaining / 1000);

@@ -61,18 +61,57 @@
   background-image: radial-gradient(circle, #3f3b54 1px, transparent 1px);
 }
 
+@layer utilities {
+  .animate-in {
+    animation-duration: 300ms;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .fade-in {
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    animation-name: fade-in;
+  }
+
+  .slide-in-from-top-1 {
+    @keyframes slide-in-from-top {
+      from {
+        transform: translateY(-0.25rem);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    animation-name: slide-in-from-top;
+  }
+}
+
 /* Custom scrollbar for panels - WebKit browsers */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #3f3b54;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #4f4b64;
 }

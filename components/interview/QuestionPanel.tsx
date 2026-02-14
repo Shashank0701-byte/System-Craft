@@ -44,14 +44,14 @@ export function QuestionPanel({ question, difficulty, showHints = false, onToggl
                 </div>
 
                 {/* Requirements */}
-                {question.requirements.length > 0 && (
+                {question.requirements?.length > 0 && (
                     <div>
                         <h3 className="text-xs font-bold text-text-muted-dark uppercase tracking-wider mb-2 flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[14px]">checklist</span>
                             Functional Requirements
                         </h3>
                         <ul className="space-y-1.5">
-                            {question.requirements.map((req, i) => (
+                            {question.requirements?.map((req, i) => (
                                 <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
                                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                                     {req}
@@ -62,14 +62,14 @@ export function QuestionPanel({ question, difficulty, showHints = false, onToggl
                 )}
 
                 {/* Constraints */}
-                {question.constraints.length > 0 && (
+                {question.constraints?.length > 0 && (
                     <div>
                         <h3 className="text-xs font-bold text-text-muted-dark uppercase tracking-wider mb-2 flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[14px]">speed</span>
                             Scale Constraints
                         </h3>
                         <ul className="space-y-1.5">
-                            {question.constraints.map((c, i) => (
+                            {question.constraints?.map((c, i) => (
                                 <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
                                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                                     {c}
@@ -119,7 +119,7 @@ export function QuestionPanel({ question, difficulty, showHints = false, onToggl
                 )}
 
                 {/* Hints */}
-                {question.hints.length > 0 && (
+                {question.hints?.length > 0 && (
                     <div>
                         <button
                             onClick={onToggleHints}
@@ -127,7 +127,7 @@ export function QuestionPanel({ question, difficulty, showHints = false, onToggl
                         >
                             <span className="flex items-center gap-1.5">
                                 <span className="material-symbols-outlined text-[14px]">lightbulb</span>
-                                Hints ({question.hints.length})
+                                Hints ({question.hints?.length})
                             </span>
                             <span className="material-symbols-outlined text-[16px]">
                                 {showHints ? 'expand_less' : 'expand_more'}
@@ -135,7 +135,7 @@ export function QuestionPanel({ question, difficulty, showHints = false, onToggl
                         </button>
                         {showHints && (
                             <ul className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {question.hints.map((hint, i) => (
+                                {question.hints?.map((hint, i) => (
                                     <li key={i} className="flex items-start gap-2 text-sm text-amber-300/80 bg-amber-500/5 rounded-lg px-3 py-2 border border-amber-500/10">
                                         <span className="material-symbols-outlined text-[14px] mt-0.5 text-amber-500">tips_and_updates</span>
                                         {hint}

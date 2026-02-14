@@ -28,7 +28,7 @@ function getClient(): OpenAI {
 
 /**
  * Generate structured JSON content via OpenRouter.
- * Uses goolge/gemini-2.0-flash-lite-preview-02-05:free for zero-cost generation.
+ * Uses Google Gemini 2.0 Flash via OpenRouter for high-quality generation.
  * Falls back gracefully with retry logic for transient errors.
  */
 export async function generateJSON<T>(prompt: string, retries = 2): Promise<T> {
