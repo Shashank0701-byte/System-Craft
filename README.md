@@ -1,4 +1,4 @@
-# 🏗️ SystemCraft
+# SystemCraft
 
 **Master System Design Interviews with AI-Powered Feedback.**
 
@@ -6,7 +6,7 @@ SystemCraft is a high-fidelity system design interview simulator. It combines an
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 - **Interactive Design Canvas**: A powerful, intuitive workspace to build complex system architectures using industry-standard sub-components (LBs, Servers, Databases, etc.).
 - **Real-time AI Interviewer**: Engage in simulated interview sessions where an AI evaluator monitors your progress and asks clarifying questions.
@@ -16,7 +16,7 @@ SystemCraft is a high-fidelity system design interview simulator. It combines an
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: [Next.js 15](https://nextjs.org/) (App Router), React 19, Tailwind CSS 4.
 - **Backend**: Next.js API Routes (Serverless).
@@ -27,7 +27,7 @@ SystemCraft is a high-fidelity system design interview simulator. It combines an
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 - Node.js 20+ installed.
@@ -65,8 +65,8 @@ SystemCraft uses a hybrid evaluation strategy:
 
 ---
 
-## 📄 License
-This project is private property of **Vertex Club**. All rights reserved.
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
