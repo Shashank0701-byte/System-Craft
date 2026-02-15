@@ -20,6 +20,8 @@ interface InterviewHeaderProps {
     onSubmit: () => void;
     /** Whether submit is in progress */
     isSubmitting?: boolean;
+    /** Session ID for linking to results */
+    sessionId?: string;
 }
 
 const DIFFICULTY_LABELS: Record<string, { color: string; label: string }> = {
@@ -35,9 +37,11 @@ export function InterviewHeader({
     status,
     onSubmit,
     isSubmitting = false,
+    sessionId,
 }: InterviewHeaderProps) {
     const diffConfig = DIFFICULTY_LABELS[difficulty] || DIFFICULTY_LABELS.medium;
     const isInProgress = status === 'in_progress';
+
 
     const renderSaveStatus = () => {
         switch (saveStatus) {
@@ -112,9 +116,24 @@ export function InterviewHeader({
                 )}
 
                 {status === 'submitted' && (
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                        <span className="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
-                        <span className="text-sm font-medium text-emerald-400">Submitted</span>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                        <span className="material-symbols-outlined text-yellow-500 text-[18px] animate-spin">sync</span>
+                        <span className="text-sm font-medium text-yellow-500">Evaluating...</span>
+                    </div>
+                )}
+
+                {status === 'evaluated' && (
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                            <span className="material-symbols-outlined text-emerald-400 text-[18px]">workspace_premium</span>
+                            <span className="text-sm font-medium text-emerald-400">Evaluated</span>
+                        </div>
+                        <Link
+                            href={`/interview/${sessionId}/result`}
+                            className="flex h-9 items-center gap-2 rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-all shadow-lg shadow-primary/20"
+                        >
+                            View Results
+                        </Link>
                     </div>
                 )}
 

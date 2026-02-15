@@ -57,6 +57,7 @@ interface DesignCanvasProps {
   initialNodes?: CanvasNode[];
   initialConnections?: Connection[];
   onSave?: (nodes: CanvasNode[], connections: Connection[]) => void;
+  readOnly?: boolean;
 }
 
 const MAX_HISTORY = 50;
@@ -104,7 +105,8 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
 export function DesignCanvas({
   initialNodes = DEFAULT_NODES,
   initialConnections = DEFAULT_CONNECTIONS,
-  onSave
+  onSave,
+  readOnly = false
 }: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -243,6 +245,7 @@ export function DesignCanvas({
 
   // Handle dropping a new component from palette
   const handleDrop = useCallback((e: React.DragEvent) => {
+    if (readOnly) return;
     e.preventDefault();
     setIsDragOver(false);
 
@@ -296,6 +299,7 @@ export function DesignCanvas({
 
   // Handle starting to draw a connection (Shift+Click on node)
   const handleNodeMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
+    if (readOnly) return;
     e.stopPropagation();
 
     if (toolMode === 'pan') return;
@@ -339,6 +343,7 @@ export function DesignCanvas({
 
   // Handle completing a connection (mouse up on another node)
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
+    if (readOnly) return;
     e.stopPropagation();
 
     if (isDrawingConnection && connectionStart && connectionStart !== nodeId) {
@@ -371,6 +376,7 @@ export function DesignCanvas({
 
   // Handle mouse move
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (readOnly && !isPanning) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -431,6 +437,7 @@ export function DesignCanvas({
 
   // Delete selected node or connection
   const handleDeleteSelected = useCallback(() => {
+    if (readOnly) return;
     if (selectedNodeId) {
       const newNodes = nodes.filter((n) => n.id !== selectedNodeId);
       const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
@@ -446,6 +453,7 @@ export function DesignCanvas({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (readOnly) return;
       // Delete selected node or connection
       if ((e.key === 'Delete' || e.key === 'Backspace')) {
         // Don't delete if user is typing in an input
@@ -649,65 +657,69 @@ export function DesignCanvas({
 
       {/* Floating Canvas Controls */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white dark:bg-[#1e1e24] border border-slate-200 dark:border-border-dark p-1.5 rounded-full shadow-xl flex items-center gap-1 z-30">
-        {/* Pan Tool */}
-        <button
-          onClick={() => setToolMode('pan')}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'pan' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            }`}
-          title="Pan Tool (drag to move canvas)"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>pan_tool</span>
-        </button>
+        {!readOnly && (
+          <>
+            {/* Pan Tool */}
+            <button
+              onClick={() => setToolMode('pan')}
+              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'pan' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+                }`}
+              title="Pan Tool (drag to move canvas)"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>pan_tool</span>
+            </button>
 
-        {/* Select Tool */}
-        <button
-          onClick={() => setToolMode('select')}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'select' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            }`}
-          title="Select Tool (click to select, drag to move nodes)"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>near_me</span>
-        </button>
+            {/* Select Tool */}
+            <button
+              onClick={() => setToolMode('select')}
+              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'select' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+                }`}
+              title="Select Tool (click to select, drag to move nodes)"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>near_me</span>
+            </button>
 
-        {/* Erase Tool */}
-        <button
-          onClick={() => setToolMode('erase')}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'erase' ? 'bg-red-500/15 text-red-500' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            }`}
-          title="Erase Tool (click any node or connection to delete)"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>ink_eraser</span>
-        </button>
+            {/* Erase Tool */}
+            <button
+              onClick={() => setToolMode('erase')}
+              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'erase' ? 'bg-red-500/15 text-red-500' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+                }`}
+              title="Erase Tool (click any node or connection to delete)"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>ink_eraser</span>
+            </button>
 
-        <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
+            <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
 
-        {/* Undo */}
-        <button
-          onClick={handleUndo}
-          disabled={!canUndo}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canUndo
-            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-            }`}
-          title="Undo (Ctrl+Z)"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>undo</span>
-        </button>
+            {/* Undo */}
+            <button
+              onClick={handleUndo}
+              disabled={!canUndo}
+              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canUndo
+                ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                }`}
+              title="Undo (Ctrl+Z)"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>undo</span>
+            </button>
 
-        {/* Redo */}
-        <button
-          onClick={handleRedo}
-          disabled={!canRedo}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canRedo
-            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-            }`}
-          title="Redo (Ctrl+Y)"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>redo</span>
-        </button>
+            {/* Redo */}
+            <button
+              onClick={handleRedo}
+              disabled={!canRedo}
+              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canRedo
+                ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                }`}
+              title="Redo (Ctrl+Y)"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>redo</span>
+            </button>
 
-        <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
+            <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
+          </>
+        )}
 
         {/* Zoom Out */}
         <button
