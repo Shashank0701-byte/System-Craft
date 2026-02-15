@@ -3,6 +3,9 @@ import dbConnect, { isValidObjectId } from '@/src/lib/db/mongoose';
 import InterviewSession from '@/src/lib/db/models/InterviewSession';
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
+import { evaluateStructure } from '@/src/lib/evaluation/structuralRules';
+import { evaluateReasoning } from '@/src/lib/evaluation/reasoningEvaluator';
+import { combineEvaluations } from '@/src/lib/evaluation/scoringEngine';
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -54,6 +57,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         // Check canvas has content
         const nodeCount = session.canvasSnapshot?.nodes?.length || 0;
+        const nodes = session.canvasSnapshot?.nodes || [];
+        const connections = session.canvasSnapshot?.connections || [];
+
         if (nodeCount === 0) {
             // Revert status back to submitted since we can't evaluate
             await InterviewSession.updateOne({ _id: id }, { $set: { status: 'submitted' } });
@@ -63,18 +69,54 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             );
         }
 
-        // TODO: Phase 4 — Run structural rule engine + AI reasoning evaluator
-        // For now, return a stub response indicating evaluation is pending
-        return NextResponse.json({
-            success: true,
-            message: 'Evaluation started. This is a Phase 1 stub — actual evaluation logic will be implemented in Phase 4.',
-            session: {
-                id: session._id.toString(),
-                status: 'evaluating',
-                nodeCount,
-                connectionCount: session.canvasSnapshot?.connections?.length || 0,
-            },
-        });
+        try {
+            // 1. Run deterministic structural evaluation
+            const structuralResults = evaluateStructure(
+                nodes,
+                connections,
+                session.question.requirements || [],
+                session.question.constraints || []
+            );
+
+            // 2. Run AI qualitative evaluation
+            const reasoningResults = await evaluateReasoning(
+                session.question,
+                session.canvasSnapshot,
+                structuralResults.details
+            );
+
+            // 3. Combine into final evaluation document
+            const fullEvaluation = combineEvaluations(structuralResults, reasoningResults);
+
+            // 4. Save results and update status
+            const updated = await InterviewSession.findByIdAndUpdate(
+                id,
+                {
+                    $set: {
+                        evaluation: fullEvaluation,
+                        status: 'evaluated'
+                    }
+                },
+                { new: true }
+            );
+
+            return NextResponse.json({
+                success: true,
+                message: 'Evaluation completed successfully',
+                evaluation: updated?.evaluation,
+                session: {
+                    id: id,
+                    status: 'evaluated',
+                    finalScore: updated?.evaluation?.finalScore
+                },
+            });
+
+        } catch (evalError) {
+            console.error('Core evaluation logic failed:', evalError);
+            // Revert status so user can retry
+            await InterviewSession.updateOne({ _id: id }, { $set: { status: 'submitted' } });
+            throw evalError;
+        }
     } catch (error) {
         console.error('Error triggering evaluation:', error);
         return NextResponse.json(
