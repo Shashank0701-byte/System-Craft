@@ -76,7 +76,6 @@ const RULES: RuleDefinition[] = [
 
             const connectedToServers = lbs.some(lb =>
                 connections.some(c => {
-                    const target = nodes.find(n => n.id === c.to || n.id === c.from);
                     const otherId = c.from === lb.id ? c.to : (c.to === lb.id ? c.from : null);
                     if (!otherId) return false;
                     const otherNode = nodes.find(n => n.id === otherId);

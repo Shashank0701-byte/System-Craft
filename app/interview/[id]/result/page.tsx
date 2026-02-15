@@ -46,9 +46,8 @@ export default function InterviewResultPage({ params }: PageProps) {
                 const data = await response.json();
 
                 if (data.session.status !== 'evaluated') {
-                    // If not evaluated yet, maybe it was just submitted?
-                    // For now, redirect back to interview if not evaluated
-                    if (data.session.status === 'in_progress' || data.session.status === 'submitted') {
+                    // If not evaluated yet, it might be in progress, submitted, or evaluating
+                    if (['in_progress', 'submitted', 'evaluating'].includes(data.session.status)) {
                         router.replace(`/interview/${id}`);
                         return;
                     }
@@ -117,9 +116,13 @@ export default function InterviewResultPage({ params }: PageProps) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-sidebar-bg-dark border border-border-dark hover:border-slate-500 rounded-xl text-sm font-bold transition-all">
+                    <button
+                        disabled
+                        aria-disabled="true"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-sidebar-bg-dark border border-border-dark opacity-50 cursor-not-allowed rounded-xl text-sm font-bold transition-all"
+                    >
                         <span className="material-symbols-outlined text-[20px]">download</span>
-                        Export PDF
+                        Export PDF (Soon)
                     </button>
                     <Link
                         href={`/interview`}
@@ -258,7 +261,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                                         <div>
                                             <div className="flex items-center gap-2 mb-0.5">
                                                 <h4 className="font-bold text-sm text-white">{detail.rule}</h4>
-                                                {!detail.status && (
+                                                {detail.status !== 'pass' && (
                                                     <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-red-500 text-white leading-none">
                                                         {detail.severity}
                                                     </span>
