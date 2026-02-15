@@ -178,9 +178,27 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 throw new Error(data.error || 'Failed to submit');
             }
 
-            // Update local state
+            // Update local state to submitted
             setSession(prev => prev ? { ...prev, status: 'submitted', submittedAt: new Date().toISOString() } : null);
             setSubmitError(null);
+
+            // Trigger evaluation
+            const evalResponse = await authFetch(`/api/interview/${id}/evaluate`, {
+                method: 'POST'
+            });
+
+            if (!evalResponse.ok) {
+                const evalData = await evalResponse.json().catch(() => ({}));
+                console.error('Evaluation failed:', evalData.error);
+                // We don't throw here to avoid showing an error after successful submission
+                // The status will remain 'submitted' and can be re-evaluated later
+            } else {
+                const evalData = await evalResponse.json();
+                setSession(prev => prev ? { ...prev, status: 'evaluated', evaluation: evalData.evaluation } : null);
+
+                // Once Phase 5 is ready, we would redirect here:
+                // router.push(`/interview/${id}/result`);
+            }
         } catch (err) {
             console.error('Error submitting:', err);
             setSubmitError(err instanceof Error ? err.message : 'Failed to submit');
@@ -259,6 +277,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 status={session.status}
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
+                sessionId={id}
             />
 
             {/* Submit Error Banner */}
