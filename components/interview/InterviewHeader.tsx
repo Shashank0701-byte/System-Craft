@@ -128,12 +128,14 @@ export function InterviewHeader({
                             <span className="material-symbols-outlined text-emerald-400 text-[18px]">workspace_premium</span>
                             <span className="text-sm font-medium text-emerald-400">Evaluated</span>
                         </div>
-                        <Link
-                            href={`/interview/${sessionId}/result`}
-                            className="flex h-9 items-center gap-2 rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-all shadow-lg shadow-primary/20"
-                        >
-                            View Results
-                        </Link>
+                        {sessionId && (
+                            <Link
+                                href={`/interview/${sessionId}/result`}
+                                className="flex h-9 items-center gap-2 rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-all shadow-lg shadow-primary/20"
+                            >
+                                View Results
+                            </Link>
+                        )}
                     </div>
                 )}
 

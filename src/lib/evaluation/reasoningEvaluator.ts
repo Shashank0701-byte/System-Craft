@@ -40,7 +40,14 @@ ${structuralResults.map(r => `- ${r.rule}: ${r.status.toUpperCase()} (${r.messag
 3. Are there hidden bottlenecks that the deterministic checks missed?
 4. Is the overall architecture coherent and justified?
 
-Return your evaluation as a structured JSON object.
+### OUTPUT FORMAT
+Return your evaluation as a structured JSON object with the following exact keys:
+- "score": number (0-100 indicating overall architectural quality)
+- "strengths": string[] (list of 2-3 specific architectural strengths)
+- "weaknesses": string[] (list of 2-3 specific architectural gaps or weaknesses)
+- "suggestions": string[] (list of 2-3 actionable steps to improve the design)
+
+Ensure the JSON is well-formatted and strictly valid.
     `;
 
     try {
