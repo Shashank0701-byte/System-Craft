@@ -71,4 +71,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 ## 🤝 Contributing
-For internal members: Please create a feature branch before opening a Pull Request. Propose major changes via the System-Craft Discord channel first.
+Please create a feature branch before opening a Pull Request.
