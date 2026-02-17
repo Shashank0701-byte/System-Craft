@@ -33,7 +33,11 @@ async function syncUserWithDB(user: User, provider: 'google' | 'github') {
     return response.json();
 }
 
-export default function AuthCard() {
+interface AuthCardProps {
+    mode?: 'login' | 'signup';
+}
+
+export default function AuthCard({ mode = 'login' }: AuthCardProps) {
     const router = useRouter();
     const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
     const [isLoadingGitHub, setIsLoadingGitHub] = useState(false);
@@ -84,10 +88,12 @@ export default function AuthCard() {
     return (
         <div className="w-full max-w-md rounded-2xl bg-[#141022]/80 backdrop-blur border border-white/10 p-8 shadow-2xl">
             <h1 className="text-2xl font-bold text-white text-center">
-                Welcome Back
+                {mode === 'signup' ? 'Create an Account' : 'Welcome Back'}
             </h1>
             <p className="text-slate-400 text-center mt-2">
-                Sign in to start designing system architectures.
+                {mode === 'signup'
+                    ? 'Get started designing system architectures for free.'
+                    : 'Sign in to start designing system architectures.'}
             </p>
 
             {/* Error message */}
@@ -175,13 +181,19 @@ export default function AuthCard() {
 
             {/* Footer text */}
             <p className="mt-6 text-center text-sm text-slate-500">
-                New to SystemCraft?{" "}
-                <Link
-                    href="/signup"
-                    className="text-primary hover:underline"
-                >
-                    Create an account
-                </Link>
+                {mode === 'signup' ? (
+                    <>Already have an account?{' '}
+                        <Link href="/login" className="text-primary hover:underline">
+                            Sign in
+                        </Link>
+                    </>
+                ) : (
+                    <>New to SystemCraft?{' '}
+                        <Link href="/signup" className="text-primary hover:underline">
+                            Create an account
+                        </Link>
+                    </>
+                )}
             </p>
 
             <div className="mt-6 flex justify-center gap-6 text-xs text-slate-500">

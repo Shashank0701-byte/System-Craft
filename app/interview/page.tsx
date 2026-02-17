@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
 import { Header } from '@/components/dashboard/Header';
+import { SidebarProvider } from '@/components/dashboard/SidebarContext';
 
 interface InterviewSession {
     id: string;
@@ -161,10 +162,21 @@ export default function InterviewPage() {
     if (!isAuthenticated) return null;
 
     return (
-        <>
+        <SidebarProvider>
             <Header />
             <div className="flex-1 overflow-y-auto p-6 md:p-8">
                 <div className="max-w-[1200px] mx-auto">
+
+                    {/* Back Navigation */}
+                    <div className="mb-6">
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
+                        >
+                            <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+                            Back to Dashboard
+                        </Link>
+                    </div>
 
                     {/* Hero Section */}
                     <div className="mb-10">
@@ -330,6 +342,6 @@ export default function InterviewPage() {
                     </div>
                 </div>
             </div>
-        </>
+        </SidebarProvider>
     );
 }

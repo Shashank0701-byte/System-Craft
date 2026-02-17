@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useCanvasPanels } from './CanvasPanelsContext';
 
 export function PropertiesPanel() {
   const [nodeCount, setNodeCount] = useState(3);
+  const { rightOpen, closeAll } = useCanvasPanels();
 
-  return (
-    <aside className="w-80 flex flex-col border-l border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-20 shadow-xl flex-shrink-0">
+  const panelContent = (
+    <>
       {/* Header */}
       <div className="p-5 border-b border-slate-200 dark:border-border-dark flex items-start justify-between">
         <div>
@@ -126,6 +128,28 @@ export function PropertiesPanel() {
           Duplicate Component
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: Fixed sidebar */}
+      <aside className="hidden md:flex w-80 flex-col border-l border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-20 shadow-xl flex-shrink-0">
+        {panelContent}
+      </aside>
+
+      {/* Mobile: Slide-in overlay from right */}
+      {rightOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+            onClick={closeAll}
+          />
+          <aside className="md:hidden fixed inset-y-0 right-0 z-40 w-80 max-w-[90vw] flex flex-col bg-sidebar-bg-dark border-l border-border-dark shadow-2xl animate-slide-in-right">
+            {panelContent}
+          </aside>
+        </>
+      )}
+    </>
   );
 }

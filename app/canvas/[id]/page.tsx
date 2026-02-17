@@ -7,6 +7,7 @@ import { CanvasHeader } from '@/components/canvas/CanvasHeader';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
 import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import { CanvasPanelsProvider } from '@/components/canvas/CanvasPanelsContext';
 
 interface DesignData {
     id: string;
@@ -325,22 +326,24 @@ export default function CanvasPage({ params }: PageProps) {
     }
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display">
-            <CanvasHeader
-                title={design?.title || 'Untitled Design'}
-                saveStatus={saveStatus}
-                onTitleChange={handleTitleChange}
-            />
-            <div className="flex flex-1 overflow-hidden">
-                <ComponentPalette />
-                <DesignCanvas
-                    initialNodes={design?.nodes || []}
-                    initialConnections={design?.connections || []}
-                    onSave={saveDesign}
+        <CanvasPanelsProvider>
+            <div className="flex flex-col h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display">
+                <CanvasHeader
+                    title={design?.title || 'Untitled Design'}
+                    saveStatus={saveStatus}
+                    onTitleChange={handleTitleChange}
                 />
-                <PropertiesPanel />
+                <div className="flex flex-1 overflow-hidden">
+                    <ComponentPalette />
+                    <DesignCanvas
+                        initialNodes={design?.nodes || []}
+                        initialConnections={design?.connections || []}
+                        onSave={saveDesign}
+                    />
+                    <PropertiesPanel />
+                </div>
             </div>
-        </div>
+        </CanvasPanelsProvider>
     );
 }
 
