@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
 interface CanvasPanelsContextType {
     leftOpen: boolean;
@@ -22,23 +22,27 @@ export function CanvasPanelsProvider({ children }: { children: ReactNode }) {
     const [leftOpen, setLeftOpen] = useState(false);
     const [rightOpen, setRightOpen] = useState(false);
 
-    const toggleLeft = () => {
+    const toggleLeft = useCallback(() => {
         setLeftOpen(prev => !prev);
-        setRightOpen(false); // Close the other panel
-    };
+        setRightOpen(false);
+    }, []);
 
-    const toggleRight = () => {
+    const toggleRight = useCallback(() => {
         setRightOpen(prev => !prev);
-        setLeftOpen(false); // Close the other panel
-    };
+        setLeftOpen(false);
+    }, []);
 
-    const closeAll = () => {
+    const closeAll = useCallback(() => {
         setLeftOpen(false);
         setRightOpen(false);
-    };
+    }, []);
+
+    const value = useMemo(() => ({
+        leftOpen, rightOpen, toggleLeft, toggleRight, closeAll,
+    }), [leftOpen, rightOpen, toggleLeft, toggleRight, closeAll]);
 
     return (
-        <CanvasPanelsContext.Provider value={{ leftOpen, rightOpen, toggleLeft, toggleRight, closeAll }}>
+        <CanvasPanelsContext.Provider value={value}>
             {children}
         </CanvasPanelsContext.Provider>
     );

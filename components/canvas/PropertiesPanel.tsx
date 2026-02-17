@@ -144,8 +144,12 @@ export function PropertiesPanel() {
           <div
             className="md:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
             onClick={closeAll}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeAll(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Close panel"
           />
-          <aside className="md:hidden fixed inset-y-0 right-0 z-40 w-80 max-w-[90vw] flex flex-col bg-sidebar-bg-dark border-l border-border-dark shadow-2xl animate-slide-in-right">
+          <aside className="md:hidden fixed inset-y-0 right-0 z-40 w-80 max-w-[90vw] flex flex-col bg-white dark:bg-sidebar-bg-dark border-l border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-right">
             {panelContent}
           </aside>
         </>

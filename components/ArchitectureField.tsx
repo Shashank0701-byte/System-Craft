@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useRef, useMemo, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Points, PointMaterial, Float } from "@react-three/drei";
+import React, { useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Points, PointMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
 function Field({ count = 100 }) {
     const pointsRef = useRef<THREE.Points>(null!);
-    const [hovered, setHovered] = useState(false);
 
     // Create random positions for the nodes
     const positions = useMemo(() => {

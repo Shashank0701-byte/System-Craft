@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { Footer } from "@/components/Footer";
-import ArchitectureField from "@/components/ArchitectureField";
+import { ClientArchitectureField } from "@/components/ClientArchitectureField";
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
       <Navbar />
       <main className="flex-grow pt-24 relative overflow-hidden">
         {/* Three.js Background Animation */}
-        <ArchitectureField />
+        <ClientArchitectureField />
 
         {/* Background Grid Pattern */}
         <div className="absolute inset-0 bg-grid-pattern bg-grid pointer-events-none z-0 opacity-20"></div>

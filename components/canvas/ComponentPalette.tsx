@@ -124,6 +124,10 @@ export function ComponentPalette() {
           <div
             className="md:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
             onClick={closeAll}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeAll(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Close panel"
           />
           <aside className="md:hidden fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-sidebar-bg-dark border-r border-border-dark shadow-2xl animate-slide-in-left">
             {paletteContent}
