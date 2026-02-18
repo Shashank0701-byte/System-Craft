@@ -33,7 +33,7 @@ export function Sidebar() {
         {/* Close button (mobile only) */}
         <button
           onClick={close}
-          className="md:hidden ml-auto p-1.5 rounded-lg hover:bg-dashboard-card text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="md:hidden ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dashboard-card text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
           aria-label="Close sidebar"
         >
           <span className="material-symbols-outlined text-[20px]">close</span>
@@ -49,31 +49,50 @@ export function Sidebar() {
         </Link>
       </div>
       <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive(item.href)
-              ? 'bg-slate-100 dark:bg-dashboard-card text-primary dark:text-white'
-              : 'text-slate-600 dark:text-text-muted-dark hover:bg-slate-100 dark:hover:bg-dashboard-card hover:text-slate-900 dark:hover:text-white'
-              }`}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={item.filled && isActive(item.href) ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        {navItems.map((item) => {
+          const classes = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive(item.href)
+            ? 'bg-slate-100 dark:bg-dashboard-card text-primary dark:text-white'
+            : 'text-slate-600 dark:text-text-muted-dark hover:bg-slate-100 dark:hover:bg-dashboard-card hover:text-slate-900 dark:hover:text-white'
+            }`;
+
+          if (item.href === '#') {
+            return (
+              <span
+                key={item.id}
+                className={`${classes} opacity-50 cursor-not-allowed`}
+                aria-disabled="true"
+              >
+                <span className="material-symbols-outlined">{item.icon}</span>
+                {item.label}
+                <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-slate-400 dark:text-text-muted-dark">Soon</span>
+              </span>
+            );
+          }
+
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className={classes}
             >
-              {item.icon}
-            </span>
-            {item.label}
-          </Link>
-        ))}
+              <span
+                className="material-symbols-outlined"
+                style={item.filled && isActive(item.href) ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              >
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+          );
+        })}
         <div className="pt-4 pb-2">
           <p className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-text-label-dark">System</p>
         </div>
-        <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-text-muted-dark hover:bg-slate-100 dark:hover:bg-dashboard-card hover:text-slate-900 dark:hover:text-white transition-colors">
+        <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-text-muted-dark opacity-50 cursor-not-allowed" aria-disabled="true">
           <span className="material-symbols-outlined">settings</span>
           Settings
-        </Link>
+          <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-slate-400 dark:text-text-muted-dark">Soon</span>
+        </span>
       </nav>
     </>
   );

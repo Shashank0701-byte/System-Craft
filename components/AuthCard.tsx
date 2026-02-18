@@ -103,7 +103,7 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                     </>
                 ) : (
                     <>
-                        <Image src="/google.svg" width={20} height={20} alt="Google" />
+                        <Image src="/google.svg" width={20} height={20} alt="" />
                         Continue with Google
                     </>
                 )}
@@ -122,7 +122,7 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                     </>
                 ) : (
                     <>
-                        <Image src="/github.svg" width={20} height={20} alt="GitHub" />
+                        <Image src="/github.svg" width={20} height={20} alt="" />
                         Continue with GitHub
                     </>
                 )}

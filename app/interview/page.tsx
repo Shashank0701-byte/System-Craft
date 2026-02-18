@@ -74,7 +74,7 @@ export default function InterviewPage() {
     const [isLoadingSessions, setIsLoadingSessions] = useState(true);
     const [isStarting, setIsStarting] = useState<string | null>(null); // difficulty being started
     const [error, setError] = useState<string | null>(null);
-    const hasFetched = useRef(false);
+    const lastFetchedUid = useRef<string | null>(null);
 
     const fetchSessions = useCallback(async () => {
         if (!user?.uid) return;
@@ -98,8 +98,8 @@ export default function InterviewPage() {
     }, [user?.uid]);
 
     useEffect(() => {
-        if (isAuthenticated && user && !hasFetched.current) {
-            hasFetched.current = true;
+        if (isAuthenticated && user && lastFetchedUid.current !== user.uid) {
+            lastFetchedUid.current = user.uid;
             fetchSessions();
         }
     }, [isAuthenticated, user, fetchSessions]);
@@ -151,7 +151,7 @@ export default function InterviewPage() {
 
     if (authLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background-dark">
+            <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     <p className="text-slate-400">Loading...</p>
@@ -239,7 +239,7 @@ export default function InterviewPage() {
                                             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-white opacity-70 group-hover:opacity-100 transition-opacity">
                                                 {isStarting === key ? (
                                                     <>
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                                         Generating question...
                                                     </>
                                                 ) : (
