@@ -94,11 +94,12 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
             <button
                 onClick={() => handleProviderSignIn(signInWithGoogle, setIsLoadingGoogle, 'google')}
                 disabled={isLoading}
+                aria-busy={isLoadingGoogle}
                 className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-[#1f1b33] hover:bg-[#2a2450] border border-white/10 py-3 text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoadingGoogle ? (
                     <>
-                        <Spinner />
+                        <Spinner label="Signing in" />
                         Signing in...
                     </>
                 ) : (
@@ -113,11 +114,12 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
             <button
                 onClick={() => handleProviderSignIn(signInWithGitHub, setIsLoadingGitHub, 'github')}
                 disabled={isLoading}
+                aria-busy={isLoadingGitHub}
                 className="mt-3 w-full flex items-center justify-center gap-3 rounded-lg bg-[#1f1b33] hover:bg-[#2a2450] border border-white/10 py-3 text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoadingGitHub ? (
                     <>
-                        <Spinner />
+                        <Spinner label="Signing in" />
                         Signing in...
                     </>
                 ) : (

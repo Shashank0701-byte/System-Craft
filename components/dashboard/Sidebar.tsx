@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from './SidebarContext';
@@ -7,6 +8,9 @@ import { useSidebar } from './SidebarContext';
 export function Sidebar() {
   const { isOpen, close } = useSidebar();
   const pathname = usePathname();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   const navItems = [
     { id: 'my-designs', href: '/dashboard', label: 'My Designs', icon: 'grid_view', filled: true },
@@ -20,6 +24,55 @@ export function Sidebar() {
     return pathname === href || pathname.startsWith(href + '/');
   };
 
+  // Focus management: trap focus, restore on close
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Save the element that triggered the drawer
+    triggerRef.current = document.activeElement;
+
+    // Move focus into the panel (close button)
+    const timer = setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 50);
+
+    // Focus trap
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !panelRef.current) return;
+
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href]:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('keydown', handleKeyDown);
+      // Restore focus to trigger
+      if (triggerRef.current && triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus();
+      }
+    };
+  }, [isOpen]);
+
   const sidebarContent = (
     <>
       <div className="p-4 flex items-center gap-3">
@@ -27,11 +80,12 @@ export function Sidebar() {
           <span className="material-symbols-outlined">hub</span>
         </div>
         <div className="flex flex-col">
-          <h1 className="text-base font-bold leading-none tracking-tight">SystemCraft</h1>
+          <h1 id="sidebar-title" className="text-base font-bold leading-none tracking-tight">SystemCraft</h1>
           <p className="text-slate-500 dark:text-text-muted-dark text-xs font-mono mt-1">v1.2.0-beta</p>
         </div>
         {/* Close button (mobile only) */}
         <button
+          ref={closeButtonRef}
           onClick={close}
           className="md:hidden ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dashboard-card text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
           aria-label="Close sidebar"
@@ -117,7 +171,13 @@ export function Sidebar() {
             aria-label="Close sidebar"
           />
           {/* Slide-in panel */}
-          <aside className="md:hidden fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-white dark:bg-sidebar-bg-dark border-r border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-left">
+          <aside
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sidebar-title"
+            className="md:hidden fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-white dark:bg-sidebar-bg-dark border-r border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-left"
+          >
             {sidebarContent}
           </aside>
         </>

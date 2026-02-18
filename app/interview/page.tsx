@@ -325,9 +325,9 @@ export default function InterviewPage() {
                                                         {session.finalScore != null && (
                                                             <div className="flex items-center gap-1.5">
                                                                 <span className="text-xs text-slate-500 dark:text-text-muted-dark">Score:</span>
-                                                                <span className={`text-sm font-bold ${session.finalScore >= 80 ? 'text-emerald-400' :
-                                                                    session.finalScore >= 60 ? 'text-amber-400' :
-                                                                        'text-red-400'
+                                                                <span className={`text-sm font-bold ${session.finalScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+                                                                    session.finalScore >= 60 ? 'text-amber-600 dark:text-amber-400' :
+                                                                        'text-red-600 dark:text-red-400'
                                                                     }`}>
                                                                     {session.finalScore}%
                                                                 </span>
