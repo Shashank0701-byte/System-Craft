@@ -4,10 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/lib/firebase/AuthContext';
 import { logout } from '@/src/lib/firebase/auth';
+import { useSidebar } from './SidebarContext';
 
 export function Header() {
   const router = useRouter();
   const { user } = useAuth();
+  const { toggle } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -78,11 +80,19 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 flex-shrink-0 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-dashboard-bg flex items-center justify-between px-6 z-10">
-      <div className="flex items-center gap-4 w-1/3">
+    <header className="h-16 flex-shrink-0 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-dashboard-bg flex items-center justify-between px-4 md:px-6 z-10">
+      <div className="flex items-center gap-3 w-full md:w-1/3">
+        {/* Hamburger toggle (mobile only) */}
+        <button
+          onClick={toggle}
+          className="md:hidden flex-shrink-0 p-2 -ml-1 rounded-lg text-slate-400 hover:text-white hover:bg-dashboard-card transition-colors cursor-pointer"
+          aria-label="Toggle sidebar"
+        >
+          <span className="material-symbols-outlined text-[22px]">menu</span>
+        </button>
         <div className="relative w-full max-w-md">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted-dark material-symbols-outlined text-[20px]">search</span>
-          <input className="w-full h-10 rounded-lg border-none bg-slate-100 dark:bg-dashboard-card pl-10 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-text-placeholder-dark focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Search designs..." type="text" />
+          <input className="w-full h-10 rounded-lg border-none bg-slate-100 dark:bg-dashboard-card pl-10 pr-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-text-placeholder-dark focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Search..." type="text" />
         </div>
       </div>
       <div className="flex items-center gap-3">

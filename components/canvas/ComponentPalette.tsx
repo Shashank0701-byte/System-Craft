@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useCanvasPanels } from './CanvasPanelsContext';
 
 type ComponentItem = {
   name: string;
@@ -51,8 +52,10 @@ const SECTIONS: Section[] = [
 ];
 
 export function ComponentPalette() {
-  return (
-    <aside className="w-64 flex flex-col border-r border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-10 shadow-xl flex-shrink-0">
+  const { leftOpen, closeAll } = useCanvasPanels();
+
+  const paletteContent = (
+    <>
       {/* Search */}
       <div className="p-4 border-b border-slate-200 dark:border-border-dark">
         <div className="relative group">
@@ -105,6 +108,32 @@ export function ComponentPalette() {
           <Link href="/docs" className="hover:text-primary transition-colors">Docs</Link>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: Fixed sidebar */}
+      <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-10 shadow-xl flex-shrink-0">
+        {paletteContent}
+      </aside>
+
+      {/* Mobile: Slide-in overlay */}
+      {leftOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+            onClick={closeAll}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeAll(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label="Close panel"
+          />
+          <aside className="md:hidden fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-white dark:bg-sidebar-bg-dark border-r border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-left">
+            {paletteContent}
+          </aside>
+        </>
+      )}
+    </>
   );
 }

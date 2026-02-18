@@ -2,7 +2,7 @@
 
 export function Hero() {
   return (
-    <section className="relative z-10 flex flex-col items-center justify-center px-4 pt-10 pb-20">
+    <section className="relative z-10 flex flex-col items-center justify-center px-4 pt-16 sm:pt-20 pb-20">
       {/* Badge */}
       <div className="mb-8 animate-fade-in-up">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 pl-1 text-sm text-slate-400 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10 cursor-default">
@@ -13,10 +13,10 @@ export function Hero() {
       </div>
       {/* Headlines */}
       <div className="text-center max-w-[800px] mb-10 flex flex-col gap-6">
-        <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 glow-text">
-          Practice System Design<br />Like a Real Interview
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 glow-text px-2">
+          Practice System Design <br className="hidden sm:block" />Like a Real Interview
         </h1>
-        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed px-4">
           The first simulator that grades your architecture in real-time. Master scalability, availability, and database sharding with interactive feedback.
         </p>
       </div>

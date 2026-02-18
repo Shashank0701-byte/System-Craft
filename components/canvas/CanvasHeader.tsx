@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/lib/firebase/AuthContext';
 import { logout } from '@/src/lib/firebase/auth';
+import { useCanvasPanels } from './CanvasPanelsContext';
 
 interface CanvasHeaderProps {
   title?: string;
@@ -28,6 +29,7 @@ export function CanvasHeader({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isCancellingRef = useRef(false);
+  const { toggleLeft, toggleRight } = useCanvasPanels();
 
   // Sync editValue when title prop changes
   useEffect(() => {
@@ -180,9 +182,18 @@ export function CanvasHeader({
   };
 
   return (
-    <header className="relative h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
-      {/* Left: Logo & Breadcrumb */}
-      <div className="flex items-center gap-6">
+    <header className="relative h-14 md:h-16 flex items-center justify-between px-3 md:px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
+      {/* Left: Mobile components toggle + Logo & Breadcrumb */}
+      <div className="flex items-center gap-2 md:gap-6">
+        {/* Mobile: Components toggle */}
+        <button
+          onClick={toggleLeft}
+          className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dashboard-card transition-colors cursor-pointer"
+          aria-label="Toggle components"
+          title="Components"
+        >
+          <span className="material-symbols-outlined text-[20px]">widgets</span>
+        </button>
         <Link href="/dashboard" className="flex items-center gap-2 text-primary dark:text-white group">
           <div className="p-1.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
             <span className="material-symbols-outlined text-primary" style={{ fontSize: '24px' }}>hub</span>
@@ -227,8 +238,17 @@ export function CanvasHeader({
         </div>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-3">
+      {/* Right: Mobile properties toggle + Actions */}
+      <div className="flex items-center gap-1 md:gap-3">
+        {/* Mobile: Properties toggle */}
+        <button
+          onClick={toggleRight}
+          className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dashboard-card transition-colors cursor-pointer"
+          aria-label="Toggle properties"
+          title="Properties"
+        >
+          <span className="material-symbols-outlined text-[20px]">tune</span>
+        </button>
         <button
           onClick={onRunAIReview}
           className="hidden md:flex h-9 items-center justify-center rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors shadow-lg shadow-primary/20 cursor-pointer"

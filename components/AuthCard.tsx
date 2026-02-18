@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { signInWithGoogle, signInWithGitHub } from "../src/lib/firebase/auth";
 import { User } from "firebase/auth";
-import { authFetch } from "../src/lib/firebase/authClient";
+import { Spinner } from "./ui/Spinner";
 
 // Sync Firebase user with MongoDB - throws on failure
 async function syncUserWithDB(user: User, provider: 'google' | 'github') {
@@ -33,61 +34,53 @@ async function syncUserWithDB(user: User, provider: 'google' | 'github') {
     return response.json();
 }
 
-export default function AuthCard() {
+interface AuthCardProps {
+    mode?: 'login' | 'signup';
+}
+
+export default function AuthCard({ mode = 'login' }: AuthCardProps) {
     const router = useRouter();
     const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
     const [isLoadingGitHub, setIsLoadingGitHub] = useState(false);
     const [signInError, setSignInError] = useState<string | null>(null);
 
-    const handleGoogleSignIn = async () => {
+    const handleProviderSignIn = useCallback(async (
+        signInFn: () => Promise<User | null>,
+        setLoading: (v: boolean) => void,
+        provider: 'google' | 'github'
+    ) => {
         setSignInError(null);
-        setIsLoadingGoogle(true);
+        setLoading(true);
         try {
-            const user = await signInWithGoogle();
-            if (user) {
-                await syncUserWithDB(user, 'google');
-                router.push('/dashboard');
+            const user = await signInFn();
+            if (!user) {
+                setSignInError(`Failed to sign in with ${provider}. Please try again.`);
+                return;
             }
+            await syncUserWithDB(user, provider);
+            router.push('/dashboard');
         } catch (error) {
             setSignInError(
                 error instanceof Error
                     ? error.message
-                    : "Failed to sign in with Google. Please try again."
+                    : `Failed to sign in with ${provider}. Please try again.`
             );
         } finally {
-            setIsLoadingGoogle(false);
+            setLoading(false);
         }
-    };
-
-    const handleGitHubSignIn = async () => {
-        setSignInError(null);
-        setIsLoadingGitHub(true);
-        try {
-            const user = await signInWithGitHub();
-            if (user) {
-                await syncUserWithDB(user, 'github');
-                router.push('/dashboard');
-            }
-        } catch (error) {
-            setSignInError(
-                error instanceof Error
-                    ? error.message
-                    : "Failed to sign in with GitHub. Please try again."
-            );
-        } finally {
-            setIsLoadingGitHub(false);
-        }
-    };
+    }, [router]);
 
     const isLoading = isLoadingGoogle || isLoadingGitHub;
 
     return (
         <div className="w-full max-w-md rounded-2xl bg-[#141022]/80 backdrop-blur border border-white/10 p-8 shadow-2xl">
             <h1 className="text-2xl font-bold text-white text-center">
-                Welcome Back
+                {mode === 'signup' ? 'Create an Account' : 'Welcome Back'}
             </h1>
             <p className="text-slate-400 text-center mt-2">
-                Sign in to start designing system architectures.
+                {mode === 'signup'
+                    ? 'Get started designing system architectures for free.'
+                    : 'Sign in to start designing system architectures.'}
             </p>
 
             {/* Error message */}
@@ -99,37 +92,19 @@ export default function AuthCard() {
 
             {/* Google */}
             <button
-                onClick={handleGoogleSignIn}
+                onClick={() => handleProviderSignIn(signInWithGoogle, setIsLoadingGoogle, 'google')}
                 disabled={isLoading}
+                aria-busy={isLoadingGoogle}
                 className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-[#1f1b33] hover:bg-[#2a2450] border border-white/10 py-3 text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoadingGoogle ? (
                     <>
-                        <svg
-                            className="animate-spin h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            />
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                        </svg>
+                        <Spinner label="Signing in" />
                         Signing in...
                     </>
                 ) : (
                     <>
-                        <img src="/google.svg" className="h-5 w-5" alt="Google" />
+                        <Image src="/google.svg" width={20} height={20} alt="" />
                         Continue with Google
                     </>
                 )}
@@ -137,37 +112,19 @@ export default function AuthCard() {
 
             {/* GitHub */}
             <button
-                onClick={handleGitHubSignIn}
+                onClick={() => handleProviderSignIn(signInWithGitHub, setIsLoadingGitHub, 'github')}
                 disabled={isLoading}
+                aria-busy={isLoadingGitHub}
                 className="mt-3 w-full flex items-center justify-center gap-3 rounded-lg bg-[#1f1b33] hover:bg-[#2a2450] border border-white/10 py-3 text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoadingGitHub ? (
                     <>
-                        <svg
-                            className="animate-spin h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            />
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                        </svg>
+                        <Spinner label="Signing in" />
                         Signing in...
                     </>
                 ) : (
                     <>
-                        <img src="/github.svg" className="h-5 w-5" alt="GitHub" />
+                        <Image src="/github.svg" width={20} height={20} alt="" />
                         Continue with GitHub
                     </>
                 )}
@@ -175,13 +132,19 @@ export default function AuthCard() {
 
             {/* Footer text */}
             <p className="mt-6 text-center text-sm text-slate-500">
-                New to SystemCraft?{" "}
-                <Link
-                    href="/signup"
-                    className="text-primary hover:underline"
-                >
-                    Create an account
-                </Link>
+                {mode === 'signup' ? (
+                    <>Already have an account?{' '}
+                        <Link href="/login" className="text-primary hover:underline">
+                            Sign in
+                        </Link>
+                    </>
+                ) : (
+                    <>New to SystemCraft?{' '}
+                        <Link href="/signup" className="text-primary hover:underline">
+                            Create an account
+                        </Link>
+                    </>
+                )}
             </p>
 
             <div className="mt-6 flex justify-center gap-6 text-xs text-slate-500">
