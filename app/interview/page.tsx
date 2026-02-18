@@ -175,7 +175,7 @@ export default function InterviewPage() {
                             <div className="mb-6">
                                 <Link
                                     href="/dashboard"
-                                    className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
+                                    className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors group"
                                 >
                                     <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
                                     Back to Dashboard
@@ -186,7 +186,7 @@ export default function InterviewPage() {
                             <div className="mb-10">
                                 <div className="flex items-center gap-3 mb-2">
                                     <span className="material-symbols-outlined text-primary text-[28px]">play_circle</span>
-                                    <h1 className="text-2xl md:text-3xl font-bold text-white">Interview Mode</h1>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Interview Mode</h1>
                                 </div>
                                 <p className="text-slate-400 text-sm md:text-base max-w-2xl">
                                     Practice system design under real interview conditions. Get an AI-generated question,
@@ -195,11 +195,11 @@ export default function InterviewPage() {
 
                                 {/* Usage Badge */}
                                 {usage && (
-                                    <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dashboard-card border border-border-dark">
+                                    <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-dashboard-card border border-slate-200 dark:border-border-dark">
                                         <span className="material-symbols-outlined text-primary text-[16px]">local_fire_department</span>
-                                        <span className="text-sm text-slate-300">
-                                            <span className="font-bold text-white">{usage.used}</span>
-                                            <span className="text-text-muted-dark"> / {usage.limit} this week</span>
+                                        <span className="text-sm text-slate-600 dark:text-slate-300">
+                                            <span className="font-bold text-slate-900 dark:text-white">{usage.used}</span>
+                                            <span className="text-slate-500 dark:text-text-muted-dark"> / {usage.limit} this week</span>
                                         </span>
                                         {usage.used >= usage.limit && (
                                             <span className="text-xs text-amber-400 font-medium ml-2">Limit reached</span>
@@ -210,7 +210,7 @@ export default function InterviewPage() {
 
                             {/* Difficulty Cards */}
                             <div className="mb-10">
-                                <h2 className="text-lg font-bold text-white mb-4">Start a New Interview</h2>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Start a New Interview</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {(Object.entries(DIFFICULTY_CONFIG) as [keyof typeof DIFFICULTY_CONFIG, typeof DIFFICULTY_CONFIG[keyof typeof DIFFICULTY_CONFIG]][]).map(([key, config]) => (
                                         <button
@@ -227,7 +227,7 @@ export default function InterviewPage() {
                                                     <span className="material-symbols-outlined text-[24px]">{config.icon}</span>
                                                     <span className="text-lg font-bold">{config.label}</span>
                                                 </div>
-                                                <span className="text-xs text-text-muted-dark bg-dashboard-card rounded-full px-2.5 py-1 font-mono">
+                                                <span className="text-xs text-slate-500 dark:text-text-muted-dark bg-slate-100 dark:bg-dashboard-card rounded-full px-2.5 py-1 font-mono">
                                                     {config.time}
                                                 </span>
                                             </div>
@@ -236,7 +236,7 @@ export default function InterviewPage() {
                                                 {config.description}
                                             </p>
 
-                                            <div className="flex items-center gap-2 text-sm font-medium text-white opacity-70 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-white opacity-70 group-hover:opacity-100 transition-opacity">
                                                 {isStarting === key ? (
                                                     <>
                                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -259,7 +259,7 @@ export default function InterviewPage() {
                                 <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-between">
                                     <span>{error}</span>
                                     <button
-                                        onClick={() => { setError(null); hasFetched.current = false; fetchSessions(); }}
+                                        onClick={() => { setError(null); fetchSessions(); }}
                                         className="ml-2 underline hover:no-underline text-sm cursor-pointer"
                                     >
                                         Retry
@@ -269,19 +269,19 @@ export default function InterviewPage() {
 
                             {/* Past Sessions */}
                             <div>
-                                <h2 className="text-lg font-bold text-white mb-4">Past Sessions</h2>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Past Sessions</h2>
 
                                 {isLoadingSessions ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {[1, 2, 3, 4].map((i) => (
-                                            <div key={i} className="h-32 rounded-xl bg-dashboard-card animate-pulse" />
+                                            <div key={i} className="h-32 rounded-xl bg-slate-100 dark:bg-dashboard-card animate-pulse" />
                                         ))}
                                     </div>
                                 ) : sessions.length === 0 ? (
-                                    <div className="text-center py-16 rounded-xl bg-dashboard-card/50 border border-border-dark">
-                                        <span className="material-symbols-outlined text-5xl text-text-muted-dark mb-3 block">school</span>
+                                    <div className="text-center py-16 rounded-xl bg-slate-50 dark:bg-dashboard-card/50 border border-slate-200 dark:border-border-dark">
+                                        <span className="material-symbols-outlined text-5xl text-slate-400 dark:text-text-muted-dark mb-3 block">school</span>
                                         <h3 className="text-base font-medium text-slate-400 mb-1">No sessions yet</h3>
-                                        <p className="text-sm text-text-muted-dark">
+                                        <p className="text-sm text-slate-500 dark:text-text-muted-dark">
                                             Start your first interview to practice system design
                                         </p>
                                     </div>
@@ -295,7 +295,7 @@ export default function InterviewPage() {
                                                 <Link
                                                     key={session.id}
                                                     href={`/interview/${session.id}`}
-                                                    className="group flex flex-col rounded-xl bg-dashboard-card border border-border-dark hover:border-primary/30 p-5 transition-all duration-200 hover:shadow-xl"
+                                                    className="group flex flex-col rounded-xl bg-white dark:bg-dashboard-card border border-slate-200 dark:border-border-dark hover:border-primary/30 p-5 transition-all duration-200 hover:shadow-xl"
                                                 >
                                                     <div className="flex items-start justify-between mb-3">
                                                         <div className="flex items-center gap-2">
@@ -307,24 +307,24 @@ export default function InterviewPage() {
                                                                 {statusConfig.label}
                                                             </span>
                                                         </div>
-                                                        <span className="text-xs text-text-muted-dark">
+                                                        <span className="text-xs text-slate-500 dark:text-text-muted-dark">
                                                             {formatRelativeTime(session.createdAt)}
                                                         </span>
                                                     </div>
 
-                                                    <p className="text-sm text-white font-medium mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                                                    <p className="text-sm text-slate-900 dark:text-white font-medium mb-3 line-clamp-2 group-hover:text-primary transition-colors">
                                                         {session.questionPrompt}
                                                     </p>
 
                                                     <div className="mt-auto flex items-center justify-between">
-                                                        <span className="text-xs text-text-muted-dark flex items-center gap-1">
+                                                        <span className="text-xs text-slate-500 dark:text-text-muted-dark flex items-center gap-1">
                                                             <span className="material-symbols-outlined text-[14px]">timer</span>
                                                             {session.timeLimit} min
                                                         </span>
 
                                                         {session.finalScore != null && (
                                                             <div className="flex items-center gap-1.5">
-                                                                <span className="text-xs text-text-muted-dark">Score:</span>
+                                                                <span className="text-xs text-slate-500 dark:text-text-muted-dark">Score:</span>
                                                                 <span className={`text-sm font-bold ${session.finalScore >= 80 ? 'text-emerald-400' :
                                                                     session.finalScore >= 60 ? 'text-amber-400' :
                                                                         'text-red-400'
@@ -334,7 +334,7 @@ export default function InterviewPage() {
                                                             </div>
                                                         )}
 
-                                                        <span className="material-symbols-outlined text-[18px] text-text-muted-dark group-hover:text-primary transition-colors">
+                                                        <span className="material-symbols-outlined text-[18px] text-slate-400 dark:text-text-muted-dark group-hover:text-primary transition-colors">
                                                             arrow_forward
                                                         </span>
                                                     </div>

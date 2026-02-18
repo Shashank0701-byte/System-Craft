@@ -9,9 +9,9 @@ export function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/dashboard', label: 'My Designs', icon: 'grid_view', filled: true },
-    { href: '/interview', label: 'Interview Mode', icon: 'play_circle', filled: false },
-    { href: '#', label: 'Templates', icon: 'library_books', filled: false },
+    { id: 'my-designs', href: '/dashboard', label: 'My Designs', icon: 'grid_view', filled: true },
+    { id: 'interview', href: '/interview', label: 'Interview Mode', icon: 'play_circle', filled: false },
+    { id: 'templates', href: '#', label: 'Templates', icon: 'library_books', filled: false },
   ];
 
   const isActive = (href: string) => {
@@ -51,7 +51,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
         {navItems.map((item) => (
           <Link
-            key={item.href}
+            key={item.id}
             href={item.href}
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive(item.href)
               ? 'bg-slate-100 dark:bg-dashboard-card text-primary dark:text-white'

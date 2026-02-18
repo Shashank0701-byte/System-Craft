@@ -129,7 +129,7 @@ export function ComponentPalette() {
             tabIndex={0}
             aria-label="Close panel"
           />
-          <aside className="md:hidden fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-sidebar-bg-dark border-r border-border-dark shadow-2xl animate-slide-in-left">
+          <aside className="md:hidden fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-white dark:bg-sidebar-bg-dark border-r border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-left">
             {paletteContent}
           </aside>
         </>
