@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
 import { IInterviewQuestion, IEvaluation } from '@/src/lib/db/models/InterviewSession';
-import { DesignCanvas } from '@/components/canvas/DesignCanvas';
+import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
 
 interface InterviewSessionData {
     id: string;
@@ -15,8 +15,8 @@ interface InterviewSessionData {
     status: string;
     evaluation: IEvaluation;
     canvasSnapshot: {
-        nodes: any[];
-        connections: any[];
+        nodes: CanvasNode[];
+        connections: Connection[];
     };
     startedAt: string;
     timeLimit: number;
@@ -358,10 +358,10 @@ export default function InterviewResultPage({ params }: PageProps) {
                             READ-ONLY SNAPSHOT
                         </span>
                     </div>
-                    <div className="h-[600px] bg-sidebar-bg-dark border border-border-dark rounded-3xl overflow-hidden relative shadow-2xl shadow-black/50">
+                    <div className="flex h-[600px] bg-sidebar-bg-dark border border-border-dark rounded-3xl overflow-hidden relative shadow-2xl shadow-black/50">
                         <DesignCanvas
-                            initialNodes={session.canvasSnapshot.nodes}
-                            initialConnections={session.canvasSnapshot.connections}
+                            initialNodes={session.canvasSnapshot?.nodes || []}
+                            initialConnections={session.canvasSnapshot?.connections || []}
                             readOnly={true}
                         />
                         <div className="absolute bottom-6 left-6 bg-background-dark/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-xl pointer-events-none">

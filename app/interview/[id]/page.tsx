@@ -8,7 +8,7 @@ import { useInterviewTimer } from '@/src/hooks/useInterviewTimer';
 import { InterviewHeader } from '@/components/interview/InterviewHeader';
 import { QuestionPanel } from '@/components/interview/QuestionPanel';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
-import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
+import { DesignCanvas, CanvasNode, Connection, CanvasStateRef } from '@/components/canvas/DesignCanvas';
 import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
 
 interface InterviewSessionData {
@@ -56,6 +56,8 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const statusResetRef = useRef<NodeJS.Timeout | null>(null);
     const isMountedRef = useRef(true);
+    const canvasStateRef = useRef<CanvasStateRef | null>(null);
+    const saveAbortControllerRef = useRef<AbortController | null>(null);
 
     // Interview timer
     const timer = useInterviewTimer({
@@ -99,6 +101,10 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[]) => {
         if (!isMountedRef.current || session?.status !== 'in_progress') return;
 
+        // Create a new AbortController for this save so it can be cancelled on submit
+        const controller = new AbortController();
+        saveAbortControllerRef.current = controller;
+
         isSavingRef.current = true;
         setSaveStatus('saving');
 
@@ -106,6 +112,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             const response = await authFetch(`/api/interview/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({ action: 'save', nodes, connections }),
+                signal: controller.signal,
             });
 
             if (!isMountedRef.current) return;
@@ -122,13 +129,15 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 }, 2000);
             }
         } catch (err) {
+            // Silently ignore aborted saves (expected when user submits)
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             console.error('Error auto-saving:', err);
             if (isMountedRef.current) setSaveStatus('error');
         } finally {
             isSavingRef.current = false;
 
-            // Process pending save
-            if (pendingSaveRef.current && isMountedRef.current) {
+            // Process pending save (only if this save wasn't aborted)
+            if (!controller.signal.aborted && pendingSaveRef.current && isMountedRef.current) {
                 const pending = pendingSaveRef.current;
                 pendingSaveRef.current = null;
                 setTimeout(() => {
@@ -166,11 +175,29 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const handleSubmit = useCallback(async () => {
         if (!session || session.status !== 'in_progress' || isSubmitting) return;
 
+        // Cancel any pending or in-flight auto-save to prevent 409 errors after status changes
+        saveAbortControllerRef.current?.abort();
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
+        pendingSaveRef.current = null;
+
         try {
             setIsSubmitting(true);
+
+            // Include latest canvas state in the submit request to guarantee
+            // the snapshot is saved even if auto-save hasn't fired yet
+            const currentCanvas = canvasStateRef.current;
             const response = await authFetch(`/api/interview/${id}`, {
                 method: 'PUT',
-                body: JSON.stringify({ action: 'submit' }),
+                body: JSON.stringify({
+                    action: 'submit',
+                    ...(currentCanvas && {
+                        nodes: currentCanvas.nodes,
+                        connections: currentCanvas.connections,
+                    }),
+                }),
             });
 
             if (!response.ok) {
@@ -196,8 +223,8 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 const evalData = await evalResponse.json();
                 setSession(prev => prev ? { ...prev, status: 'evaluated', evaluation: evalData.evaluation } : null);
 
-                // Once Phase 5 is ready, we would redirect here:
-                // router.push(`/interview/${id}/result`);
+                // Redirect to results page now that evaluation is complete
+                router.push(`/interview/${id}/result`);
             }
         } catch (err) {
             console.error('Error submitting:', err);
@@ -205,7 +232,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         } finally {
             setIsSubmitting(false);
         }
-    }, [session, id, isSubmitting]);
+    }, [session, id, isSubmitting, router]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -269,7 +296,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const isReadOnly = session.status !== 'in_progress';
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-background-dark text-white font-display">
+        <div className="relative flex flex-col h-screen overflow-hidden bg-background-dark text-white font-display">
             <InterviewHeader
                 difficulty={session.difficulty}
                 saveStatus={saveStatus}
@@ -315,6 +342,8 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                     initialNodes={session.canvasSnapshot?.nodes || []}
                     initialConnections={session.canvasSnapshot?.connections || []}
                     onSave={isReadOnly ? undefined : saveDesign}
+                    readOnly={isReadOnly}
+                    stateRef={isReadOnly ? undefined : canvasStateRef}
                 />
 
                 {/* Properties Panel */}
@@ -323,21 +352,19 @@ export default function InterviewCanvasPage({ params }: PageProps) {
 
             {/* Submitted Overlay */}
             {isReadOnly && (
-                <div className="absolute inset-0 pointer-events-none z-10">
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
-                        <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-dashboard-card/95 backdrop-blur-sm border border-border-dark shadow-2xl">
-                            <span className="material-symbols-outlined text-emerald-400 text-[20px]">lock</span>
-                            <span className="text-sm text-slate-300">
-                                This interview has been <span className="font-bold text-white">{session.status === 'submitted' ? 'submitted' : session.status}</span>.
-                                The canvas is read-only.
-                            </span>
-                            <button
-                                onClick={() => router.push('/interview')}
-                                className="ml-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-sm rounded-lg font-medium transition-colors cursor-pointer"
-                            >
-                                Back to Interviews
-                            </button>
-                        </div>
+                <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10">
+                    <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-dashboard-card/95 backdrop-blur-sm border border-border-dark shadow-2xl">
+                        <span className="material-symbols-outlined text-emerald-400 text-[20px]">lock</span>
+                        <span className="text-sm text-slate-300">
+                            This interview has been <span className="font-bold text-white">{session.status === 'submitted' ? 'submitted' : session.status}</span>.
+                            The canvas is read-only.
+                        </span>
+                        <button
+                            onClick={() => router.push('/interview')}
+                            className="ml-2 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-sm rounded-lg font-medium transition-colors cursor-pointer"
+                        >
+                            Back to Interviews
+                        </button>
                     </div>
                 </div>
             )}

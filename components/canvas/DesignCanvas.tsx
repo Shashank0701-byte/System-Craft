@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useId, useCallback, useEffect, useReducer } from 'react';
+import { useState, useRef, useId, useCallback, useEffect, useReducer, MutableRefObject } from 'react';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
@@ -44,6 +44,7 @@ type HistoryState = {
 
 type HistoryAction =
   | { type: 'SET'; payload: CanvasState }
+  | { type: 'RESET'; payload: CanvasState }
   | { type: 'UNDO' }
   | { type: 'REDO' };
 
@@ -53,11 +54,18 @@ type ToolMode = 'select' | 'pan' | 'erase';
 const DEFAULT_NODES: CanvasNode[] = [];
 const DEFAULT_CONNECTIONS: Connection[] = [];
 
+export interface CanvasStateRef {
+  nodes: CanvasNode[];
+  connections: Connection[];
+}
+
 interface DesignCanvasProps {
   initialNodes?: CanvasNode[];
   initialConnections?: Connection[];
   onSave?: (nodes: CanvasNode[], connections: Connection[]) => void;
   readOnly?: boolean;
+  /** Live ref to current canvas state — updated on every change */
+  stateRef?: MutableRefObject<CanvasStateRef | null>;
 }
 
 const MAX_HISTORY = 50;
@@ -97,6 +105,15 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
         future: newFuture,
       };
     }
+    case 'RESET': {
+      // Replace present without pushing old state into undo history.
+      // Used for programmatic loads (e.g. async initial data) that aren't user edits.
+      return {
+        past: [],
+        present: action.payload,
+        future: [],
+      };
+    }
     default:
       return state;
   }
@@ -106,7 +123,8 @@ export function DesignCanvas({
   initialNodes = DEFAULT_NODES,
   initialConnections = DEFAULT_CONNECTIONS,
   onSave,
-  readOnly = false
+  readOnly = false,
+  stateRef
 }: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -124,6 +142,25 @@ export function DesignCanvas({
   const canUndo = historyState.past.length > 0;
   const canRedo = historyState.future.length > 0;
 
+  // Sync reducer when initial data arrives asynchronously (e.g. result page fetch)
+  const initialDataLoadedRef = useRef(initialNodes.length > 0 || initialConnections.length > 0);
+  useEffect(() => {
+    // Skip if data was already present at mount time (already in reducer initial state)
+    if (initialDataLoadedRef.current) return;
+    // Only sync once when real data arrives
+    if (initialNodes.length > 0 || initialConnections.length > 0) {
+      initialDataLoadedRef.current = true;
+      dispatch({ type: 'RESET', payload: { nodes: initialNodes, connections: initialConnections } });
+    }
+  }, [initialNodes, initialConnections]);
+
+  // Keep stateRef in sync so parent can read current canvas state at any time
+  useEffect(() => {
+    if (stateRef) {
+      stateRef.current = { nodes, connections };
+    }
+  }, [nodes, connections, stateRef]);
+
   // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
@@ -136,6 +173,51 @@ export function DesignCanvas({
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+
+  // Auto-fit: in readOnly mode, calculate zoom & pan to show all nodes
+  const hasAutoFitRef = useRef(false);
+  useEffect(() => {
+    if (!readOnly || hasAutoFitRef.current || nodes.length === 0) return;
+    const container = canvasRef.current;
+    if (!container) return;
+
+    const NODE_SIZE = 60;
+    const PADDING = 60; // px around the bounding box
+
+    // Bounding box of all nodes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const node of nodes) {
+      minX = Math.min(minX, node.x);
+      minY = Math.min(minY, node.y);
+      maxX = Math.max(maxX, node.x + NODE_SIZE);
+      maxY = Math.max(maxY, node.y + NODE_SIZE);
+    }
+
+    const contentW = maxX - minX + PADDING * 2;
+    const contentH = maxY - minY + PADDING * 2;
+    const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
+
+    // Container has no dimensions yet (layout hasn't painted). We intentionally
+    // don't set hasAutoFitRef.current = true so the effect retries on the next
+    // render once the container has non-zero dimensions.
+    // Alternative: use a ResizeObserver or requestAnimationFrame retry loop.
+    if (containerW === 0 || containerH === 0) return;
+
+    // Scale to fit, clamped between 50% and 100%
+    const scaleX = containerW / contentW;
+    const scaleY = containerH / contentH;
+    const fitScale = Math.min(scaleX, scaleY, 1); // never zoom in past 100%
+    const clampedScale = Math.max(0.5, Math.round(fitScale * 100) / 100);
+
+    // Center the content
+    const offsetX = (containerW - contentW * clampedScale) / 2 - (minX - PADDING) * clampedScale;
+    const offsetY = (containerH - contentH * clampedScale) / 2 - (minY - PADDING) * clampedScale;
+
+    setZoom(Math.round(clampedScale * 100));
+    setPanOffset({ x: offsetX, y: offsetY });
+    hasAutoFitRef.current = true;
+  }, [readOnly, nodes]);
 
   // Drag state for moving nodes
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
@@ -504,16 +586,18 @@ export function DesignCanvas({
       <div className="absolute inset-0 bg-grid-pattern pointer-events-none" />
 
       {/* Instructions Tooltip */}
-      <div className="absolute top-4 left-4 bg-black/70 text-white text-xs px-3 py-2 rounded-lg z-50 max-w-xs">
-        <p className="font-medium mb-1">Controls:</p>
-        <ul className="space-y-0.5 text-white/80">
-          <li>• Drag from palette to add</li>
-          <li>• Click & drag nodes to move</li>
-          <li>• <kbd className="bg-white/20 px-1 rounded">Shift</kbd>+Click to draw arrows</li>
-          <li>• <kbd className="bg-white/20 px-1 rounded">Delete</kbd> to remove selected</li>
-          <li>• <kbd className="bg-white/20 px-1 rounded">Ctrl+Z</kbd> Undo / <kbd className="bg-white/20 px-1 rounded">Ctrl+Y</kbd> Redo</li>
-        </ul>
-      </div>
+      {!readOnly && (
+        <div className="absolute top-4 left-4 bg-black/70 text-white text-xs px-3 py-2 rounded-lg z-50 max-w-xs">
+          <p className="font-medium mb-1">Controls:</p>
+          <ul className="space-y-0.5 text-white/80">
+            <li>• Drag from palette to add</li>
+            <li>• Click & drag nodes to move</li>
+            <li>• <kbd className="bg-white/20 px-1 rounded">Shift</kbd>+Click to draw arrows</li>
+            <li>• <kbd className="bg-white/20 px-1 rounded">Delete</kbd> to remove selected</li>
+            <li>• <kbd className="bg-white/20 px-1 rounded">Ctrl+Z</kbd> Undo / <kbd className="bg-white/20 px-1 rounded">Ctrl+Y</kbd> Redo</li>
+          </ul>
+        </div>
+      )}
 
       {/* Drop Zone Indicator */}
       {isDragOver && (
@@ -592,8 +676,8 @@ export function DesignCanvas({
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                 onMouseUp={(e) => handleNodeMouseUp(e, node.id)}
               >
-                {/* Delete button - visible when selected */}
-                {isSelected && (
+                {/* Delete button - visible when selected and not readOnly */}
+                {isSelected && !readOnly && (
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
@@ -640,6 +724,7 @@ export function DesignCanvas({
                 className={`pointer-events-auto ${toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-pointer'}`}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (readOnly) return;
                   if (toolMode === 'erase') {
                     const newConnections = connections.filter((c) => c.id !== conn.id);
                     saveToHistory(nodes, newConnections);
