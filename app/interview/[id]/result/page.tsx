@@ -358,7 +358,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                             READ-ONLY SNAPSHOT
                         </span>
                     </div>
-                    <div className="h-[600px] bg-sidebar-bg-dark border border-border-dark rounded-3xl overflow-hidden relative shadow-2xl shadow-black/50">
+                    <div className="flex h-[600px] bg-sidebar-bg-dark border border-border-dark rounded-3xl overflow-hidden relative shadow-2xl shadow-black/50">
                         <DesignCanvas
                             initialNodes={session.canvasSnapshot.nodes}
                             initialConnections={session.canvasSnapshot.connections}
