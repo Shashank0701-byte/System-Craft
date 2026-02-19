@@ -57,6 +57,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const statusResetRef = useRef<NodeJS.Timeout | null>(null);
     const isMountedRef = useRef(true);
     const canvasStateRef = useRef<CanvasStateRef | null>(null);
+    const saveAbortControllerRef = useRef<AbortController | null>(null);
 
     // Interview timer
     const timer = useInterviewTimer({
@@ -100,6 +101,10 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[]) => {
         if (!isMountedRef.current || session?.status !== 'in_progress') return;
 
+        // Create a new AbortController for this save so it can be cancelled on submit
+        const controller = new AbortController();
+        saveAbortControllerRef.current = controller;
+
         isSavingRef.current = true;
         setSaveStatus('saving');
 
@@ -107,6 +112,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             const response = await authFetch(`/api/interview/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({ action: 'save', nodes, connections }),
+                signal: controller.signal,
             });
 
             if (!isMountedRef.current) return;
@@ -123,13 +129,15 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 }, 2000);
             }
         } catch (err) {
+            // Silently ignore aborted saves (expected when user submits)
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             console.error('Error auto-saving:', err);
             if (isMountedRef.current) setSaveStatus('error');
         } finally {
             isSavingRef.current = false;
 
-            // Process pending save
-            if (pendingSaveRef.current && isMountedRef.current) {
+            // Process pending save (only if this save wasn't aborted)
+            if (!controller.signal.aborted && pendingSaveRef.current && isMountedRef.current) {
                 const pending = pendingSaveRef.current;
                 pendingSaveRef.current = null;
                 setTimeout(() => {
@@ -167,7 +175,8 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const handleSubmit = useCallback(async () => {
         if (!session || session.status !== 'in_progress' || isSubmitting) return;
 
-        // Cancel any pending auto-save to prevent 409 errors after status changes
+        // Cancel any pending or in-flight auto-save to prevent 409 errors after status changes
+        saveAbortControllerRef.current?.abort();
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = null;
@@ -287,7 +296,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const isReadOnly = session.status !== 'in_progress';
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden bg-background-dark text-white font-display">
+        <div className="relative flex flex-col h-screen overflow-hidden bg-background-dark text-white font-display">
             <InterviewHeader
                 difficulty={session.difficulty}
                 saveStatus={saveStatus}

@@ -44,6 +44,7 @@ type HistoryState = {
 
 type HistoryAction =
   | { type: 'SET'; payload: CanvasState }
+  | { type: 'RESET'; payload: CanvasState }
   | { type: 'UNDO' }
   | { type: 'REDO' };
 
@@ -104,6 +105,15 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
         future: newFuture,
       };
     }
+    case 'RESET': {
+      // Replace present without pushing old state into undo history.
+      // Used for programmatic loads (e.g. async initial data) that aren't user edits.
+      return {
+        past: [],
+        present: action.payload,
+        future: [],
+      };
+    }
     default:
       return state;
   }
@@ -140,7 +150,7 @@ export function DesignCanvas({
     // Only sync once when real data arrives
     if (initialNodes.length > 0 || initialConnections.length > 0) {
       initialDataLoadedRef.current = true;
-      dispatch({ type: 'SET', payload: { nodes: initialNodes, connections: initialConnections } });
+      dispatch({ type: 'RESET', payload: { nodes: initialNodes, connections: initialConnections } });
     }
   }, [initialNodes, initialConnections]);
 
@@ -188,6 +198,10 @@ export function DesignCanvas({
     const containerW = container.clientWidth;
     const containerH = container.clientHeight;
 
+    // Container has no dimensions yet (layout hasn't painted). We intentionally
+    // don't set hasAutoFitRef.current = true so the effect retries on the next
+    // render once the container has non-zero dimensions.
+    // Alternative: use a ResizeObserver or requestAnimationFrame retry loop.
     if (containerW === 0 || containerH === 0) return;
 
     // Scale to fit, clamped between 50% and 100%
