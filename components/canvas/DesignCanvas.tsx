@@ -790,19 +790,19 @@ export function DesignCanvas({
                     className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-24 text-center text-[10px] font-medium bg-white dark:bg-[#1e1e24] border border-primary rounded px-1 py-0.5 text-slate-800 dark:text-white outline-none shadow-lg z-30"
                   />
                 ) : (
-                  node.label && (
-                    <div
-                      className={`absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold tracking-wide whitespace-nowrap max-w-[90px] truncate text-center px-1.5 py-0.5 rounded-full ${isSelected
-                        ? 'bg-primary/15 text-primary'
-                        : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
-                        } ${readOnly ? 'pointer-events-none' : 'cursor-text'}`}
-                      title={node.label}
-                      onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
-                      onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      {node.label}
-                    </div>
-                  )
+                  <div
+                    className={`absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold tracking-wide whitespace-nowrap max-w-[90px] truncate text-center px-1.5 py-0.5 rounded-full ${node.label
+                        ? isSelected
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                        : 'bg-transparent text-slate-400/60 dark:text-slate-600 italic'
+                      } ${readOnly ? 'pointer-events-none' : 'cursor-text'}`}
+                    title={node.label || node.type}
+                    onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    {node.label || node.type}
+                  </div>
                 )}
               </div>
             );
