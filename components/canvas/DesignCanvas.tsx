@@ -183,6 +183,10 @@ export function DesignCanvas({
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
   const labelInputRef = useRef<HTMLInputElement>(null);
+  // Guards against blur re-firing handleLabelSubmit after Enter/Escape already resolved the edit
+  const editResolvedRef = useRef(false);
+  // Signals the debounced save effect to skip one cycle after an immediate save
+  const skipNextDebouncedSaveRef = useRef(false);
 
   // Tool mode
   const [toolMode, setToolMode] = useState<ToolMode>('select');
@@ -265,6 +269,12 @@ export function DesignCanvas({
   // Debounced auto-save to database
   useEffect(() => {
     if (!onSave) return;
+
+    // If an immediate save was already triggered (e.g. label edit), skip this cycle
+    if (skipNextDebouncedSaveRef.current) {
+      skipNextDebouncedSaveRef.current = false;
+      return;
+    }
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -543,6 +553,7 @@ export function DesignCanvas({
     e.stopPropagation();
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
+    editResolvedRef.current = false; // Reset for the new edit session
     setEditingNodeId(nodeId);
     setEditingLabel(node.label || '');
     // Focus the input on next render
@@ -553,6 +564,7 @@ export function DesignCanvas({
   const handleLabelSubmit = useCallback((nodeId: string) => {
     const trimmed = editingLabel.trim();
     if (!trimmed) {
+      editResolvedRef.current = true;
       setEditingNodeId(null);
       return;
     }
@@ -560,6 +572,7 @@ export function DesignCanvas({
       n.id === nodeId ? { ...n, label: trimmed } : n
     );
     saveToHistory(newNodes, connections);
+    editResolvedRef.current = true; // Prevent onBlur from re-running this
     setEditingNodeId(null);
 
     // Bypass the 2-second debounce — save immediately so labels persist faster
@@ -568,6 +581,7 @@ export function DesignCanvas({
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
+      skipNextDebouncedSaveRef.current = true; // Suppress the debounced echo
       onSave(newNodes, connections);
     }
   }, [editingLabel, nodes, connections, saveToHistory, onSave]);
@@ -762,10 +776,16 @@ export function DesignCanvas({
                     onChange={(e) => setEditingLabel(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleLabelSubmit(node.id);
-                      if (e.key === 'Escape') setEditingNodeId(null);
+                      if (e.key === 'Escape') {
+                        editResolvedRef.current = true;
+                        setEditingNodeId(null);
+                      }
                       e.stopPropagation(); // prevent canvas hotkeys
                     }}
-                    onBlur={() => handleLabelSubmit(node.id)}
+                    onBlur={() => {
+                      if (editResolvedRef.current) return; // Already handled by Enter/Escape
+                      handleLabelSubmit(node.id);
+                    }}
                     onMouseDown={(e) => e.stopPropagation()}
                     className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-24 text-center text-[10px] font-medium bg-white dark:bg-[#1e1e24] border border-primary rounded px-1 py-0.5 text-slate-800 dark:text-white outline-none shadow-lg z-30"
                   />
@@ -776,6 +796,7 @@ export function DesignCanvas({
                         ? 'bg-primary/15 text-primary'
                         : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
                         } ${readOnly ? 'pointer-events-none' : 'cursor-text'}`}
+                      title={node.label}
                       onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
                       onMouseDown={(e) => e.stopPropagation()}
                     >
