@@ -16,6 +16,20 @@ const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
   Kafka: { text: 'text-cyan-500', darkText: 'dark:text-cyan-400' },
 };
 
+// Friendly default labels assigned when a component is dropped onto the canvas
+const DEFAULT_LABELS: Record<string, string> = {
+  Client: 'Client App',
+  Server: 'App Server',
+  Function: 'Lambda',
+  LB: 'Load Balancer',
+  CDN: 'CDN',
+  SQL: 'SQL Database',
+  Cache: 'Redis Cache',
+  Blob: 'Blob Storage',
+  Queue: 'Message Queue',
+  Kafka: 'Event Stream',
+};
+
 export type CanvasNode = {
   id: string;
   type: string;
@@ -164,6 +178,11 @@ export function DesignCanvas({
   // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
+
+  // Inline label editing state
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+  const labelInputRef = useRef<HTMLInputElement>(null);
 
   // Tool mode
   const [toolMode, setToolMode] = useState<ToolMode>('select');
@@ -349,7 +368,7 @@ export function DesignCanvas({
         icon: component.icon,
         x: Math.max(0, x),
         y: Math.max(0, y),
-        label: component.type,
+        label: DEFAULT_LABELS[component.type] || component.type,
       };
 
       const newNodes = [...nodes, newNode];
@@ -515,7 +534,43 @@ export function DesignCanvas({
     }
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
+    setEditingNodeId(null); // Cancel any open label editor
   }, []);
+
+  // Handle double-click on a node's label to start editing
+  const handleLabelDoubleClick = useCallback((e: React.MouseEvent, nodeId: string) => {
+    if (readOnly) return;
+    e.stopPropagation();
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    setEditingNodeId(nodeId);
+    setEditingLabel(node.label || '');
+    // Focus the input on next render
+    setTimeout(() => labelInputRef.current?.focus(), 0);
+  }, [readOnly, nodes]);
+
+  // Commit the edited label and trigger an immediate save
+  const handleLabelSubmit = useCallback((nodeId: string) => {
+    const trimmed = editingLabel.trim();
+    if (!trimmed) {
+      setEditingNodeId(null);
+      return;
+    }
+    const newNodes = nodes.map(n =>
+      n.id === nodeId ? { ...n, label: trimmed } : n
+    );
+    saveToHistory(newNodes, connections);
+    setEditingNodeId(null);
+
+    // Bypass the 2-second debounce — save immediately so labels persist faster
+    if (onSave) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      onSave(newNodes, connections);
+    }
+  }, [editingLabel, nodes, connections, saveToHistory, onSave]);
 
   // Delete selected node or connection
   const handleDeleteSelected = useCallback(() => {
@@ -696,10 +751,37 @@ export function DesignCanvas({
                 >
                   {node.icon}
                 </span>
-                {node.label && (
-                  <div className="absolute -bottom-8 bg-black/75 text-white text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {node.label}
-                  </div>
+
+                {/* Always-visible label below node */}
+                {editingNodeId === node.id ? (
+                  <input
+                    ref={labelInputRef}
+                    type="text"
+                    value={editingLabel}
+                    maxLength={25}
+                    onChange={(e) => setEditingLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleLabelSubmit(node.id);
+                      if (e.key === 'Escape') setEditingNodeId(null);
+                      e.stopPropagation(); // prevent canvas hotkeys
+                    }}
+                    onBlur={() => handleLabelSubmit(node.id)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-24 text-center text-[10px] font-medium bg-white dark:bg-[#1e1e24] border border-primary rounded px-1 py-0.5 text-slate-800 dark:text-white outline-none shadow-lg z-30"
+                  />
+                ) : (
+                  node.label && (
+                    <div
+                      className={`absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold tracking-wide whitespace-nowrap max-w-[90px] truncate text-center px-1.5 py-0.5 rounded-full ${isSelected
+                        ? 'bg-primary/15 text-primary'
+                        : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                        } ${readOnly ? 'pointer-events-none' : 'cursor-text'}`}
+                      onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      {node.label}
+                    </div>
+                  )
                 )}
               </div>
             );
