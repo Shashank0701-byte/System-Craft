@@ -43,6 +43,7 @@ export type Connection = {
   id: string;
   from: string;
   to: string;
+  label?: string;
 };
 
 type CanvasState = {
@@ -183,6 +184,12 @@ export function DesignCanvas({
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState('');
   const labelInputRef = useRef<HTMLInputElement>(null);
+
+  // Inline label editing state - Connections
+  const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
+  const [editingConnectionLabel, setEditingConnectionLabel] = useState('');
+  const connectionLabelInputRef = useRef<HTMLInputElement>(null);
+
   // Guards against blur re-firing handleLabelSubmit after Enter/Escape already resolved the edit
   const editResolvedRef = useRef(false);
   // Signals the debounced save effect to skip one cycle after an immediate save
@@ -336,6 +343,21 @@ export function DesignCanvas({
 
     const midX = (fromX + toX) / 2;
     return `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`;
+  };
+
+  // Calculate geometric midpoint of a connection for label positioning
+  const getConnectionMidpoint = (fromId: string, toId: string): { x: number, y: number } | null => {
+    const nodeList = displayNodes;
+    const fromNode = nodeList.find((n) => n.id === fromId);
+    const toNode = nodeList.find((n) => n.id === toId);
+    if (!fromNode || !toNode) return null;
+
+    const fromX = fromNode.x + 60;
+    const fromY = fromNode.y + 30;
+    const toX = toNode.x;
+    const toY = toNode.y + 30;
+
+    return { x: (fromX + toX) / 2, y: (fromY + toY) / 2 };
   };
 
   // Get path for connection being drawn
@@ -586,6 +608,40 @@ export function DesignCanvas({
     }
   }, [editingLabel, nodes, connections, saveToHistory, onSave]);
 
+  // Handle double-click on a connection (or its label) to start editing
+  const handleConnectionLabelDoubleClick = useCallback((e: React.MouseEvent, connectionId: string) => {
+    if (readOnly) return;
+    e.stopPropagation();
+    const conn = connections.find(c => c.id === connectionId);
+    if (!conn) return;
+    editResolvedRef.current = false;
+    setEditingConnectionId(connectionId);
+    setEditingConnectionLabel(conn.label || '');
+    setTimeout(() => connectionLabelInputRef.current?.focus(), 0);
+  }, [readOnly, connections]);
+
+  // Commit the edited connection label
+  const handleConnectionLabelSubmit = useCallback((connectionId: string) => {
+    const trimmed = editingConnectionLabel.trim();
+    // For connections, empty string clears the label
+    const newConnections = connections.map(c =>
+      c.id === connectionId ? { ...c, label: trimmed || undefined } : c
+    );
+    saveToHistory(nodes, newConnections);
+    editResolvedRef.current = true;
+    setEditingConnectionId(null);
+
+    // Bypass debounce
+    if (onSave) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      skipNextDebouncedSaveRef.current = true;
+      onSave(nodes, newConnections);
+    }
+  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave]);
+
   // Delete selected node or connection
   const handleDeleteSelected = useCallback(() => {
     if (readOnly) return;
@@ -792,10 +848,10 @@ export function DesignCanvas({
                 ) : (
                   <div
                     className={`absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold tracking-wide whitespace-nowrap max-w-[90px] truncate text-center px-1.5 py-0.5 rounded-full ${node.label
-                        ? isSelected
-                          ? 'bg-primary/15 text-primary'
-                          : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
-                        : 'bg-transparent text-slate-400/60 dark:text-slate-600 italic'
+                      ? isSelected
+                        ? 'bg-primary/15 text-primary'
+                        : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                      : 'bg-transparent text-slate-400/60 dark:text-slate-600 italic'
                       } ${readOnly ? 'pointer-events-none' : 'cursor-text'}`}
                     title={node.label || node.type}
                     onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
@@ -837,10 +893,98 @@ export function DesignCanvas({
                     setSelectedNodeId(null);
                   }
                 }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (readOnly || toolMode === 'erase') return;
+                  handleConnectionLabelDoubleClick(e, conn.id);
+                }}
               />
             );
           })}
         </svg>
+
+        {/* Connection Labels */}
+        <div className="absolute inset-0 z-[15] pointer-events-none">
+          {connections.map((conn) => {
+            const midpoint = getConnectionMidpoint(conn.from, conn.to);
+            if (!midpoint) return null;
+
+            const isEditing = editingConnectionId === conn.id;
+            const isSelected = selectedConnectionId === conn.id;
+
+            return (
+              <div
+                key={`label-${conn.id}`}
+                className="absolute flex items-center justify-center"
+                style={{
+                  left: midpoint.x,
+                  top: midpoint.y,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                {isEditing ? (
+                  <input
+                    ref={connectionLabelInputRef}
+                    type="text"
+                    value={editingConnectionLabel}
+                    maxLength={25}
+                    onChange={(e) => setEditingConnectionLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleConnectionLabelSubmit(conn.id);
+                      if (e.key === 'Escape') {
+                        editResolvedRef.current = true;
+                        setEditingConnectionId(null);
+                      }
+                      e.stopPropagation();
+                    }}
+                    onBlur={() => {
+                      if (editResolvedRef.current) return;
+                      handleConnectionLabelSubmit(conn.id);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="w-24 text-center text-[10px] font-medium bg-white dark:bg-[#1e1e24] border border-primary rounded px-1 py-0.5 text-slate-800 dark:text-white outline-none shadow-lg pointer-events-auto"
+                    placeholder="e.g. gRPC, HTTP"
+                  />
+                ) : (
+                  <>
+                    {conn.label ? (
+                      <div
+                        className={`text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer pointer-events-auto shadow-sm transition-colors ${isSelected
+                          ? 'bg-primary text-white'
+                          : 'bg-white/90 dark:bg-[#1e1e24]/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#3f3b54]'
+                          } ${readOnly ? 'pointer-events-none' : ''}`}
+                        title={conn.label}
+                        onDoubleClick={(e) => handleConnectionLabelDoubleClick(e, conn.id)}
+                        onMouseDown={(e) => {
+                          if (readOnly) return;
+                          e.stopPropagation();
+                          setSelectedConnectionId(conn.id);
+                          setSelectedNodeId(null);
+                        }}
+                      >
+                        {conn.label}
+                      </div>
+                    ) : (
+                      isSelected && !readOnly && (
+                        <div
+                          className="text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer pointer-events-auto bg-primary/10 text-primary border border-primary/30 transition-colors hover:bg-primary/20 backdrop-blur-sm"
+                          title="Add label to connection"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleConnectionLabelDoubleClick(e, conn.id);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          + Label
+                        </div>
+                      )
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Floating Canvas Controls */}

@@ -15,6 +15,7 @@ export interface IConnection {
     id: string;
     from: string;
     to: string;
+    label?: string;
 }
 
 export interface IDesign extends Document {
@@ -46,6 +47,7 @@ const ConnectionSchema = new Schema<IConnection>(
         id: { type: String, required: true },
         from: { type: String, required: true },
         to: { type: String, required: true },
+        label: { type: String },
     },
     { _id: false }
 );
