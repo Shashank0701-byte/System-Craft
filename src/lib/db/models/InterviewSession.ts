@@ -145,6 +145,7 @@ const CanvasSnapshotConnectionSchema = new Schema(
         id: { type: String, required: true },
         from: { type: String, required: true },
         to: { type: String, required: true },
+        label: { type: String },
     },
     { _id: false }
 );
