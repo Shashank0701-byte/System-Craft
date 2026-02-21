@@ -192,6 +192,7 @@ export function DesignCanvas({
 
   // Guards against blur re-firing handleLabelSubmit after Enter/Escape already resolved the edit
   const editResolvedRef = useRef(false);
+  const connectionEditResolvedRef = useRef(false);
   // Signals the debounced save effect to skip one cycle after an immediate save
   const skipNextDebouncedSaveRef = useRef(false);
 
@@ -618,7 +619,7 @@ export function DesignCanvas({
     e.stopPropagation();
     const conn = connections.find(c => c.id === connectionId);
     if (!conn) return;
-    editResolvedRef.current = false;
+    connectionEditResolvedRef.current = false;
     setEditingConnectionId(connectionId);
     setEditingConnectionLabel(conn.label || '');
     setTimeout(() => connectionLabelInputRef.current?.focus(), 0);
@@ -627,12 +628,21 @@ export function DesignCanvas({
   // Commit the edited connection label
   const handleConnectionLabelSubmit = useCallback((connectionId: string) => {
     const trimmed = editingConnectionLabel.trim();
+
+    // Early exit if the label didn't change
+    const conn = connections.find(c => c.id === connectionId);
+    if (!conn || trimmed === (conn.label || '')) {
+      connectionEditResolvedRef.current = true;
+      setEditingConnectionId(null);
+      return;
+    }
+
     // For connections, empty string clears the label
     const newConnections = connections.map(c =>
       c.id === connectionId ? { ...c, label: trimmed || undefined } : c
     );
     saveToHistory(nodes, newConnections);
-    editResolvedRef.current = true;
+    connectionEditResolvedRef.current = true;
     setEditingConnectionId(null);
 
     // Bypass debounce
@@ -936,13 +946,13 @@ export function DesignCanvas({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleConnectionLabelSubmit(conn.id);
                       if (e.key === 'Escape') {
-                        editResolvedRef.current = true;
+                        connectionEditResolvedRef.current = true;
                         setEditingConnectionId(null);
                       }
                       e.stopPropagation();
                     }}
                     onBlur={() => {
-                      if (editResolvedRef.current) return;
+                      if (connectionEditResolvedRef.current) return;
                       handleConnectionLabelSubmit(conn.id);
                     }}
                     onMouseDown={(e) => e.stopPropagation()}
@@ -953,10 +963,10 @@ export function DesignCanvas({
                   <>
                     {conn.label ? (
                       <div
-                        className={`text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer pointer-events-auto shadow-sm transition-colors ${isSelected
+                        className={`text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer shadow-sm transition-colors ${isSelected
                           ? 'bg-primary text-white'
                           : 'bg-white/90 dark:bg-[#1e1e24]/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#3f3b54]'
-                          } ${readOnly ? 'pointer-events-none' : ''}`}
+                          } ${readOnly || toolMode === 'erase' ? 'pointer-events-none' : 'pointer-events-auto'}`}
                         title={conn.label}
                         onClick={(e) => {
                           if (!readOnly) {
@@ -977,7 +987,7 @@ export function DesignCanvas({
                     ) : (
                       isSelected && !readOnly && (
                         <div
-                          className="text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer pointer-events-auto bg-primary/10 text-primary border border-primary/30 transition-colors hover:bg-primary/20 backdrop-blur-sm"
+                          className={`text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer bg-primary/10 text-primary border border-primary/30 transition-colors hover:bg-primary/20 backdrop-blur-sm ${toolMode === 'erase' ? 'pointer-events-none' : 'pointer-events-auto'}`}
                           title="Add label to connection"
                           onClick={(e) => {
                             e.stopPropagation();
