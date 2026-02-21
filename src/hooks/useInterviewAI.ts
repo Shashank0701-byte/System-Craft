@@ -1,0 +1,115 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ICanvasNode, IConnection } from '../lib/db/models/Design';
+import { authFetch } from '../lib/firebase/authClient';
+
+export interface AIMessage {
+    role: 'interviewer' | 'candidate';
+    content: string;
+    timestamp: string | Date;
+}
+
+interface HintResponse {
+    message: string;
+    severity: 'question' | 'nudge' | 'praise';
+}
+
+interface UseInterviewAIProps {
+    sessionId: string;
+    stateRef: React.MutableRefObject<{ nodes: ICanvasNode[]; connections: IConnection[] }>;
+    timeRemaining: number;
+    initialMessages?: AIMessage[];
+}
+
+export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMessages = [] }: UseInterviewAIProps) {
+    const [messages, setMessages] = useState<AIMessage[]>(initialMessages);
+    const [isThinking, setIsThinking] = useState(false);
+
+    useEffect(() => {
+        if (initialMessages.length > 0 && messages.length === 0) {
+            setMessages(initialMessages);
+        }
+    }, [initialMessages, messages.length]);
+
+    const hasStartedRef = useRef(false);
+    const lastHintTimeRef = useRef(Date.now());
+
+    // Trigger an AI analysis
+    const requestHint = useCallback(async (candidateReply?: string) => {
+        try {
+            if (isThinking) return;
+            setIsThinking(true);
+
+            const currentState = stateRef.current;
+            const nodes = currentState?.nodes || [];
+            const connections = currentState?.connections || [];
+
+            const response = await authFetch(`/api/interview/${sessionId}/hint`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nodes,
+                    connections,
+                    timeRemaining,
+                    candidateReply
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Hint request failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Update local message list
+            setMessages(prev => {
+                const next = [...prev];
+                if (candidateReply) {
+                    next.push({ role: 'candidate', content: candidateReply, timestamp: new Date() });
+                }
+                if (data.message) {
+                    next.push(data.message);
+                }
+                return next;
+            });
+
+            lastHintTimeRef.current = Date.now();
+        } catch (error) {
+            console.error('Failed to request AI hint:', error);
+        } finally {
+            setIsThinking(false);
+        }
+    }, [sessionId, stateRef, timeRemaining, isThinking]);
+
+    // Periodic polling - e.g., every 5 minutes in ms (300,000 ms)
+    useEffect(() => {
+        // Only start polling once the component is ready
+        if (!hasStartedRef.current) {
+            hasStartedRef.current = true;
+            // Start a timer for the first check-in a bit early (e.g. 2 minutes)
+            setTimeout(() => {
+                requestHint();
+            }, 120000);
+        }
+
+        const interval = setInterval(() => {
+            // 5 minutes
+            if (Date.now() - lastHintTimeRef.current >= 300000) {
+                requestHint();
+            }
+        }, 60000); // Check every minute if 5 mins have passed since last interaction
+
+        return () => clearInterval(interval);
+    }, [requestHint]);
+
+    const sendReply = useCallback((text: string) => {
+        return requestHint(text);
+    }, [requestHint]);
+
+    return {
+        messages,
+        isThinking,
+        sendReply
+    };
+}
