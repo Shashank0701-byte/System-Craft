@@ -329,34 +329,37 @@ export function DesignCanvas({
     return COLOR_MAP[type] || { text: 'text-slate-500', darkText: 'dark:text-slate-400' };
   };
 
-  // Calculate path between two nodes
-  const getConnectionPath = (fromId: string, toId: string): string => {
+  // Helper to compute connection endpoint coordinates
+  const getConnectionCoords = (fromId: string, toId: string) => {
     const nodeList = displayNodes;
     const fromNode = nodeList.find((n) => n.id === fromId);
     const toNode = nodeList.find((n) => n.id === toId);
-    if (!fromNode || !toNode) return '';
+    if (!fromNode || !toNode) return null;
 
-    const fromX = fromNode.x + 60;
-    const fromY = fromNode.y + 30;
-    const toX = toNode.x;
-    const toY = toNode.y + 30;
+    return {
+      fromX: fromNode.x + 60,
+      fromY: fromNode.y + 30,
+      toX: toNode.x,
+      toY: toNode.y + 30
+    };
+  };
 
+  // Calculate path between two nodes
+  const getConnectionPath = (fromId: string, toId: string): string => {
+    const coords = getConnectionCoords(fromId, toId);
+    if (!coords) return '';
+
+    const { fromX, fromY, toX, toY } = coords;
     const midX = (fromX + toX) / 2;
     return `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`;
   };
 
   // Calculate geometric midpoint of a connection for label positioning
   const getConnectionMidpoint = (fromId: string, toId: string): { x: number, y: number } | null => {
-    const nodeList = displayNodes;
-    const fromNode = nodeList.find((n) => n.id === fromId);
-    const toNode = nodeList.find((n) => n.id === toId);
-    if (!fromNode || !toNode) return null;
+    const coords = getConnectionCoords(fromId, toId);
+    if (!coords) return null;
 
-    const fromX = fromNode.x + 60;
-    const fromY = fromNode.y + 30;
-    const toX = toNode.x;
-    const toY = toNode.y + 30;
-
+    const { fromX, fromY, toX, toY } = coords;
     return { x: (fromX + toX) / 2, y: (fromY + toY) / 2 };
   };
 
@@ -567,6 +570,7 @@ export function DesignCanvas({
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
     setEditingNodeId(null); // Cancel any open label editor
+    setEditingConnectionId(null); // Cancel any open connection label editor
   }, []);
 
   // Handle double-click on a node's label to start editing
@@ -954,6 +958,12 @@ export function DesignCanvas({
                           : 'bg-white/90 dark:bg-[#1e1e24]/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#3f3b54]'
                           } ${readOnly ? 'pointer-events-none' : ''}`}
                         title={conn.label}
+                        onClick={(e) => {
+                          if (!readOnly) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }
+                        }}
                         onDoubleClick={(e) => handleConnectionLabelDoubleClick(e, conn.id)}
                         onMouseDown={(e) => {
                           if (readOnly) return;
