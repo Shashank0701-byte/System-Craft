@@ -15,20 +15,24 @@ interface HintResponse {
 
 interface UseInterviewAIProps {
     sessionId: string;
-    stateRef: React.MutableRefObject<{ nodes: ICanvasNode[]; connections: IConnection[] }>;
+    stateRef: React.MutableRefObject<{ nodes: ICanvasNode[]; connections: IConnection[] } | null>;
     timeRemaining: number;
     initialMessages?: AIMessage[];
 }
 
 export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMessages = [] }: UseInterviewAIProps) {
-    const [messages, setMessages] = useState<AIMessage[]>(initialMessages);
+    const [messages, setMessages] = useState<AIMessage[]>(() => initialMessages);
     const [isThinking, setIsThinking] = useState(false);
 
+    const isThinkingRef = useRef(isThinking);
     useEffect(() => {
-        if (initialMessages.length > 0 && messages.length === 0) {
-            setMessages(initialMessages);
-        }
-    }, [initialMessages, messages.length]);
+        isThinkingRef.current = isThinking;
+    }, [isThinking]);
+
+    const timeRemainingRef = useRef(timeRemaining);
+    useEffect(() => {
+        timeRemainingRef.current = timeRemaining;
+    }, [timeRemaining]);
 
     const hasStartedRef = useRef(false);
     const lastHintTimeRef = useRef(Date.now());
@@ -36,7 +40,7 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
     // Trigger an AI analysis
     const requestHint = useCallback(async (candidateReply?: string) => {
         try {
-            if (isThinking) return;
+            if (isThinkingRef.current) return;
             setIsThinking(true);
 
             const currentState = stateRef.current;
@@ -51,7 +55,7 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
                 body: JSON.stringify({
                     nodes,
                     connections,
-                    timeRemaining,
+                    timeRemaining: timeRemainingRef.current,
                     candidateReply
                 })
             });
@@ -80,15 +84,17 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
         } finally {
             setIsThinking(false);
         }
-    }, [sessionId, stateRef, timeRemaining, isThinking]);
+    }, [sessionId, stateRef]);
 
     // Periodic polling - e.g., every 5 minutes in ms (300,000 ms)
     useEffect(() => {
+        let startTimeout: NodeJS.Timeout | null = null;
+
         // Only start polling once the component is ready
         if (!hasStartedRef.current) {
             hasStartedRef.current = true;
             // Start a timer for the first check-in a bit early (e.g. 2 minutes)
-            setTimeout(() => {
+            startTimeout = setTimeout(() => {
                 requestHint();
             }, 120000);
         }
@@ -100,7 +106,10 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
             }
         }, 60000); // Check every minute if 5 mins have passed since last interaction
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            if (startTimeout) clearTimeout(startTimeout);
+        };
     }, [requestHint]);
 
     const sendReply = useCallback((text: string) => {

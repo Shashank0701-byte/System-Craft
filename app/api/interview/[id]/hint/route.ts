@@ -29,9 +29,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+        }
+
         // Client can optionally pass a candidate reply to add to history
         const { nodes = [], connections = [], timeRemaining, candidateReply } = body;
+
+        if (!Array.isArray(nodes) || !Array.isArray(connections)) {
+            return NextResponse.json({ error: 'nodes and connections must be arrays' }, { status: 400 });
+        }
 
         await dbConnect();
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
@@ -51,16 +61,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             session.aiMessages = [];
         }
 
-        // If user sent a reply, push it to message log first
-        if (candidateReply && candidateReply.trim() !== '') {
-            session.aiMessages.push({
-                role: 'candidate',
-                content: candidateReply.trim(),
-                timestamp: new Date()
-            });
-            // We save here in case the AI generation fails
-            await session.save();
-        }
+        const sanitizeMessage = (msg: string) => {
+            return msg
+                .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+                .slice(0, 1500);
+        };
+
+        const sanitizedCandidateReply = candidateReply && candidateReply.trim() !== ''
+            ? sanitizeMessage(candidateReply.trim())
+            : null;
 
         const structuralResults = evaluateStructure(
             nodes,
@@ -95,8 +104,9 @@ Time Remaining: ${timeRemaining || 'unknown'} minutes.
 
 Conversation History (oldest to newest):
 ${session.aiMessages.length > 0
-                ? session.aiMessages.map(m => `${m.role === 'interviewer' ? 'You' : 'Candidate'}: ${m.content}`).join('\n')
+                ? session.aiMessages.map(m => `<${m.role === 'interviewer' ? 'INTERVIEWER' : 'CANDIDATE'}> ${sanitizeMessage(m.content)} </${m.role === 'interviewer' ? 'INTERVIEWER' : 'CANDIDATE'}>`).join('\n')
                 : 'No messages yet.'}
+${sanitizedCandidateReply ? `<CANDIDATE> ${sanitizedCandidateReply} </CANDIDATE>` : ''}
 
 Generate a short, conversational response (1-2 sentences max) to send to the candidate right now. Do not be overly verbose. Act like a real interviewer guiding them.
 - If the candidate just replied, acknowledge their point or ask a follow-up.
@@ -113,9 +123,17 @@ Respond strictly in JSON:
 
         const newMessage = {
             role: 'interviewer' as const,
-            content: response.message,
+            content: sanitizeMessage(response.message),
             timestamp: new Date()
         };
+
+        if (sanitizedCandidateReply) {
+            session.aiMessages.push({
+                role: 'candidate',
+                content: sanitizedCandidateReply,
+                timestamp: new Date()
+            });
+        }
 
         session.aiMessages.push(newMessage);
         await session.save();

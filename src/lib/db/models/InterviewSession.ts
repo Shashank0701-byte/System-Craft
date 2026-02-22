@@ -155,6 +155,15 @@ const CanvasSnapshotConnectionSchema = new Schema(
     { _id: false }
 );
 
+const AiMessageSchema = new Schema(
+    {
+        role: { type: String, enum: ['interviewer', 'candidate'] },
+        content: { type: String },
+        timestamp: { type: Date },
+    },
+    { _id: false }
+);
+
 const InterviewSessionSchema = new Schema<IInterviewSession>(
     {
         userId: {
@@ -196,11 +205,7 @@ const InterviewSessionSchema = new Schema<IInterviewSession>(
             connections: { type: [CanvasSnapshotConnectionSchema], default: [] },
         },
         aiMessages: {
-            type: [{
-                role: { type: String, enum: ['interviewer', 'candidate'] },
-                content: { type: String },
-                timestamp: { type: Date },
-            }],
+            type: [AiMessageSchema],
             default: []
         },
         evaluation: {

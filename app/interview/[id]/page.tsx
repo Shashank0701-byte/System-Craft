@@ -77,7 +77,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     // AI Interviewer hook
     const ai = useInterviewAI({
         sessionId: id,
-        stateRef: canvasStateRef as React.MutableRefObject<{ nodes: CanvasNode[]; connections: Connection[] }>,
+        stateRef: canvasStateRef,
         timeRemaining: timer.minutes,
         initialMessages: session?.aiMessages || []
     });

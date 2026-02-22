@@ -47,6 +47,7 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
         return (
             <button
                 onClick={() => setIsOpen(true)}
+                aria-label={`Open AI Interviewer${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
                 className="absolute bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg shadow-indigo-500/20 transition-all font-medium border border-indigo-400/30 group"
             >
                 <div className="relative">
@@ -63,7 +64,7 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
     }
 
     return (
-        <div className="absolute right-0 top-0 bottom-0 w-[350px] bg-dashboard-card z-40 border-l border-border-dark flex flex-col shadow-2xl">
+        <div className="absolute right-0 top-14 bottom-0 w-[350px] bg-dashboard-card z-40 border-l border-border-dark flex flex-col shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-dark bg-sidebar-bg-dark">
                 <div className="flex items-center gap-2">
@@ -107,8 +108,8 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
                                 )}
 
                                 <div className={`p-3 rounded-2xl text-[13px] leading-relaxed relative group shadow-sm ${isAI
-                                        ? 'bg-white/5 border border-white/5 text-slate-200 rounded-tl-sm'
-                                        : 'bg-indigo-600 text-white rounded-tr-sm'
+                                    ? 'bg-white/5 border border-white/5 text-slate-200 rounded-tl-sm'
+                                    : 'bg-indigo-600 text-white rounded-tr-sm'
                                     }`}>
                                     {msg.content}
                                     <span className={`absolute -bottom-5 text-[9px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${isAI ? 'left-1' : 'right-1'}`}>
