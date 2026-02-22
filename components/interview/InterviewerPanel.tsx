@@ -39,7 +39,7 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
         e.preventDefault();
         if (!inputText.trim() || isThinking) return;
 
-        onSendReply(inputText.trim());
+        onSendReply(inputText.trim().slice(0, 800));
         setInputText('');
     };
 
@@ -144,8 +144,9 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
                     <input
                         type="text"
                         value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
+                        onChange={(e) => setInputText(e.target.value.slice(0, 800))}
                         disabled={isThinking}
+                        maxLength={800}
                         placeholder={isThinking ? "AI is thinking..." : "Explain your design or ask a question..."}
                         aria-label="Message to AI"
                         className="w-full bg-transparent text-sm text-white placeholder-slate-500 px-3 py-2.5 outline-none rounded-xl"
