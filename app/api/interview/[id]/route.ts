@@ -47,6 +47,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 submittedAt: session.submittedAt,
                 status: session.status,
                 canvasSnapshot: session.canvasSnapshot,
+                aiMessages: session.aiMessages || [],
                 evaluation: session.evaluation ?? null,
                 createdAt: session.createdAt,
                 updatedAt: session.updatedAt,

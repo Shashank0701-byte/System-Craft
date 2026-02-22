@@ -58,6 +58,11 @@ export interface IInterviewSession extends Document {
         nodes: ICanvasNode[];
         connections: IConnection[];
     };
+    aiMessages?: {
+        role: 'interviewer' | 'candidate';
+        content: string;
+        timestamp: Date;
+    }[];
     evaluation?: IEvaluation;
     createdAt: Date;
     updatedAt: Date;
@@ -150,6 +155,15 @@ const CanvasSnapshotConnectionSchema = new Schema(
     { _id: false }
 );
 
+const AiMessageSchema = new Schema(
+    {
+        role: { type: String, enum: ['interviewer', 'candidate'], required: true },
+        content: { type: String, required: true },
+        timestamp: { type: Date, required: true },
+    },
+    { _id: false }
+);
+
 const InterviewSessionSchema = new Schema<IInterviewSession>(
     {
         userId: {
@@ -189,6 +203,10 @@ const InterviewSessionSchema = new Schema<IInterviewSession>(
         canvasSnapshot: {
             nodes: { type: [CanvasSnapshotNodeSchema], default: [] },
             connections: { type: [CanvasSnapshotConnectionSchema], default: [] },
+        },
+        aiMessages: {
+            type: [AiMessageSchema],
+            default: []
         },
         evaluation: {
             type: EvaluationSchema,

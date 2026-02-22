@@ -18,6 +18,11 @@ interface InterviewSessionData {
         nodes: CanvasNode[];
         connections: Connection[];
     };
+    aiMessages?: {
+        role: 'interviewer' | 'candidate';
+        content: string;
+        timestamp: string;
+    }[];
     startedAt: string;
     timeLimit: number;
 }
@@ -345,6 +350,41 @@ export default function InterviewResultPage({ params }: PageProps) {
                     </section>
                 </div>
             </div>
+
+            {/* AI Conversation History (if any) */}
+            {session.aiMessages && session.aiMessages.length > 0 && (
+                <div className="max-w-6xl mx-auto mt-8">
+                    <section className="bg-sidebar-bg-dark border border-border-dark rounded-3xl p-6 lg:p-8 relative overflow-hidden">
+                        <div className="flex items-center gap-2 mb-6">
+                            <span className="material-symbols-outlined text-indigo-400 text-[24px]">forum</span>
+                            <h3 className="text-lg font-bold">Interview Transcript</h3>
+                        </div>
+                        <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-4">
+                            {session.aiMessages.map((msg, i) => {
+                                const isAI = msg.role === 'interviewer';
+                                return (
+                                    <div key={i} className={`flex gap-3 max-w-[80%] ${isAI ? 'self-start' : 'self-end ml-auto flex-row-reverse'}`}>
+                                        {isAI && (
+                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center mt-1 border border-indigo-500/30">
+                                                <span className="material-symbols-outlined text-[14px] text-indigo-400">robot_2</span>
+                                            </div>
+                                        )}
+                                        <div className={`p-4 rounded-2xl text-[14px] leading-relaxed relative ${isAI
+                                                ? 'bg-dashboard-bg border border-border-dark text-slate-300 rounded-tl-sm shadow-md'
+                                                : 'bg-indigo-600/20 border border-indigo-500/30 text-white rounded-tr-sm'
+                                            }`}>
+                                            {msg.content}
+                                            <span className="block mt-2 text-[10px] text-slate-500 font-medium">
+                                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+                </div>
+            )}
 
             {/* Wide Column: Design Preview */}
             <div className="max-w-6xl mx-auto mt-8">

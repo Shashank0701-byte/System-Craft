@@ -10,6 +10,8 @@ import { QuestionPanel } from '@/components/interview/QuestionPanel';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas, CanvasNode, Connection, CanvasStateRef } from '@/components/canvas/DesignCanvas';
 import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import { useInterviewAI, AIMessage } from '@/src/hooks/useInterviewAI';
+import { InterviewerPanel } from '@/components/interview/InterviewerPanel';
 
 interface InterviewSessionData {
     id: string;
@@ -29,6 +31,7 @@ interface InterviewSessionData {
         nodes: CanvasNode[];
         connections: Connection[];
     };
+    aiMessages?: AIMessage[];
     evaluation?: unknown;
 }
 
@@ -49,6 +52,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showHints, setShowHints] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isInterviewPanelOpen, setIsInterviewPanelOpen] = useState(false);
 
     // Refs for save logic
     const isSavingRef = useRef(false);
@@ -68,6 +72,14 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             // Auto-submit when time expires
             handleSubmit();
         },
+    });
+
+    // AI Interviewer hook
+    const ai = useInterviewAI({
+        sessionId: id,
+        stateRef: canvasStateRef,
+        timeRemaining: timer.minutes,
+        initialMessages: session?.aiMessages || []
     });
 
     // Fetch session data
@@ -348,6 +360,17 @@ export default function InterviewCanvasPage({ params }: PageProps) {
 
                 {/* Properties Panel */}
                 <PropertiesPanel />
+
+                {/* AI Interviewer Panel */}
+                {!isReadOnly && (
+                    <InterviewerPanel
+                        messages={ai.messages}
+                        isThinking={ai.isThinking}
+                        onSendReply={ai.sendReply}
+                        isOpen={isInterviewPanelOpen}
+                        setIsOpen={setIsInterviewPanelOpen}
+                    />
+                )}
             </div>
 
             {/* Submitted Overlay */}
