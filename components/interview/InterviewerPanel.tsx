@@ -78,6 +78,8 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
                 </div>
                 <button
                     onClick={() => setIsOpen(false)}
+                    aria-label="Close"
+                    title="Close"
                     className="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
                 >
                     <span className="material-symbols-outlined text-[18px]">close</span>
@@ -145,11 +147,13 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
                         onChange={(e) => setInputText(e.target.value)}
                         disabled={isThinking}
                         placeholder={isThinking ? "AI is thinking..." : "Explain your design or ask a question..."}
+                        aria-label="Message to AI"
                         className="w-full bg-transparent text-sm text-white placeholder-slate-500 px-3 py-2.5 outline-none rounded-xl"
                     />
                     <button
                         type="submit"
                         disabled={!inputText.trim() || isThinking}
+                        aria-label="Send message"
                         className="absolute right-2 w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
                     >
                         <span className="material-symbols-outlined text-[16px] -rotate-45 ml-1 mb-1">send</span>

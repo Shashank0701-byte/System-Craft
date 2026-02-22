@@ -13,6 +13,12 @@ interface HintResponse {
     severity: 'question' | 'nudge' | 'praise';
 }
 
+interface HintEndpointResponse {
+    success: boolean;
+    hint: HintResponse;
+    message: AIMessage;
+}
+
 interface UseInterviewAIProps {
     sessionId: string;
     stateRef: React.MutableRefObject<{ nodes: ICanvasNode[]; connections: IConnection[] } | null>;
@@ -41,6 +47,7 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
     const requestHint = useCallback(async (candidateReply?: string) => {
         try {
             if (isThinkingRef.current) return;
+            isThinkingRef.current = true;
             setIsThinking(true);
 
             const currentState = stateRef.current;
@@ -64,7 +71,7 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
                 throw new Error(`Hint request failed: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const data = await response.json() as HintEndpointResponse;
 
             // Update local message list
             setMessages(prev => {
@@ -82,6 +89,7 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
         } catch (error) {
             console.error('Failed to request AI hint:', error);
         } finally {
+            isThinkingRef.current = false;
             setIsThinking(false);
         }
     }, [sessionId, stateRef]);

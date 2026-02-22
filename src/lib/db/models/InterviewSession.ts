@@ -157,9 +157,9 @@ const CanvasSnapshotConnectionSchema = new Schema(
 
 const AiMessageSchema = new Schema(
     {
-        role: { type: String, enum: ['interviewer', 'candidate'] },
-        content: { type: String },
-        timestamp: { type: Date },
+        role: { type: String, enum: ['interviewer', 'candidate'], required: true },
+        content: { type: String, required: true },
+        timestamp: { type: Date, required: true },
     },
     { _id: false }
 );
