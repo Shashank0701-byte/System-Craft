@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/lib/firebase/AuthContext';
 import { logout } from '@/src/lib/firebase/auth';
 import { useSidebar } from './SidebarContext';
+import { ProfileSettingsModal } from './ProfileSettingsModal';
 
 export function Header() {
   const router = useRouter();
   const { user } = useAuth();
   const { toggle } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -139,7 +141,13 @@ export function Header() {
 
               {/* Menu Items */}
               <div className="py-2">
-                <button className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-highlight-dark transition-colors cursor-pointer">
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full px-4 py-2.5 flex items-center gap-3 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-highlight-dark transition-colors cursor-pointer"
+                >
                   <span className="material-symbols-outlined text-[20px]">settings</span>
                   <span>Settings</span>
                 </button>
@@ -164,6 +172,12 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </header>
   );
 }

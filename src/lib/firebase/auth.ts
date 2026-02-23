@@ -4,6 +4,7 @@ import {
     signInWithPopup,
     signOut,
     AuthError,
+    updateProfile,
 } from "firebase/auth";
 import { auth } from "./firebaseClient";
 
@@ -51,5 +52,23 @@ export const logout = async () => {
             message: authError.message,
         });
         throw new Error(authError.message || "Failed to log out");
+    }
+};
+
+export const updateUserProfile = async (displayName?: string, photoURL?: string) => {
+    if (!auth || !auth.currentUser) throw new Error("User is not signed in.");
+    try {
+        await updateProfile(auth.currentUser, {
+            ...(displayName && { displayName }),
+            ...(photoURL && { photoURL })
+        });
+        await auth.currentUser.reload();
+    } catch (error) {
+        const authError = error as AuthError;
+        console.error("Profile update error:", {
+            code: authError.code,
+            message: authError.message,
+        });
+        throw new Error(authError.message || "Failed to update profile");
     }
 };
