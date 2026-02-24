@@ -55,7 +55,7 @@ export default function AnalyticsPage() {
         };
 
         fetchAnalytics();
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user?.uid]);
 
     if (authLoading || isLoading) {
         return (
@@ -232,8 +232,8 @@ export default function AnalyticsPage() {
                                                                 <div
                                                                     key={j}
                                                                     className={`w-6 h-6 rounded flex items-center justify-center ${res === 'pass' ? 'bg-emerald-500/20 text-emerald-500' :
-                                                                            res === 'fail' ? 'bg-red-500/20 text-red-500' :
-                                                                                'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                                                                        res === 'fail' ? 'bg-red-500/20 text-red-500' :
+                                                                            'bg-slate-200 dark:bg-slate-800 text-slate-400'
                                                                         }`}
                                                                     title={`Session ${j + 1}: ${res.toUpperCase()}`}
                                                                 >

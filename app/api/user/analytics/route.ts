@@ -24,10 +24,13 @@ export async function GET(request: NextRequest) {
         }
 
         // Fetch evaluated sessions, parsed directly by Mongoose
-        const sessions = await InterviewSession.find({
+        const latestSessions = await InterviewSession.find({
             userId: user._id,
             status: 'evaluated',
-        }).sort({ createdAt: 1 }).lean();
+        }).sort({ createdAt: -1 }).limit(50).lean();
+
+        // Reverse to maintain chronological order
+        const sessions = latestSessions.reverse();
 
         if (!sessions || sessions.length === 0) {
             return NextResponse.json({
@@ -51,24 +54,18 @@ export async function GET(request: NextRequest) {
         const scoreTrend: any[] = [];
 
         let totalTimeMinutes = 0;
+        let validTimeSessionsCount = 0;
         const difficultyCounts: Record<string, number> = {};
         const weaknessCounts: Record<string, number> = {};
 
         // Heatmap for the last N interviews (up to 10 max)
         const recentSessions = sessions.slice(-10);
-        // rule names
-        const allRules = [
-            'Load Balancer Reachability',
-            'No Orphaned Nodes',
-            'Compute Connectivity',
-            'State Externalization'
-        ]; // based on generic structural rules
 
         const rulesEncountered = new Set<string>();
         const ruleHistory: Record<string, ('pass' | 'fail' | 'skip')[]> = {};
 
         sessions.forEach((session: any) => {
-            const finalScore = session.evaluation?.finalScore || 0;
+            const finalScore = session.evaluation?.finalScore ?? 0;
             totalScore += finalScore;
             if (finalScore > bestScore) bestScore = finalScore;
 
@@ -77,11 +74,12 @@ export async function GET(request: NextRequest) {
             if (session.startedAt && session.submittedAt) {
                 const diffMs = new Date(session.submittedAt).getTime() - new Date(session.startedAt).getTime();
                 totalTimeMinutes += diffMs / 60000;
+                validTimeSessionsCount++;
             }
 
             // Score trend
             scoreTrend.push({
-                date: new Date(session.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                date: new Date(session.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                 score: finalScore,
                 difficulty: session.difficulty,
             });
@@ -135,13 +133,15 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        const avgTimeToSubmitMinutes = Math.round(totalTimeMinutes / totalInterviews);
+        const avgTimeToSubmitMinutes = validTimeSessionsCount > 0
+            ? Math.round(totalTimeMinutes / validTimeSessionsCount)
+            : 0;
 
-        // Improvement %: Compare first half with second half or first 3 vs last 3
+        // Improvement %: Compare first session score with last session score to compute percentage improvement
         let improvementPercent = 0;
         if (totalInterviews > 1) {
-            const firstScore = sessions[0].evaluation?.finalScore || 0;
-            const lastScore = sessions[sessions.length - 1].evaluation?.finalScore || 0;
+            const firstScore = sessions[0].evaluation?.finalScore ?? 0;
+            const lastScore = sessions[sessions.length - 1].evaluation?.finalScore ?? 0;
             if (firstScore > 0) {
                 improvementPercent = Math.round(((lastScore - firstScore) / firstScore) * 100);
             }
