@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
 import { Header } from '@/components/dashboard/Header';
@@ -35,6 +36,7 @@ export default function AnalyticsPage() {
     const [data, setData] = useState<AnalyticsResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [retryCounter, setRetryCounter] = useState(0);
 
     useEffect(() => {
         if (!isAuthenticated || !user) return;
@@ -53,7 +55,7 @@ export default function AnalyticsPage() {
                     setData(result);
                 }
             } catch (err: any) {
-                if (err.name === 'AbortError' || err instanceof DOMException) return;
+                if (err.name === 'AbortError') return;
                 console.error(err);
                 if (!controller.signal.aborted) {
                     setError(err instanceof Error ? err.message : 'Unknown error');
@@ -70,11 +72,11 @@ export default function AnalyticsPage() {
         return () => {
             controller.abort();
         };
-    }, [isAuthenticated, user?.uid]);
+    }, [isAuthenticated, user?.uid, retryCounter]);
 
     if (authLoading || isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background-dark">
+            <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     <p className="text-slate-400">Loading Analytics...</p>
@@ -87,10 +89,10 @@ export default function AnalyticsPage() {
 
     if (error || !data) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-background-dark text-slate-400">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-background-light dark:bg-background-dark text-slate-400">
                 <p>Failed to load analytics data.</p>
                 <button
-                    onClick={() => window.location.reload()}
+                    onClick={() => setRetryCounter(c => c + 1)}
                     className="mt-4 text-primary hover:underline"
                 >
                     Retry
@@ -134,18 +136,18 @@ export default function AnalyticsPage() {
                             <p className="text-slate-500 dark:text-text-muted-dark max-w-sm mx-auto mb-6">
                                 Complete at least one system design interview to unlock detailed performance analytics.
                             </p>
-                            <a
+                            <Link
                                 href="/dashboard"
                                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
                             >
                                 <span className="material-symbols-outlined text-[20px]">add</span>
                                 Start Interview
-                            </a>
+                            </Link>
                         </div>
                     ) : (
                         <div className="space-y-6">
                             {/* Stats Cards Row */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                                 <StatCard
                                     title="Total Evaluated"
                                     value={data.totalInterviews.toString()}
@@ -167,6 +169,11 @@ export default function AnalyticsPage() {
                                     title="Common Difficulty"
                                     value={data.summaryStats.mostCommonDifficulty.charAt(0).toUpperCase() + data.summaryStats.mostCommonDifficulty.slice(1)}
                                     icon="tune"
+                                />
+                                <StatCard
+                                    title="Avg Time"
+                                    value={`${data.summaryStats.avgTimeToSubmitMinutes}m`}
+                                    icon="timer"
                                 />
                             </div>
 
