@@ -39,22 +39,37 @@ export default function AnalyticsPage() {
     useEffect(() => {
         if (!isAuthenticated || !user) return;
 
+        const controller = new AbortController();
+
         const fetchAnalytics = async () => {
             try {
                 setIsLoading(true);
-                const response = await authFetch('/api/user/analytics');
+                const response = await authFetch('/api/user/analytics', {
+                    signal: controller.signal,
+                });
                 if (!response.ok) throw new Error('Failed to load analytics');
                 const result = await response.json();
-                setData(result);
-            } catch (err) {
+                if (!controller.signal.aborted) {
+                    setData(result);
+                }
+            } catch (err: any) {
+                if (err.name === 'AbortError' || err instanceof DOMException) return;
                 console.error(err);
-                setError(err instanceof Error ? err.message : 'Unknown error');
+                if (!controller.signal.aborted) {
+                    setError(err instanceof Error ? err.message : 'Unknown error');
+                }
             } finally {
-                setIsLoading(false);
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchAnalytics();
+
+        return () => {
+            controller.abort();
+        };
     }, [isAuthenticated, user?.uid]);
 
     if (authLoading || isLoading) {

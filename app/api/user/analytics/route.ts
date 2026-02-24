@@ -69,7 +69,8 @@ export async function GET(request: NextRequest) {
             totalScore += finalScore;
             if (finalScore > bestScore) bestScore = finalScore;
 
-            difficultyCounts[session.difficulty] = (difficultyCounts[session.difficulty] || 0) + 1;
+            const diff = (typeof session.difficulty === 'string' && session.difficulty.trim() !== '') ? session.difficulty.trim() : 'unknown';
+            difficultyCounts[diff] = (difficultyCounts[diff] || 0) + 1;
 
             if (session.startedAt && session.submittedAt) {
                 const diffMs = new Date(session.submittedAt).getTime() - new Date(session.startedAt).getTime();
@@ -100,7 +101,9 @@ export async function GET(request: NextRequest) {
             const details = session.evaluation?.structural?.details || [];
 
             // Build rule heatmap array
-            details.forEach((d: any) => rulesEncountered.add(d.ruleId));
+            details.forEach((d: any) => {
+                rulesEncountered.add(d.ruleId);
+            });
         });
 
         // Initialize rule history
