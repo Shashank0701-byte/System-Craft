@@ -1,4 +1,3 @@
-/* eslint-disable */
 'use client';
 
 import { useState, useRef, useId, useCallback, useEffect, useReducer, MutableRefObject } from 'react';
@@ -705,7 +704,7 @@ export function DesignCanvas({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo]);
+  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo, readOnly]);
 
   return (
     <main
