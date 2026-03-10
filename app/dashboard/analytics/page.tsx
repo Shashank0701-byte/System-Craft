@@ -54,8 +54,9 @@ export default function AnalyticsPage() {
                 if (!controller.signal.aborted) {
                     setData(result);
                 }
-            } catch (err: any) {
-                if (err.name === 'AbortError') return;
+            } catch (err: unknown) {
+                if (err instanceof Error && err.name === 'AbortError') return;
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error(err);
                 if (!controller.signal.aborted) {
                     setError(err instanceof Error ? err.message : 'Unknown error');
@@ -72,7 +73,7 @@ export default function AnalyticsPage() {
         return () => {
             controller.abort();
         };
-    }, [isAuthenticated, user?.uid, retryCounter]);
+    }, [isAuthenticated, user, retryCounter]);
 
     if (authLoading || isLoading) {
         return (

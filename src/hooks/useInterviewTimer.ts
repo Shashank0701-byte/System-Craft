@@ -40,7 +40,9 @@ export function useInterviewTimer({
     onTimeUp,
 }: UseInterviewTimerOptions): TimerState {
     const onTimeUpRef = useRef(onTimeUp);
-    onTimeUpRef.current = onTimeUp;
+    useEffect(() => {
+        onTimeUpRef.current = onTimeUp;
+    }, [onTimeUp]);
 
     const hasExpiredRef = useRef(false);
 

@@ -95,7 +95,7 @@ export function InterviewerPanel({ messages, isThinking, onSendReply, isOpen, se
                         </div>
                         <p className="text-sm tracking-wide text-slate-400 font-medium mb-1">No messages yet</p>
                         <p className="text-xs text-slate-500 leading-relaxed">
-                            Start designing your system. I'll check in periodically with hints, questions, and feedback.
+                            Start designing your system. I&apos;ll check in periodically with hints, questions, and feedback.
                         </p>
                     </div>
                 ) : (
