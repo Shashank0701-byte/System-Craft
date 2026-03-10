@@ -4,6 +4,8 @@
 
 SystemCraft is a high-fidelity system design interview simulator. It combines an interactive architectural canvas with a sophisticated AI engine to evaluate your designs against real-world constraints, providing deep insights into trade-offs, scalability, and structural integrity.
 
+[![Docker Setup Guide](https://img.shields.io/badge/Docker-Setup_Guide-2496ED?style=for-the-badge&logo=docker&logoColor=white)](./DOCKER.md)
+
 ---
 
 ## Key Features
@@ -54,6 +56,9 @@ NEXT_PUBLIC_FIREBASE_API_KEY=your_key
 ```bash
 npm run dev
 ```
+
+### 5. Running with Docker
+Prefer containers? Check out our dedicated [Docker Setup Guide](./DOCKER.md) for quick-start instructions using Docker Compose.
 
 ---
 
