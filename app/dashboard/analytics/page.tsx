@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
         return () => {
             controller.abort();
         };
-    }, [isAuthenticated, user?.uid, retryCounter]);
+    }, [isAuthenticated, user, retryCounter]);
 
     if (authLoading || isLoading) {
         return (

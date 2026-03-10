@@ -1,0 +1,176 @@
+
+D:\vertex-club\System-Craft\System-Craft\components\canvas\DesignCanvas.tsx
+  384:34  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `readOnly`, but the source dependencies were [nodes, connections, zoom, panOffset, saveToHistory]. Inferred different dependency than source.
+
+D:\vertex-club\System-Craft\System-Craft\components\canvas\DesignCanvas.tsx:384:34
+  382 |
+  383 |   // Handle dropping a new component from palette
+> 384 |   const handleDrop = useCallback((e: React.DragEvent) => {
+      |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 385 |     if (readOnly) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 386 |     e.preventDefault();
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 416 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 417 |   }, [nodes, connections, zoom, panOffset, saveToHistory]);
+      | ^^^^ Could not preserve existing manual memoization
+  418 |
+  419 |   const handleDragOver = useCallback((e: React.DragEvent) => {
+  420 |     e.preventDefault();                                                                                                                                                                                     react-hooks/preserve-manual-memoization
+  417:6   warning  React Hook useCallback has a missing dependency: 'readOnly'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  438:43  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `readOnly`, but the source dependencies were [nodes, connections, toolMode, zoom, saveToHistory]. Inferred different dependency than source.
+
+D:\vertex-club\System-Craft\System-Craft\components\canvas\DesignCanvas.tsx:438:43
+  436 |
+  437 |   // Handle starting to draw a connection (Shift+Click on node)
+> 438 |   const handleNodeMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
+      |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 439 |     if (readOnly) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 440 |     e.stopPropagation();
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 478 |     });
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 479 |   }, [nodes, connections, toolMode, zoom, saveToHistory]);
+      | ^^^^ Could not preserve existing manual memoization
+  480 |
+  481 |   // Handle completing a connection (mouse up on another node)
+  482 |   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {                                                       react-hooks/preserve-manual-memoization
+  479:6   warning  React Hook useCallback has a missing dependency: 'readOnly'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  482:41  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `readOnly`, but the source dependencies were [isDrawingConnection, connectionStart, connections, nodes, draggedNodeId, tempNodes, saveToHistory]. Inferred different dependency than source.
+
+D:\vertex-club\System-Craft\System-Craft\components\canvas\DesignCanvas.tsx:482:41
+  480 |
+  481 |   // Handle completing a connection (mouse up on another node)
+> 482 |   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
+      |                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 483 |     if (readOnly) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 484 |     e.stopPropagation();
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 511 |     setDraggedNodeId(null);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 512 |   }, [isDrawingConnection, connectionStart, connections, nodes, draggedNodeId, tempNodes, saveToHistory]);
+      | ^^^^ Could not preserve existing manual memoization
+  513 |
+  514 |   // Handle mouse move
+  515 |   const handleMouseMove = useCallback((e: React.MouseEvent) => {  react-hooks/preserve-manual-memoization
+  512:6   warning  React Hook useCallback has a missing dependency: 'readOnly'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  515:39  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `readOnly`, but the source dependencies were [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom]. Inferred different dependency than source.
+
+D:\vertex-club\System-Craft\System-Craft\components\canvas\DesignCanvas.tsx:515:39
+  513 |
+  514 |   // Handle mouse move
+> 515 |   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+      |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 516 |     if (readOnly && !isPanning) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 517 |     const rect = canvasRef.current?.getBoundingClientRect();
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 548 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 549 |   }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom]);
+      | ^^^^ Could not preserve existing manual memoization
+  550 |
+  551 |   // Handle mouse up on canvas
+  552 |   const handleMouseUp = useCallback(() => {                                                 react-hooks/preserve-manual-memoization
+  549:6   warning  React Hook useCallback has a missing dependency: 'readOnly'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  660:44  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `readOnly`, but the source dependencies were [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory]. Inferred different dependency than source.
+
+D:\vertex-club\System-Craft\System-Craft\components\canvas\DesignCanvas.tsx:660:44
+  658 |
+  659 |   // Delete selected node or connection
+> 660 |   const handleDeleteSelected = useCallback(() => {
+      |                                            ^^^^^^^
+> 661 |     if (readOnly) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 662 |     if (selectedNodeId) {
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 671 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 672 |   }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory]);
+      | ^^^^ Could not preserve existing manual memoization
+  673 |
+  674 |   // Keyboard shortcuts
+  675 |   useEffect(() => {                                                                                                                                                                                                              react-hooks/preserve-manual-memoization
+  672:6   warning  React Hook useCallback has a missing dependency: 'readOnly'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+  707:6   warning  React Hook useEffect has a missing dependency: 'readOnly'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/exhaustive-deps
+
+D:\vertex-club\System-Craft\System-Craft\components\dashboard\Sidebar.tsx
+  3:29  warning  'useCallback' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\vertex-club\System-Craft\System-Craft\components\dashboard\SidebarContext.tsx
+  24:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\vertex-club\System-Craft\System-Craft\components\dashboard\SidebarContext.tsx:24:9
+  22 |     // Close sidebar on route change
+  23 |     useEffect(() => {
+> 24 |         setIsOpen(false);
+     |         ^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |     }, [pathname]);
+  26 |
+  27 |     // Close on Escape  react-hooks/set-state-in-effect
+
+D:\vertex-club\System-Craft\System-Craft\components\interview\InterviewerPanel.tsx
+  98:59  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\vertex-club\System-Craft\System-Craft\src\hooks\useInterviewTimer.ts
+  43:5  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+D:\vertex-club\System-Craft\System-Craft\src\hooks\useInterviewTimer.ts:43:5
+  41 | }: UseInterviewTimerOptions): TimerState {
+  42 |     const onTimeUpRef = useRef(onTimeUp);
+> 43 |     onTimeUpRef.current = onTimeUp;
+     |     ^^^^^^^^^^^^^^^^^^^ Cannot update ref during render
+  44 |
+  45 |     const hasExpiredRef = useRef(false);
+  46 |  react-hooks/refs
+
+D:\vertex-club\System-Craft\System-Craft\src\lib\db\mongoose.ts
+  10:5  warning  Unused eslint-disable directive (no problems were reported from 'no-var')
+
+D:\vertex-club\System-Craft\System-Craft\src\lib\firebase\AuthContext.tsx
+  24:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\vertex-club\System-Craft\System-Craft\src\lib\firebase\AuthContext.tsx:24:13
+  22 |     useEffect(() => {
+  23 |         if (!auth) {
+> 24 |             setIsLoading(false);
+     |             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |             return;
+  26 |         }
+  27 |         return onAuthStateChanged(auth, (u) => {  react-hooks/set-state-in-effect
+
+✖ 17 problems (9 errors, 8 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
