@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
 import User from '@/src/lib/db/models/User';

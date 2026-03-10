@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, use, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
@@ -291,12 +292,12 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                         <span className="material-symbols-outlined text-5xl text-red-500 mb-4">error</span>
                         <h2 className="text-xl font-bold text-white mb-2">Failed to Load</h2>
                         <p className="text-slate-400 mb-6">{error || 'Session not found'}</p>
-                        <a
+                        <Link
                             href="/interview"
                             className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium"
                         >
                             Back to Interviews
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>
