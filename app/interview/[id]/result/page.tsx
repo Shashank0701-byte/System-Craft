@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -341,7 +342,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                                 <div className="space-y-2">
                                     {reasoning.suggestions.map((s: string, i: number) => (
                                         <div key={i} className="p-3 bg-white/5 border border-white/5 rounded-xl text-sm text-slate-300 leading-relaxed italic">
-                                            "{s}"
+                                            &quot;{s}&quot;
                                         </div>
                                     ))}
                                 </div>
