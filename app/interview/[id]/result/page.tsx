@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
-import { IInterviewQuestion, IEvaluation } from '@/src/lib/db/models/InterviewSession';
+import { IInterviewQuestion, IEvaluation, IRuleResult } from '@/src/lib/db/models/InterviewSession';
 import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
 
 interface InterviewSessionData {
@@ -249,7 +249,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
-                            {structural.details.map((detail: any, i: number) => (
+                            {structural.details.map((detail: IRuleResult, i: number) => (
                                 <div
                                     key={i}
                                     className={`p-4 rounded-2xl border transition-all hover:translate-x-1 ${detail.status === 'pass'

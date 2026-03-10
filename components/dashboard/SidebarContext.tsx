@@ -16,19 +16,16 @@ const SidebarContext = createContext<SidebarContextType>({
 });
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpenState, setIsOpenState] = useState(false);
+    const [openedByPathname, setOpenedByPathname] = useState<string | null>(null);
     const pathname = usePathname();
 
-    // Close sidebar on route change
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsOpen(false);
-    }, [pathname]);
+    const isOpen = isOpenState && openedByPathname === pathname;
 
     // Close on Escape
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsOpen(false);
+            if (e.key === 'Escape') setIsOpenState(false);
         };
         if (isOpen) document.addEventListener('keydown', handleEscape);
         return () => document.removeEventListener('keydown', handleEscape);
@@ -47,8 +44,15 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     return (
         <SidebarContext.Provider value={{
             isOpen,
-            toggle: () => setIsOpen(prev => !prev),
-            close: () => setIsOpen(false),
+            toggle: () => {
+                if (isOpen) {
+                    setIsOpenState(false);
+                } else {
+                    setIsOpenState(true);
+                    setOpenedByPathname(pathname);
+                }
+            },
+            close: () => setIsOpenState(false),
         }}>
             {children}
         </SidebarContext.Provider>

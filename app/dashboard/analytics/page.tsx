@@ -39,7 +39,7 @@ export default function AnalyticsPage() {
     const [retryCounter, setRetryCounter] = useState(0);
 
     useEffect(() => {
-        if (!isAuthenticated || !user) return;
+        if (!isAuthenticated || !user?.uid) return;
 
         const controller = new AbortController();
 
@@ -56,7 +56,6 @@ export default function AnalyticsPage() {
                 }
             } catch (err: unknown) {
                 if (err instanceof Error && err.name === 'AbortError') return;
-                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error(err);
                 if (!controller.signal.aborted) {
                     setError(err instanceof Error ? err.message : 'Unknown error');
