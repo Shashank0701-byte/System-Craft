@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { signInWithGoogle, signInWithGitHub, signInWithEmail, signUpWithEmail, resetPassword } from "../src/lib/firebase/auth";
+import { signInWithGoogle, signInWithGitHub, signInWithEmail, signUpWithEmail, resetPassword, logout } from "../src/lib/firebase/auth";
 import { useAuth } from "../src/lib/firebase/AuthContext";
 import { User } from "firebase/auth";
 import { Spinner } from "./ui/Spinner";
@@ -57,16 +57,18 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [showResetPassword, setShowResetPassword] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
+    const [syncFailed, setSyncFailed] = useState(false);
 
-    // If user is already logged in (not mid-sign-in) OR sync completed, redirect to dashboard
+    // If user is already logged in (not mid-sign-in, no sync failure) OR sync completed, redirect
     useEffect(() => {
-        if (!authLoading && currentUser && !signingInRef.current) {
+        if (!authLoading && currentUser && !signingInRef.current && !syncFailed) {
             router.push('/dashboard');
         }
-        if (userSynced) {
+        if (userSynced && !syncFailed) {
             router.push('/dashboard');
         }
-    }, [authLoading, currentUser, userSynced, router]);
+    }, [authLoading, currentUser, userSynced, syncFailed, router]);
 
     const handleProviderSignIn = useCallback(async (
         signInFn: () => Promise<User | null>,
@@ -101,30 +103,40 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
         e.preventDefault();
         setSignInError(null);
         setSuccessMessage(null);
+        setSyncFailed(false);
         setIsLoadingEmail(true);
         signingInRef.current = true;
 
-        try {
-            let user: User | null = null;
+        let createdUser: User | null = null;
 
+        try {
             if (mode === 'signup') {
                 if (!displayName.trim()) {
                     setSignInError('Please enter your name.');
                     return;
                 }
-                user = await signUpWithEmail(email, password, displayName.trim());
+                createdUser = await signUpWithEmail(email, password, displayName.trim());
             } else {
-                user = await signInWithEmail(email, password);
+                createdUser = await signInWithEmail(email, password);
             }
 
-            if (!user) {
+            if (!createdUser) {
                 setSignInError('Authentication failed. Please try again.');
                 return;
             }
 
-            await syncUserWithDB(user, 'email');
+            await syncUserWithDB(createdUser, 'email');
             setUserSynced(true);
         } catch (error) {
+            // If signup created a Firebase user but DB sync failed, clean up
+            if (mode === 'signup' && createdUser) {
+                try {
+                    await logout();
+                } catch {
+                    // Best-effort cleanup
+                }
+            }
+            setSyncFailed(true);
             setSignInError(
                 error instanceof Error
                     ? error.message
@@ -146,6 +158,7 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
             return;
         }
 
+        setIsResetting(true);
         try {
             await resetPassword(email);
             setSuccessMessage('Password reset email sent! Check your inbox.');
@@ -156,10 +169,12 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                     ? error.message
                     : 'Failed to send reset email.'
             );
+        } finally {
+            setIsResetting(false);
         }
     }, [email]);
 
-    const isLoading = isLoadingGoogle || isLoadingGitHub || isLoadingEmail;
+    const isLoading = isLoadingGoogle || isLoadingGitHub || isLoadingEmail || isResetting;
 
     // Show nothing while checking auth (prevents flash)
     if (authLoading) {
@@ -170,8 +185,8 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
         );
     }
 
-    // If already logged in, don't render the card (redirect is happening)
-    if (currentUser) return null;
+    // If already logged in and synced (or was already logged in), don't render the card
+    if (currentUser && !syncFailed && !signingInRef.current) return null;
 
     return (
         <div className="w-full max-w-md rounded-2xl bg-[#141022]/80 backdrop-blur border border-white/10 p-8 shadow-2xl">
@@ -213,16 +228,24 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="you@example.com"
-                            required
-                            className="w-full rounded-lg bg-[#1f1b33] border border-white/10 px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition"
+                            disabled={isLoading}
+                            className="w-full rounded-lg bg-[#1f1b33] border border-white/10 px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition disabled:opacity-50"
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={isLoading}
+                        aria-busy={isResetting}
                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary hover:bg-primary-hover py-3 text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Send Reset Link
+                        {isResetting ? (
+                            <>
+                                <Spinner label="Sending reset link" />
+                                Sending reset link...
+                            </>
+                        ) : (
+                            'Send Reset Link'
+                        )}
                     </button>
                     <button
                         type="button"
