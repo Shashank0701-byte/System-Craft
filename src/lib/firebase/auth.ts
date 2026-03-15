@@ -5,6 +5,9 @@ import {
     signOut,
     AuthError,
     updateProfile,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "./firebaseClient";
 
@@ -70,5 +73,72 @@ export const updateUserProfile = async (displayName?: string, photoURL?: string)
             message: authError.message,
         });
         throw new Error(authError.message || "Failed to update profile");
+    }
+};
+
+export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
+    let createdUser = null;
+    try {
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        createdUser = res.user;
+
+        try {
+            await updateProfile(createdUser, { displayName });
+        } catch (profileError) {
+            // Rollback: delete the partially created account
+            await createdUser.delete();
+            throw profileError;
+        }
+
+        return createdUser;
+    } catch (error) {
+        const authError = error as AuthError;
+        console.error("Email sign-up error:", {
+            code: authError.code,
+            message: authError.message,
+        });
+        if (authError.code === 'auth/email-already-in-use') {
+            throw new Error("An account with this email already exists.");
+        }
+        if (authError.code === 'auth/weak-password') {
+            throw new Error("Password must be at least 6 characters.");
+        }
+        throw new Error(authError.message || "Failed to create account");
+    }
+};
+
+export const signInWithEmail = async (email: string, password: string) => {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
+    try {
+        const res = await signInWithEmailAndPassword(auth, email, password);
+        return res.user;
+    } catch (error) {
+        const authError = error as AuthError;
+        console.error("Email sign-in error:", {
+            code: authError.code,
+            message: authError.message,
+        });
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-credential') {
+            throw new Error("Invalid email or password.");
+        }
+        throw new Error(authError.message || "Failed to sign in");
+    }
+};
+
+export const resetPassword = async (email: string) => {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
+    try {
+        await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+        const authError = error as AuthError;
+        console.error("Password reset error:", {
+            code: authError.code,
+            message: authError.message,
+        });
+        if (authError.code === 'auth/user-not-found') {
+            throw new Error("No account found with this email.");
+        }
+        throw new Error(authError.message || "Failed to send reset email");
     }
 };
