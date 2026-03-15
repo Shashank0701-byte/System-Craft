@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -47,6 +47,10 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
     const [isLoadingEmail, setIsLoadingEmail] = useState(false);
     const [signInError, setSignInError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [userSynced, setUserSynced] = useState(false);
+
+    // Track whether a sign-in flow is actively running (prevents premature redirect)
+    const signingInRef = useRef(false);
 
     // Email/password form state
     const [email, setEmail] = useState('');
@@ -54,12 +58,15 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
     const [displayName, setDisplayName] = useState('');
     const [showResetPassword, setShowResetPassword] = useState(false);
 
-    // If user is already logged in, redirect to dashboard
+    // If user is already logged in (not mid-sign-in) OR sync completed, redirect to dashboard
     useEffect(() => {
-        if (!authLoading && currentUser) {
+        if (!authLoading && currentUser && !signingInRef.current) {
             router.push('/dashboard');
         }
-    }, [authLoading, currentUser, router]);
+        if (userSynced) {
+            router.push('/dashboard');
+        }
+    }, [authLoading, currentUser, userSynced, router]);
 
     const handleProviderSignIn = useCallback(async (
         signInFn: () => Promise<User | null>,
@@ -69,6 +76,7 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
         setSignInError(null);
         setSuccessMessage(null);
         setLoading(true);
+        signingInRef.current = true;
         try {
             const user = await signInFn();
             if (!user) {
@@ -76,7 +84,7 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                 return;
             }
             await syncUserWithDB(user, provider);
-            router.push('/dashboard');
+            setUserSynced(true);
         } catch (error) {
             setSignInError(
                 error instanceof Error
@@ -84,15 +92,17 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                     : `Failed to sign in with ${provider}. Please try again.`
             );
         } finally {
+            signingInRef.current = false;
             setLoading(false);
         }
-    }, [router]);
+    }, []);
 
     const handleEmailSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         setSignInError(null);
         setSuccessMessage(null);
         setIsLoadingEmail(true);
+        signingInRef.current = true;
 
         try {
             let user: User | null = null;
@@ -113,7 +123,7 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
             }
 
             await syncUserWithDB(user, 'email');
-            router.push('/dashboard');
+            setUserSynced(true);
         } catch (error) {
             setSignInError(
                 error instanceof Error
@@ -121,9 +131,10 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
                     : 'Authentication failed. Please try again.'
             );
         } finally {
+            signingInRef.current = false;
             setIsLoadingEmail(false);
         }
-    }, [mode, email, password, displayName, router]);
+    }, [mode, email, password, displayName]);
 
     const handlePasswordReset = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();

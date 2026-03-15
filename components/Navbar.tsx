@@ -60,7 +60,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/login"
+                href="/signup"
                 className="cursor-pointer flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/40 transition-all"
               >
                 Get Started

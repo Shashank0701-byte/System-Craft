@@ -78,10 +78,20 @@ export const updateUserProfile = async (displayName?: string, photoURL?: string)
 
 export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     if (!auth) throw new Error("Firebase Auth is not initialized.");
+    let createdUser = null;
     try {
         const res = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(res.user, { displayName });
-        return res.user;
+        createdUser = res.user;
+
+        try {
+            await updateProfile(createdUser, { displayName });
+        } catch (profileError) {
+            // Rollback: delete the partially created account
+            await createdUser.delete();
+            throw profileError;
+        }
+
+        return createdUser;
     } catch (error) {
         const authError = error as AuthError;
         console.error("Email sign-up error:", {

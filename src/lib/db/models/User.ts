@@ -5,7 +5,7 @@ export interface IUser extends Document {
     email: string;
     displayName: string;
     photoURL?: string;
-    provider: 'google' | 'github';
+    provider: 'google' | 'github' | 'email';
     createdAt: Date;
     updatedAt: Date;
     lastLoginAt: Date;
@@ -42,7 +42,7 @@ const UserSchema = new Schema<IUser>(
         },
         provider: {
             type: String,
-            enum: ['google', 'github'],
+            enum: ['google', 'github', 'email'],
             required: true,
         },
         lastLoginAt: {
