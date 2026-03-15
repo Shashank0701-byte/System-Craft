@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "../src/lib/firebase/AuthContext";
 import { logout } from "../src/lib/firebase/auth";
 
 export default function Navbar() {
   const { user, isLoading } = useAuth();
-
+  const pathname = usePathname();
+  const isAuthPage = pathname === '/login' || pathname === '/signup';
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-white/10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -48,7 +50,7 @@ export default function Navbar() {
               <div className="hidden sm:block w-16 h-5 bg-white/10 rounded animate-pulse" />
               <div className="w-24 h-9 bg-white/10 rounded-lg animate-pulse" />
             </div>
-          ) : !user ? (
+          ) : isAuthPage ? null : !user ? (
             <>
               <Link
                 href="/login"
