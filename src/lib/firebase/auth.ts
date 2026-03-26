@@ -8,11 +8,46 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
+    fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { auth } from "./firebaseClient";
 
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
+
+function formatProviderName(method: string): string {
+    switch (method) {
+        case "google.com":
+            return "Google";
+        case "github.com":
+            return "GitHub";
+        case "password":
+            return "email and password";
+        default:
+            return method;
+    }
+}
+
+async function buildProviderConflictMessage(authError: AuthError, attemptedProvider: "Google" | "GitHub") {
+    const email = authError.customData?.email;
+
+    if (!auth || !email) {
+        return `An account already exists with this email. Sign in using the original method first, then connect ${attemptedProvider} later.`;
+    }
+
+    try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+
+        if (methods.length === 0) {
+            return `An account already exists with this email. Sign in using the original method first, then connect ${attemptedProvider} later.`;
+        }
+
+        const formattedMethods = methods.map(formatProviderName).join(" or ");
+        return `This email is already registered with ${formattedMethods}. Sign in using ${formattedMethods} first, then connect ${attemptedProvider} later.`;
+    } catch {
+        return `An account already exists with this email. Sign in using the original method first, then connect ${attemptedProvider} later.`;
+    }
+}
 
 export const signInWithGoogle = async () => {
     if (!auth) throw new Error("Firebase Auth is not initialized.");
@@ -25,6 +60,9 @@ export const signInWithGoogle = async () => {
             code: authError.code,
             message: authError.message,
         });
+        if (authError.code === "auth/account-exists-with-different-credential") {
+            throw new Error(await buildProviderConflictMessage(authError, "Google"));
+        }
         throw new Error(authError.message || "Failed to sign in with Google");
     }
 };
@@ -40,6 +78,9 @@ export const signInWithGitHub = async () => {
             code: authError.code,
             message: authError.message,
         });
+        if (authError.code === "auth/account-exists-with-different-credential") {
+            throw new Error(await buildProviderConflictMessage(authError, "GitHub"));
+        }
         throw new Error(authError.message || "Failed to sign in with GitHub");
     }
 };
