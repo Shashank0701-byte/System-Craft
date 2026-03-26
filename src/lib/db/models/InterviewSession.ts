@@ -22,6 +22,23 @@ export interface IRuleResult {
     severity: 'critical' | 'warning' | 'info';
 }
 
+export type ConstraintChangeType = 'traffic' | 'reliability' | 'latency' | 'compliance' | 'product' | 'cost';
+export type ConstraintChangeSeverity = 'moderate' | 'high';
+export type ConstraintChangeStatus = 'active' | 'acknowledged' | 'addressed';
+
+export interface IConstraintChange {
+    id: string;
+    type: ConstraintChangeType;
+    title: string;
+    description: string;
+    severity: ConstraintChangeSeverity;
+    introducedAt: Date;
+    introducedAtMinute: number;
+    status: ConstraintChangeStatus;
+    impactAreas: string[];
+    interviewerMessage: string;
+}
+
 // Full evaluation result
 export interface IEvaluation {
     structural: {
@@ -35,6 +52,9 @@ export interface IEvaluation {
         strengths: string[];
         weaknesses: string[];
         suggestions: string[];
+        adaptationSummary?: string;
+        addressedConstraintChanges?: string[];
+        missedConstraintChanges?: string[];
     };
     finalScore: number;
     weights: {
@@ -63,6 +83,7 @@ export interface IInterviewSession extends Document {
         content: string;
         timestamp: Date;
     }[];
+    constraintChanges?: IConstraintChange[];
     evaluation?: IEvaluation;
     createdAt: Date;
     updatedAt: Date;
@@ -100,6 +121,30 @@ const RuleResultSchema = new Schema(
     { _id: false }
 );
 
+const ConstraintChangeSchema = new Schema(
+    {
+        id: { type: String, required: true },
+        type: {
+            type: String,
+            enum: ['traffic', 'reliability', 'latency', 'compliance', 'product', 'cost'],
+            required: true,
+        },
+        title: { type: String, required: true },
+        description: { type: String, required: true },
+        severity: { type: String, enum: ['moderate', 'high'], required: true },
+        introducedAt: { type: Date, required: true },
+        introducedAtMinute: { type: Number, required: true },
+        status: {
+            type: String,
+            enum: ['active', 'acknowledged', 'addressed'],
+            default: 'active',
+        },
+        impactAreas: { type: [String], default: [] },
+        interviewerMessage: { type: String, required: true },
+    },
+    { _id: false }
+);
+
 const StructuralEvalSchema = new Schema(
     {
         score: { type: Number, required: true },
@@ -116,6 +161,9 @@ const ReasoningEvalSchema = new Schema(
         strengths: { type: [String], default: [] },
         weaknesses: { type: [String], default: [] },
         suggestions: { type: [String], default: [] },
+        adaptationSummary: { type: String, default: null },
+        addressedConstraintChanges: { type: [String], default: [] },
+        missedConstraintChanges: { type: [String], default: [] },
     },
     { _id: false }
 );
@@ -206,6 +254,10 @@ const InterviewSessionSchema = new Schema<IInterviewSession>(
         },
         aiMessages: {
             type: [AiMessageSchema],
+            default: []
+        },
+        constraintChanges: {
+            type: [ConstraintChangeSchema],
             default: []
         },
         evaluation: {

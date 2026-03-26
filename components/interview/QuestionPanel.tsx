@@ -1,10 +1,11 @@
 'use client';
 
-import { IInterviewQuestion } from '@/src/lib/db/models/InterviewSession';
+import { IConstraintChange, IInterviewQuestion } from '@/src/lib/db/models/InterviewSession';
 
 interface QuestionPanelProps {
     question: IInterviewQuestion;
     difficulty: 'easy' | 'medium' | 'hard';
+    constraintChanges?: IConstraintChange[];
     /** Whether to reveal hints */
     showHints?: boolean;
     onToggleHints?: () => void;
@@ -16,7 +17,13 @@ const DIFFICULTY_COLORS = {
     hard: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', dot: 'bg-red-500' },
 };
 
-export function QuestionPanel({ question, difficulty, showHints = false, onToggleHints }: QuestionPanelProps) {
+export function QuestionPanel({
+    question,
+    difficulty,
+    constraintChanges = [],
+    showHints = false,
+    onToggleHints
+}: QuestionPanelProps) {
     const colors = DIFFICULTY_COLORS[difficulty];
 
     return (
@@ -76,6 +83,39 @@ export function QuestionPanel({ question, difficulty, showHints = false, onToggl
                                 </li>
                             ))}
                         </ul>
+                    </div>
+                )}
+
+                {/* Live Changes */}
+                {constraintChanges.length > 0 && (
+                    <div>
+                        <h3 className="text-xs font-bold text-text-muted-dark uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[14px]">bolt</span>
+                            Live Changes
+                        </h3>
+                        <div className="space-y-2">
+                            {constraintChanges.map((change) => (
+                                <div
+                                    key={change.id}
+                                    className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-3"
+                                >
+                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <p className="text-sm font-semibold text-white">{change.title}</p>
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${change.severity === 'high'
+                                            ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                                            : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                                            }`}>
+                                            {change.severity}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-300 leading-relaxed">{change.description}</p>
+                                    <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+                                        <span className="material-symbols-outlined text-[13px]">schedule</span>
+                                        Added {change.introducedAtMinute} min into interview
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

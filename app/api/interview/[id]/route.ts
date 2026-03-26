@@ -48,6 +48,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 status: session.status,
                 canvasSnapshot: session.canvasSnapshot,
                 aiMessages: session.aiMessages || [],
+                constraintChanges: session.constraintChanges || [],
                 evaluation: session.evaluation ?? null,
                 createdAt: session.createdAt,
                 updatedAt: session.updatedAt,
