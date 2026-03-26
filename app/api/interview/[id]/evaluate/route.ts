@@ -82,7 +82,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             const reasoningResults = await evaluateReasoning(
                 session.question,
                 session.canvasSnapshot,
-                structuralResults.details
+                structuralResults.details,
+                session.constraintChanges || []
             );
 
             // 3. Combine into final evaluation document

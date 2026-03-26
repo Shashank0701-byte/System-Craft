@@ -13,6 +13,7 @@ import { DesignCanvas, CanvasNode, Connection, CanvasStateRef } from '@/componen
 import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
 import { useInterviewAI, AIMessage } from '@/src/hooks/useInterviewAI';
 import { InterviewerPanel } from '@/components/interview/InterviewerPanel';
+import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 
 interface InterviewSessionData {
     id: string;
@@ -33,6 +34,7 @@ interface InterviewSessionData {
         connections: Connection[];
     };
     aiMessages?: AIMessage[];
+    constraintChanges?: IConstraintChange[];
     evaluation?: unknown;
 }
 
@@ -80,7 +82,20 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         sessionId: id,
         stateRef: canvasStateRef,
         timeRemaining: timer.minutes,
-        initialMessages: session?.aiMessages || []
+        initialMessages: session?.aiMessages || [],
+        onConstraintChange: (change) => {
+            setSession(prev => {
+                if (!prev) return prev;
+                const existing = prev.constraintChanges || [];
+                if (existing.some(item => item.id === change.id)) {
+                    return prev;
+                }
+                return {
+                    ...prev,
+                    constraintChanges: [...existing, change]
+                };
+            });
+        }
     });
 
     // Fetch session data
@@ -342,6 +357,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                     <QuestionPanel
                         question={session.question}
                         difficulty={session.difficulty}
+                        constraintChanges={session.constraintChanges || []}
                         showHints={showHints}
                         onToggleHints={() => setShowHints(prev => !prev)}
                     />

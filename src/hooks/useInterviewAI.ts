@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ICanvasNode, IConnection } from '../lib/db/models/Design';
+import { IConstraintChange } from '../lib/db/models/InterviewSession';
 import { authFetch } from '../lib/firebase/authClient';
 
 export interface AIMessage {
@@ -17,6 +18,7 @@ interface HintEndpointResponse {
     success: boolean;
     hint: HintResponse;
     message: AIMessage;
+    constraintChange?: IConstraintChange | null;
 }
 
 interface UseInterviewAIProps {
@@ -24,11 +26,24 @@ interface UseInterviewAIProps {
     stateRef: React.MutableRefObject<{ nodes: ICanvasNode[]; connections: IConnection[] } | null>;
     timeRemaining: number;
     initialMessages?: AIMessage[];
+    onConstraintChange?: (change: IConstraintChange) => void;
 }
 
-export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMessages = [] }: UseInterviewAIProps) {
+export function useInterviewAI({
+    sessionId,
+    stateRef,
+    timeRemaining,
+    initialMessages = [],
+    onConstraintChange
+}: UseInterviewAIProps) {
     const [messages, setMessages] = useState<AIMessage[]>(() => initialMessages);
     const [isThinking, setIsThinking] = useState(false);
+
+    useEffect(() => {
+        if (initialMessages.length > 0) {
+            setMessages(initialMessages);
+        }
+    }, [initialMessages]);
 
     const isThinkingRef = useRef(isThinking);
     useEffect(() => {
@@ -85,6 +100,10 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
                 return next;
             });
 
+            if (data.constraintChange) {
+                onConstraintChange?.(data.constraintChange);
+            }
+
             lastHintTimeRef.current = Date.now();
         } catch (error) {
             console.error('Failed to request AI hint:', error);
@@ -92,7 +111,7 @@ export function useInterviewAI({ sessionId, stateRef, timeRemaining, initialMess
             isThinkingRef.current = false;
             setIsThinking(false);
         }
-    }, [sessionId, stateRef]);
+    }, [sessionId, stateRef, onConstraintChange]);
 
     // Periodic polling - e.g., every 5 minutes in ms (300,000 ms)
     useEffect(() => {

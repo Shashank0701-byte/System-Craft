@@ -1,5 +1,5 @@
 import { generateJSON } from '../ai/geminiClient';
-import { IInterviewQuestion, IRuleResult } from '../db/models/InterviewSession';
+import { IInterviewQuestion, IRuleResult, IConstraintChange } from '../db/models/InterviewSession';
 import { ICanvasNode, IConnection } from '../db/models/Design';
 
 export interface ReasoningEvaluation {
@@ -7,6 +7,9 @@ export interface ReasoningEvaluation {
     strengths: string[];
     weaknesses: string[];
     suggestions: string[];
+    adaptationSummary?: string;
+    addressedConstraintChanges?: string[];
+    missedConstraintChanges?: string[];
 }
 
 /**
@@ -15,8 +18,15 @@ export interface ReasoningEvaluation {
 export async function evaluateReasoning(
     question: IInterviewQuestion,
     canvasSnapshot: { nodes: ICanvasNode[]; connections: IConnection[] },
-    structuralResults: IRuleResult[]
+    structuralResults: IRuleResult[],
+    constraintChanges: IConstraintChange[] = []
 ): Promise<ReasoningEvaluation> {
+    const activeConstraintText = constraintChanges.length > 0
+        ? constraintChanges.map((change) =>
+            `- [${change.type}] ${change.title}: ${change.description} (introduced at minute ${change.introducedAtMinute})`
+        ).join('\n')
+        : 'None';
+
     const prompt = `
 You are a senior system design interviewer at a top-tier tech company. 
 Evaluate the following candidate design based on the provided question and architectural constraints.
@@ -26,6 +36,9 @@ Prompt: ${question.prompt}
 Requirements: ${question.requirements.join(', ')}
 Constraints: ${question.constraints.join(', ')}
 Traffic Profile: ${JSON.stringify(question.trafficProfile)}
+
+### LIVE CONSTRAINT CHANGES
+${activeConstraintText}
 
 ### CANDIDATE DESIGN (JSON Structure)
 Nodes: ${JSON.stringify(canvasSnapshot.nodes.map(n => ({ id: n.id, type: n.type, label: n.label })))}
@@ -39,6 +52,7 @@ ${structuralResults.map(r => `- ${r.rule}: ${r.status.toUpperCase()} (${r.messag
 2. Are trade-offs appropriate for the specific scale constraints?
 3. Are there hidden bottlenecks that the deterministic checks missed?
 4. Is the overall architecture coherent and justified?
+5. If live constraint changes were introduced, did the candidate adapt the design appropriately?
 
 ### OUTPUT FORMAT
 Return your evaluation as a structured JSON object with the following exact keys:
@@ -46,6 +60,9 @@ Return your evaluation as a structured JSON object with the following exact keys
 - "strengths": string[] (list of 2-3 specific architectural strengths)
 - "weaknesses": string[] (list of 2-3 specific architectural gaps or weaknesses)
 - "suggestions": string[] (list of 2-3 actionable steps to improve the design)
+- "adaptationSummary": string (1-2 sentences describing how well the candidate handled any live changes)
+- "addressedConstraintChanges": string[] (titles of live changes the design addressed well)
+- "missedConstraintChanges": string[] (titles of live changes the design failed to address)
 
 Ensure the JSON is well-formatted and strictly valid.
     `;
@@ -61,6 +78,9 @@ Ensure the JSON is well-formatted and strictly valid.
         evaluation.strengths = evaluation.strengths || [];
         evaluation.weaknesses = evaluation.weaknesses || [];
         evaluation.suggestions = evaluation.suggestions || [];
+        evaluation.adaptationSummary = evaluation.adaptationSummary || undefined;
+        evaluation.addressedConstraintChanges = evaluation.addressedConstraintChanges || [];
+        evaluation.missedConstraintChanges = evaluation.missedConstraintChanges || [];
 
         return evaluation;
     } catch (error) {
@@ -70,7 +90,12 @@ Ensure the JSON is well-formatted and strictly valid.
             score: 50,
             strengths: ['Basic structure present'],
             weaknesses: ['AI feedback unavailable at this time'],
-            suggestions: ['Please review your design against functional requirements manually']
+            suggestions: ['Please review your design against functional requirements manually'],
+            adaptationSummary: constraintChanges.length > 0
+                ? 'Live constraint changes were introduced, but adaptation analysis was unavailable.'
+                : 'No live constraint changes were introduced.',
+            addressedConstraintChanges: [],
+            missedConstraintChanges: constraintChanges.map((change) => change.title)
         };
     }
 }

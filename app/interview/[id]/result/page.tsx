@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
-import { IInterviewQuestion, IEvaluation, IRuleResult } from '@/src/lib/db/models/InterviewSession';
+import { IInterviewQuestion, IEvaluation, IRuleResult, IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
 
 interface InterviewSessionData {
@@ -23,6 +23,7 @@ interface InterviewSessionData {
         content: string;
         timestamp: string;
     }[];
+    constraintChanges?: IConstraintChange[];
     startedAt: string;
     timeLimit: number;
 }
@@ -100,6 +101,7 @@ export default function InterviewResultPage({ params }: PageProps) {
 
     const { evaluation, question } = session;
     const { structural, reasoning, finalScore } = evaluation;
+    const constraintChanges = session.constraintChanges || [];
 
     return (
         <div className="min-h-screen bg-background-dark text-white p-6 md:p-10 font-display selection:bg-primary/30">
@@ -236,6 +238,34 @@ export default function InterviewResultPage({ params }: PageProps) {
 
                 {/* Left Column: Structural Analysis */}
                 <div className="lg:col-span-2 space-y-8">
+                    {constraintChanges.length > 0 && (
+                        <section className="bg-sidebar-bg-dark border border-border-dark rounded-3xl p-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <span className="material-symbols-outlined text-amber-400 text-[22px]">bolt</span>
+                                <h3 className="text-lg font-bold">Live Constraint Changes</h3>
+                            </div>
+                            <div className="space-y-3">
+                                {constraintChanges.map((change) => (
+                                    <div key={change.id} className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
+                                        <div className="flex items-center justify-between gap-3 mb-1.5">
+                                            <h4 className="font-semibold text-white">{change.title}</h4>
+                                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${change.severity === 'high'
+                                                ? 'bg-red-500/15 text-red-400 border border-red-500/20'
+                                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                                                }`}>
+                                                {change.severity}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-300">{change.description}</p>
+                                        <p className="mt-2 text-[11px] text-slate-500">
+                                            Introduced {change.introducedAtMinute} minutes into the interview
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
                     <section>
                         <div className="flex items-center justify-between mb-4 px-2">
                             <h3 className="text-lg font-bold flex items-center gap-2">
@@ -292,6 +322,48 @@ export default function InterviewResultPage({ params }: PageProps) {
                         </div>
 
                         <div className="space-y-8">
+                            {constraintChanges.length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[16px]">bolt</span>
+                                        Adaptability
+                                    </h4>
+                                    <div className="p-4 bg-white/5 border border-white/5 rounded-2xl text-sm text-slate-300 leading-relaxed">
+                                        {reasoning.adaptationSummary || 'The interview included live requirement changes, but no adaptation summary was generated.'}
+                                    </div>
+                                    {(reasoning.addressedConstraintChanges?.length || reasoning.missedConstraintChanges?.length) ? (
+                                        <div className="mt-3 grid grid-cols-1 gap-3">
+                                            {reasoning.addressedConstraintChanges && reasoning.addressedConstraintChanges.length > 0 && (
+                                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                                                    <p className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2">Addressed</p>
+                                                    <ul className="space-y-2">
+                                                        {reasoning.addressedConstraintChanges.map((item, i) => (
+                                                            <li key={`${item}-${i}`} className="text-sm text-slate-300 flex items-start gap-2">
+                                                                <span className="mt-1.5 size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                                {item}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                            {reasoning.missedConstraintChanges && reasoning.missedConstraintChanges.length > 0 && (
+                                                <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                                                    <p className="text-[11px] font-black uppercase tracking-widest text-red-400 mb-2">Missed</p>
+                                                    <ul className="space-y-2">
+                                                        {reasoning.missedConstraintChanges.map((item, i) => (
+                                                            <li key={`${item}-${i}`} className="text-sm text-slate-300 flex items-start gap-2">
+                                                                <span className="mt-1.5 size-1.5 rounded-full bg-red-500 shrink-0" />
+                                                                {item}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+
                             {/* Strengths */}
                             <div>
                                 <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2">
