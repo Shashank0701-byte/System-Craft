@@ -133,7 +133,7 @@ const ConstraintChangeSchema = new Schema(
         description: { type: String, required: true },
         severity: { type: String, enum: ['moderate', 'high'], required: true },
         introducedAt: { type: Date, required: true },
-        introducedAtMinute: { type: Number, required: true },
+        introducedAtMinute: { type: Number, required: true, min: 0 },
         status: {
             type: String,
             enum: ['active', 'acknowledged', 'addressed'],

@@ -30,7 +30,10 @@ export function combineEvaluations(
             score: reasoning.score,
             strengths: reasoning.strengths,
             weaknesses: reasoning.weaknesses,
-            suggestions: reasoning.suggestions
+            suggestions: reasoning.suggestions,
+            adaptationSummary: reasoning.adaptationSummary,
+            addressedConstraintChanges: reasoning.addressedConstraintChanges,
+            missedConstraintChanges: reasoning.missedConstraintChanges
         },
         finalScore,
         weights: WEIGHTS

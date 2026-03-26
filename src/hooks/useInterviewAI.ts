@@ -38,11 +38,14 @@ export function useInterviewAI({
 }: UseInterviewAIProps) {
     const [messages, setMessages] = useState<AIMessage[]>(() => initialMessages);
     const [isThinking, setIsThinking] = useState(false);
+    const hasInitializedMessagesRef = useRef(false);
 
     useEffect(() => {
-        if (initialMessages.length > 0) {
-            setMessages(initialMessages);
-        }
+        if (hasInitializedMessagesRef.current) return;
+        if (initialMessages.length === 0) return;
+
+        setMessages(initialMessages);
+        hasInitializedMessagesRef.current = true;
     }, [initialMessages]);
 
     const isThinkingRef = useRef(isThinking);
