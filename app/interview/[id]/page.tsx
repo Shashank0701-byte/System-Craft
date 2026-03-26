@@ -66,6 +66,20 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const canvasStateRef = useRef<CanvasStateRef | null>(null);
     const saveAbortControllerRef = useRef<AbortController | null>(null);
 
+    const handleConstraintChange = useCallback((change: IConstraintChange) => {
+        setSession(prev => {
+            if (!prev) return prev;
+            const existing = prev.constraintChanges || [];
+            if (existing.some(item => item.id === change.id)) {
+                return prev;
+            }
+            return {
+                ...prev,
+                constraintChanges: [...existing, change]
+            };
+        });
+    }, []);
+
     // Interview timer
     const timer = useInterviewTimer({
         timeLimit: session?.timeLimit || 45,
@@ -83,19 +97,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         stateRef: canvasStateRef,
         timeRemaining: timer.minutes,
         initialMessages: session?.aiMessages || [],
-        onConstraintChange: (change) => {
-            setSession(prev => {
-                if (!prev) return prev;
-                const existing = prev.constraintChanges || [];
-                if (existing.some(item => item.id === change.id)) {
-                    return prev;
-                }
-                return {
-                    ...prev,
-                    constraintChanges: [...existing, change]
-                };
-            });
-        }
+        onConstraintChange: handleConstraintChange
     });
 
     // Fetch session data
