@@ -24,66 +24,82 @@ interface ConstraintTriggerSession {
     timeLimit: number;
 }
 
+interface ConstraintCandidateContext {
+    prompt: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    introducedAtMinute: number;
+    nodes: ICanvasNode[];
+    connections: IConnection[];
+    failedRuleMessages: string[];
+}
+
 const LIVE_CHANGE_MIN_PROGRESS = 0.25;
 const LIVE_CHANGE_MAX_PROGRESS = 0.75;
 const LIVE_CHANGE_MIN_NODES = 3;
 
 function generateConstraintChange(
-    prompt: string,
-    difficulty: 'easy' | 'medium' | 'hard',
-    introducedAtMinute: number
+    {
+        prompt,
+        difficulty,
+        introducedAtMinute,
+        nodes,
+        connections,
+        failedRuleMessages
+    }: ConstraintCandidateContext
 ): IConstraintChange {
     const lowerPrompt = prompt.toLowerCase();
+    const nodeTypes = new Set(nodes.map((node) => node.type));
+    const connectionCount = connections.length;
+    const hasCache = nodeTypes.has('Cache') || nodeTypes.has('CDN');
+    const hasQueue = nodeTypes.has('Queue') || nodeTypes.has('Kafka');
+    const databaseCount = nodes.filter((node) => node.type === 'SQL' || node.type === 'Blob').length;
+    const hasRealtimePrompt = ['chat', 'notification', 'feed', 'stream', 'collaborative'].some((keyword) => lowerPrompt.includes(keyword));
+    const hasFinancialPrompt = ['payment', 'trade', 'order'].some((keyword) => lowerPrompt.includes(keyword));
+    const mentionsDisconnected = failedRuleMessages.some((message) => message.toLowerCase().includes('not connected') || message.toLowerCase().includes('floating'));
 
-    const templates: Array<Omit<IConstraintChange, 'id' | 'introducedAt' | 'introducedAtMinute' | 'status' | 'interviewerMessage'>> = [];
+    let selected: Omit<IConstraintChange, 'id' | 'introducedAt' | 'introducedAtMinute' | 'status' | 'interviewerMessage'>;
 
-    if (lowerPrompt.includes('chat') || lowerPrompt.includes('notification') || lowerPrompt.includes('feed') || lowerPrompt.includes('stream')) {
-        templates.push({
+    if (!hasCache && (hasRealtimePrompt || nodeTypes.has('LB') || connectionCount >= 3)) {
+        selected = {
             type: 'traffic',
             title: 'Traffic Spike',
             description: 'Peak traffic is now expected to spike to roughly 10x the original estimate during major live events.',
             severity: 'high',
             impactAreas: ['scalability', 'caching', 'load balancing'],
-        });
-    }
-
-    if (lowerPrompt.includes('payment') || lowerPrompt.includes('trade') || lowerPrompt.includes('order')) {
-        templates.push({
+        };
+    } else if ((databaseCount <= 1 || mentionsDisconnected) && difficulty !== 'easy') {
+        selected = {
+            type: 'reliability',
+            title: 'Regional Failover',
+            description: 'The system must continue serving users during a full regional outage with minimal disruption.',
+            severity: difficulty === 'hard' ? 'high' : 'moderate',
+            impactAreas: ['availability', 'replication', 'disaster recovery'],
+        };
+    } else if (!hasQueue && (hasRealtimePrompt || nodeTypes.has('Server') || nodeTypes.has('Function'))) {
+        selected = {
+            type: 'product',
+            title: 'Real-Time Updates',
+            description: 'Users now expect live updates in the product instead of relying on manual refreshes or long polling.',
+            severity: 'moderate',
+            impactAreas: ['realtime', 'messaging', 'fan-out'],
+        };
+    } else if (hasFinancialPrompt) {
+        selected = {
             type: 'latency',
             title: 'Stricter Write Latency',
             description: 'Critical write operations now need to complete within 150ms at p95 while preserving correctness.',
             severity: 'high',
             impactAreas: ['latency', 'consistency', 'storage'],
-        });
+        };
+    } else {
+        selected = {
+            type: 'compliance',
+            title: 'Regional Data Residency',
+            description: 'Data for EU users must remain in-region and cannot be freely replicated across all geographies.',
+            severity: 'moderate',
+            impactAreas: ['compliance', 'storage', 'multi-region'],
+        };
     }
-
-    templates.push({
-        type: 'reliability',
-        title: 'Regional Failover',
-        description: 'The system must continue serving users during a full regional outage with minimal disruption.',
-        severity: difficulty === 'hard' ? 'high' : 'moderate',
-        impactAreas: ['availability', 'replication', 'disaster recovery'],
-    });
-
-    templates.push({
-        type: 'compliance',
-        title: 'Regional Data Residency',
-        description: 'Data for EU users must remain in-region and cannot be freely replicated across all geographies.',
-        severity: 'moderate',
-        impactAreas: ['compliance', 'storage', 'multi-region'],
-    });
-
-    templates.push({
-        type: 'product',
-        title: 'Real-Time Updates',
-        description: 'Users now expect live updates in the product instead of relying on manual refreshes or long polling.',
-        severity: 'moderate',
-        impactAreas: ['realtime', 'messaging', 'fan-out'],
-    });
-
-    const selected = difficulty === 'hard'
-        ? templates[0]
-        : templates.find((template) => template.type !== 'compliance') || templates[0];
 
     const interviewerMessage = `Let's add a new constraint: ${selected.description} How would you adjust your design to handle that?`;
 
@@ -186,14 +202,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             ? sanitizeMessage(candidateReply.trim())
             : null;
 
+        const structuralResults = evaluateStructure(
+            nodes,
+            connections,
+            session.question.requirements || [],
+            session.question.constraints || []
+        );
+
+        const failedRuleMessages = structuralResults.details
+            .filter((detail) => detail.status === 'fail')
+            .map((detail) => detail.message);
+
         const liveChangeDecision = shouldTriggerConstraintChange(session, nodes.length);
 
         if (liveChangeDecision.shouldTrigger) {
-            const constraintChange = generateConstraintChange(
-                session.question.prompt,
-                session.difficulty,
-                liveChangeDecision.introducedAtMinute
-            );
+            const constraintChange = generateConstraintChange({
+                prompt: session.question.prompt,
+                difficulty: session.difficulty,
+                introducedAtMinute: liveChangeDecision.introducedAtMinute,
+                nodes,
+                connections,
+                failedRuleMessages
+            });
 
             const newMessage = {
                 role: 'interviewer' as const,
@@ -224,13 +254,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             });
         }
 
-        const structuralResults = evaluateStructure(
-            nodes,
-            connections,
-            session.question.requirements || [],
-            session.question.constraints || []
-        );
-
         const formatNode = (n: ICanvasNode) => ({ type: n.type, label: n.label });
         const formatConn = (c: IConnection) => {
             const from = nodes.find((n: ICanvasNode) => n.id === c.from);
@@ -238,7 +261,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             return { fromType: from?.type, fromLabel: from?.label, toType: to?.type, toLabel: to?.label, label: c.label };
         };
 
-        const failedRules = structuralResults.details.filter(d => d.status === 'fail').map(d => d.message);
+        const failedRules = failedRuleMessages;
 
         const prompt = `You are an expert systems design interviewer evaluating a candidate in a real-time system design interview. 
 
