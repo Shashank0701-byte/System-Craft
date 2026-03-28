@@ -329,6 +329,8 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         <div className="relative flex flex-col h-screen overflow-hidden bg-background-dark text-white font-display">
             <InterviewHeader
                 difficulty={session.difficulty}
+                constraintChangeCount={session.constraintChanges?.length || 0}
+                latestConstraintTitle={session.constraintChanges?.at(-1)?.title}
                 saveStatus={saveStatus}
                 timer={timer}
                 status={session.status}

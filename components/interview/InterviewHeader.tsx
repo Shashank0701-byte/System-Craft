@@ -5,6 +5,8 @@ import { InterviewTimer } from './InterviewTimer';
 
 interface InterviewHeaderProps {
     difficulty: 'easy' | 'medium' | 'hard';
+    constraintChangeCount?: number;
+    latestConstraintTitle?: string;
     /** Save status */
     saveStatus: 'idle' | 'saving' | 'saved' | 'error';
     /** Timer state */
@@ -32,6 +34,8 @@ const DIFFICULTY_LABELS: Record<string, { color: string; label: string }> = {
 
 export function InterviewHeader({
     difficulty,
+    constraintChangeCount = 0,
+    latestConstraintTitle,
     saveStatus,
     timer,
     status,
@@ -41,7 +45,6 @@ export function InterviewHeader({
 }: InterviewHeaderProps) {
     const diffConfig = DIFFICULTY_LABELS[difficulty] || DIFFICULTY_LABELS.medium;
     const isInProgress = status === 'in_progress';
-
 
     const renderSaveStatus = () => {
         switch (saveStatus) {
@@ -73,7 +76,6 @@ export function InterviewHeader({
 
     return (
         <header className="relative h-14 flex items-center justify-between px-4 border-b border-border-dark bg-sidebar-bg-dark shrink-0 z-20">
-            {/* Left: Logo & Interview badge */}
             <div className="flex items-center gap-4">
                 <Link href="/interview" className="flex items-center gap-2 text-white group">
                     <div className="p-1.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
@@ -92,15 +94,28 @@ export function InterviewHeader({
                     </span>
                 </div>
 
+                {constraintChangeCount > 0 && (
+                    <div
+                        className="hidden lg:flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1"
+                        title={latestConstraintTitle || 'Interview requirements updated'}
+                    >
+                        <span className="material-symbols-outlined text-[14px] text-amber-400">bolt</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-amber-300">
+                            Updated Requirements
+                        </span>
+                        <span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-black text-amber-200">
+                            {constraintChangeCount}
+                        </span>
+                    </div>
+                )}
+
                 {renderSaveStatus()}
             </div>
 
-            {/* Center: Timer */}
             <div className="absolute left-1/2 -translate-x-1/2">
                 <InterviewTimer {...timer} />
             </div>
 
-            {/* Right: Actions */}
             <div className="flex items-center gap-3">
                 {isInProgress && (
                     <button
