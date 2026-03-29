@@ -19,7 +19,7 @@ export async function POST(
 
         // 2. Locate Constraint
         const constraintChanges = session.constraintChanges || [];
-        const constraintIndex = constraintChanges.findIndex((c: any) => c.id === constraintId);
+        const constraintIndex = constraintChanges.findIndex((c: { id: string }) => c.id === constraintId);
         if (constraintIndex === -1) {
             return NextResponse.json({ error: 'Constraint not found' }, { status: 404 });
         }
