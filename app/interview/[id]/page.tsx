@@ -101,22 +101,30 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         onConstraintChange: handleConstraintChange
     });
 
+    // Extract stable setter from ai object
+    const { setMessages } = ai;
+
     // Final Validation Phase Trigger automatically checks and dispatches.
     useEffect(() => {
         if (!finalValidationTriggered && timer.minutes !== undefined && timer.minutes <= 10 && session?.status === 'in_progress') {
             setFinalValidationTriggered(true);
-            
+
             authFetch(`/api/interview/${id}/final-validation`, { method: 'POST' })
-                .then(res => res.json())
+                .then(async (res) => {
+                    if (!res.ok) {
+                        throw new Error(await res.text() || res.statusText);
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (data.success && data.messages) {
-                        if (ai.setMessages) ai.setMessages(data.messages);
+                        if (setMessages) setMessages(data.messages);
                         setIsInterviewPanelOpen(true);
                     }
                 })
                 .catch(err => console.error('Final validation trigger failed:', err));
         }
-    }, [timer.minutes, finalValidationTriggered, session?.status, id, ai]);
+    }, [timer.minutes, finalValidationTriggered, session?.status, id, setMessages]);
 
     // Fetch session data
     const fetchSession = useCallback(async () => {

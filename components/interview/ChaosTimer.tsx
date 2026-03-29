@@ -21,7 +21,7 @@ export function ChaosTimer({ constraint, onTimeout }: ChaosTimerProps) {
 
     const calculateRemaining = useCallback(() => {
         if (constraint.failedAt) return { remaining: 0, mode: 'failed' as const };
-        
+
         const now = Date.now();
         if (constraint.overtimeAt) {
             const overtimeEnd = new Date(constraint.overtimeAt).getTime() + PENALTY_MS;
@@ -30,24 +30,22 @@ export function ChaosTimer({ constraint, onTimeout }: ChaosTimerProps) {
 
         const normalEnd = new Date(constraint.introducedAt).getTime() + WARNING_MS;
         const remaining = normalEnd - now;
-        
+
         if (remaining <= 0) {
             // It hit 0 naturally but we haven't received DB overtime flag yet
             return { remaining: 0, mode: 'normal' as const };
         }
         return { remaining: Math.ceil(remaining / 1000), mode: 'normal' as const };
-    }, [constraint]);
+    }, [constraint, PENALTY_MS, WARNING_MS]);
 
     const [state, setState] = useState(() => calculateRemaining());
-    
-    // To prevent spamming the effect while waiting for DB response
+
+    // Prevent duplicate timeout callbacks while waiting for DB response.
+    // These refs track whether we've already sent a warning or penalty request.
     const hasTriggeredWarning = useRef(false);
     const hasTriggeredPenalty = useRef(false);
 
     useEffect(() => {
-        // Reset triggers if DB fields update
-        if (constraint.overtimeAt) hasTriggeredWarning.current = false;
-        if (constraint.failedAt) hasTriggeredPenalty.current = false;
 
         const interval = setInterval(() => {
             const current = calculateRemaining();

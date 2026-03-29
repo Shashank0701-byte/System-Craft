@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
-import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import InterviewSession, { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 
 export async function POST(
     req: NextRequest,
@@ -19,7 +19,7 @@ export async function POST(
 
         // 2. Locate Constraint
         const constraintChanges = session.constraintChanges || [];
-        const constraintIndex = constraintChanges.findIndex((c: { id: string }) => c.id === constraintId);
+        const constraintIndex = constraintChanges.findIndex((c: IConstraintChange) => c.id === constraintId);
         if (constraintIndex === -1) {
             return NextResponse.json({ error: 'Constraint not found' }, { status: 404 });
         }

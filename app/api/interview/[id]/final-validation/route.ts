@@ -1,16 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/src/lib/db/mongoose';
+import dbConnect, { isValidObjectId } from '@/src/lib/db/mongoose';
 import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import User from '@/src/lib/db/models/User';
+import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 
 export async function POST(
     req: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
-        await dbConnect();
         const { id } = await context.params;
 
-        const session = await InterviewSession.findOne({ id });
+        // Validate session ID format
+        if (!isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 });
+        }
+
+        // Authenticate user
+        const authHeader = req.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
+        if (!authenticatedUser) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        await dbConnect();
+
+        // Find user in database
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        // Find session and verify ownership
+        const session = await InterviewSession.findOne({ _id: id, userId: user._id });
         if (!session) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         }
@@ -18,7 +40,7 @@ export async function POST(
         if (!session.aiMessages) session.aiMessages = [];
 
         // Idempotency check: Have we already sent it?
-        const alreadySent = session.aiMessages.some((m: { role: string; content: string }) => 
+        const alreadySent = session.aiMessages.some((m: { role: string; content: string }) =>
             m.role === 'interviewer' && m.content.includes("Final Validation Phase")
         );
 
