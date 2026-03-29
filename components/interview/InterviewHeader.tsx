@@ -26,6 +26,7 @@ interface InterviewHeaderProps {
     isSubmitting?: boolean;
     /** Session ID for linking to results */
     sessionId?: string;
+    onChaosTimeout?: (type: 'warning' | 'penalty', id: string) => void;
 }
 
 const DIFFICULTY_LABELS: Record<string, { color: string; label: string }> = {
@@ -44,6 +45,7 @@ export function InterviewHeader({
     onSubmit,
     isSubmitting = false,
     sessionId,
+    onChaosTimeout,
 }: InterviewHeaderProps) {
     const diffConfig = DIFFICULTY_LABELS[difficulty] || DIFFICULTY_LABELS.medium;
     const isInProgress = status === 'in_progress';
@@ -114,12 +116,11 @@ export function InterviewHeader({
                 {renderSaveStatus()}
             </div>
 
-            <div className="absolute left-1/2 -translate-x-1/2">
-                {latestConstraint && latestConstraint.status !== 'addressed' ? (
-                    <ChaosTimer introducedAt={latestConstraint.introducedAt} />
-                ) : (
-                    <InterviewTimer {...timer} />
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+                {latestConstraint && latestConstraint.status !== 'addressed' && (
+                    <ChaosTimer constraint={latestConstraint} onTimeout={onChaosTimeout || (() => {})} />
                 )}
+                <InterviewTimer {...timer} />
             </div>
 
             <div className="flex items-center gap-3">

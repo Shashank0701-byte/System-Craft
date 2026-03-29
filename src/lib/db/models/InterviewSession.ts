@@ -38,6 +38,8 @@ export interface IConstraintChange {
     impactAreas: string[];
     interviewerMessage: string;
     impactedNodeId?: string;
+    overtimeAt?: Date;
+    failedAt?: Date;
 }
 
 // Full evaluation result
@@ -143,6 +145,8 @@ const ConstraintChangeSchema = new Schema(
         impactAreas: { type: [String], default: [] },
         interviewerMessage: { type: String, required: true },
         impactedNodeId: { type: String, default: null },
+        overtimeAt: { type: Date, default: null },
+        failedAt: { type: Date, default: null },
     },
     { _id: false }
 );

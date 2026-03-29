@@ -323,6 +323,23 @@ export default function InterviewCanvasPage({ params }: PageProps) {
 
     if (!isAuthenticated) return null;
 
+    const handleChaosTimeout = useCallback(async (type: 'warning' | 'penalty', constraintId: string) => {
+        try {
+            const res = await authFetch(`/api/interview/${id}/chaos-timeout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, constraintId })
+            });
+            const data = await res.json();
+            if (data.success && data.messages) {
+                if (ai.setMessages) ai.setMessages(data.messages);
+                setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
+            }
+        } catch (err) {
+            console.error('Chaos timeout failed:', err);
+        }
+    }, [id, ai]);
+
     const isReadOnly = session.status !== 'in_progress';
 
     return (
@@ -337,6 +354,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 sessionId={id}
+                onChaosTimeout={handleChaosTimeout}
             />
 
             {/* Submit Error Banner */}
