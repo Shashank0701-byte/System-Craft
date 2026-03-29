@@ -56,6 +56,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const [showHints, setShowHints] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isInterviewPanelOpen, setIsInterviewPanelOpen] = useState(false);
+    const [finalValidationTriggered, setFinalValidationTriggered] = useState(false);
 
     // Refs for save logic
     const isSavingRef = useRef(false);
@@ -99,6 +100,23 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         initialMessages: session?.aiMessages || [],
         onConstraintChange: handleConstraintChange
     });
+
+    // Final Validation Phase Trigger automatically checks and dispatches.
+    useEffect(() => {
+        if (!finalValidationTriggered && timer.minutes !== undefined && timer.minutes <= 10 && session?.status === 'in_progress') {
+            setFinalValidationTriggered(true);
+            
+            authFetch(`/api/interview/${id}/final-validation`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.messages) {
+                        if (ai.setMessages) ai.setMessages(data.messages);
+                        setIsInterviewPanelOpen(true);
+                    }
+                })
+                .catch(err => console.error('Final validation trigger failed:', err));
+        }
+    }, [timer.minutes, finalValidationTriggered, session?.status, id, ai.setMessages]);
 
     // Fetch session data
     const fetchSession = useCallback(async () => {
@@ -284,6 +302,24 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         };
     }, [id]);
 
+    const handleChaosTimeout = useCallback(async (type: 'warning' | 'penalty', constraintId: string) => {
+        try {
+            const res = await authFetch(`/api/interview/${id}/chaos-timeout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, constraintId })
+            });
+            const data = await res.json();
+            if (data.success && data.messages) {
+                if (ai.setMessages) ai.setMessages(data.messages);
+                setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
+                setIsInterviewPanelOpen(true); // Automatically slide open the interviewer panel
+            }
+        } catch (err) {
+            console.error('Chaos timeout failed:', err);
+        }
+    }, [id, ai]);
+
     // Loading state
     if (authLoading || isLoading) {
         return (
@@ -322,23 +358,6 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     }
 
     if (!isAuthenticated) return null;
-
-    const handleChaosTimeout = useCallback(async (type: 'warning' | 'penalty', constraintId: string) => {
-        try {
-            const res = await authFetch(`/api/interview/${id}/chaos-timeout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type, constraintId })
-            });
-            const data = await res.json();
-            if (data.success && data.messages) {
-                if (ai.setMessages) ai.setMessages(data.messages);
-                setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
-            }
-        } catch (err) {
-            console.error('Chaos timeout failed:', err);
-        }
-    }, [id, ai]);
 
     const isReadOnly = session.status !== 'in_progress';
 
