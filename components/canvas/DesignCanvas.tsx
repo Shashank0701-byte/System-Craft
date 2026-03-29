@@ -487,7 +487,7 @@ export function DesignCanvas({
       x: e.clientX / scale - node.x,
       y: e.clientY / scale - node.y,
     });
-  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly]);
+  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
 
   // Handle completing a connection (mouse up on another node)
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -583,7 +583,7 @@ export function DesignCanvas({
     setSelectedConnectionId(null);
     setEditingNodeId(null); // Cancel any open label editor
     setEditingConnectionId(null); // Cancel any open connection label editor
-  }, []);
+  }, [setSelectedNodeId, setSelectedConnectionId, setEditingConnectionId]);
 
   // Handle double-click on a node's label to start editing
   const handleLabelDoubleClick = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -634,7 +634,7 @@ export function DesignCanvas({
     setEditingConnectionId(connectionId);
     setEditingConnectionLabel(conn.label || '');
     setTimeout(() => connectionLabelInputRef.current?.focus(), 0);
-  }, [readOnly, connections]);
+  }, [readOnly, connections, setEditingConnectionId, setEditingConnectionLabel]);
 
   // Commit the edited connection label
   const handleConnectionLabelSubmit = useCallback((connectionId: string) => {
@@ -665,7 +665,7 @@ export function DesignCanvas({
       skipNextDebouncedSaveRef.current = true;
       onSave(nodes, newConnections);
     }
-  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave]);
+  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave, setEditingConnectionId]);
 
   // Delete selected node or connection
   const handleDeleteSelected = useCallback(() => {
@@ -680,7 +680,7 @@ export function DesignCanvas({
       saveToHistory(nodes, newConnections);
       setSelectedConnectionId(null);
     }
-  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly]);
+  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -856,11 +856,11 @@ export function DesignCanvas({
                 data-node
                 style={{ left: node.x, top: node.y }}
                 className={`absolute w-[60px] h-[60px] rounded-xl flex flex-col items-center justify-center select-none shadow-lg transition-all duration-300 ${isImpacted
-                  ? 'bg-red-500/10 border-2 border-red-500/50 opacity-80 grayscale-[50%] cursor-not-allowed'
+                  ? 'bg-red-500/10 border-2 border-red-500/50 opacity-80 grayscale-[50%] cursor-not-allowed pointer-events-auto'
                   : isBottlenecked
-                  ? 'bg-red-600 border-2 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.7)] text-white ring-2 ring-red-500 animate-pulse'
+                  ? 'bg-red-600 border-2 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.7)] text-white ring-2 ring-red-500 animate-pulse pointer-events-auto'
                   : isWarning
-                  ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'
+                  ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)] pointer-events-auto'
                   : 'bg-white dark:bg-[#1e1e24] cursor-move transition-shadow pointer-events-auto ' + (isSelected
                     ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
                     : 'border-2 border-transparent hover:border-primary')

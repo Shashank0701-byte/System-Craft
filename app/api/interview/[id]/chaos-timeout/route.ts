@@ -16,6 +16,9 @@ export async function POST(
         if (!session) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         }
+        if (session.status !== 'in_progress') {
+            return NextResponse.json({ success: true, warning: 'Session is no longer in progress' });
+        }
 
         // 2. Locate Constraint
         const constraintChanges = session.constraintChanges || [];
@@ -27,7 +30,7 @@ export async function POST(
         const constraint = constraintChanges[constraintIndex];
 
         // 3. Early Returns (already addressed or failed)
-        if (constraint.status === 'addressed' || (type === 'warning' && constraint.overtimeAt) || (type === 'penalty' && constraint.failedAt)) {
+        if (constraint.status === 'addressed' || constraint.failedAt || (type === 'warning' && constraint.overtimeAt)) {
             return NextResponse.json({ success: true, warning: 'Already processed' });
         }
 

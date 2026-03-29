@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { ICanvasNode, IConnection } from '@/src/lib/db/models/Design';
 import { runSimulation, SimulationResult } from '@/src/lib/simulation/engine';
+
+const EMPTY_METRICS: SimulationResult = {
+    nodeMetrics: {},
+    edgeMetrics: {},
+    globalStatus: 'healthy'
+};
 
 export function useSimulationEngine(
     nodes: ICanvasNode[],
@@ -8,26 +14,10 @@ export function useSimulationEngine(
     targetRps: number,
     isRunning: boolean
 ) {
-    const [metrics, setMetrics] = useState<SimulationResult>({
-        nodeMetrics: {},
-        edgeMetrics: {},
-        globalStatus: 'healthy'
-    });
-
-    useEffect(() => {
+    return useMemo<SimulationResult>(() => {
         if (!isRunning || targetRps <= 0) {
-            setMetrics({
-                nodeMetrics: {},
-                edgeMetrics: {},
-                globalStatus: 'healthy'
-            });
-            return;
+            return EMPTY_METRICS;
         }
-
-        const result = runSimulation(nodes, connections, targetRps);
-        setMetrics(result);
-        
+        return runSimulation(nodes, connections, targetRps);
     }, [nodes, connections, targetRps, isRunning]);
-
-    return metrics;
 }
