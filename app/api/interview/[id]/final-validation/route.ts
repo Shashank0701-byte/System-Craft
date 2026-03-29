@@ -18,7 +18,7 @@ export async function POST(
         if (!session.aiMessages) session.aiMessages = [];
 
         // Idempotency check: Have we already sent it?
-        const alreadySent = session.aiMessages.some((m: any) => 
+        const alreadySent = session.aiMessages.some((m: { role: string; content: string }) => 
             m.role === 'interviewer' && m.content.includes("Final Validation Phase")
         );
 

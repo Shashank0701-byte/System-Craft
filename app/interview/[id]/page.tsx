@@ -116,7 +116,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 })
                 .catch(err => console.error('Final validation trigger failed:', err));
         }
-    }, [timer.minutes, finalValidationTriggered, session?.status, id, ai.setMessages]);
+    }, [timer.minutes, finalValidationTriggered, session?.status, id, ai]);
 
     // Fetch session data
     const fetchSession = useCallback(async () => {

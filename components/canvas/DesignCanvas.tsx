@@ -318,14 +318,14 @@ export function DesignCanvas({
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, []);
+  }, [dispatch, setSelectedNodeId, setSelectedConnectionId, setTempNodes]);
 
   const handleRedo = useCallback(() => {
     dispatch({ type: 'REDO' });
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, []);
+  }, [dispatch, setSelectedNodeId, setSelectedConnectionId, setTempNodes]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
