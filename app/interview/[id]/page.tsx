@@ -101,22 +101,30 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         onConstraintChange: handleConstraintChange
     });
 
+    const { setMessages } = ai;
+
     // Final Validation Phase Trigger automatically checks and dispatches.
     useEffect(() => {
         if (!finalValidationTriggered && timer.minutes !== undefined && timer.minutes <= 10 && session?.status === 'in_progress') {
             setFinalValidationTriggered(true);
             
             authFetch(`/api/interview/${id}/final-validation`, { method: 'POST' })
-                .then(res => res.json())
+                .then(async res => {
+                    if (!res.ok) {
+                        const errText = await res.text();
+                        throw new Error(errText || res.statusText);
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (data.success && data.messages) {
-                        if (ai.setMessages) ai.setMessages(data.messages);
+                        if (setMessages) setMessages(data.messages);
                         setIsInterviewPanelOpen(true);
                     }
                 })
                 .catch(err => console.error('Final validation trigger failed:', err));
         }
-    }, [timer.minutes, finalValidationTriggered, session?.status, id, ai]);
+    }, [timer.minutes, finalValidationTriggered, session?.status, id, setMessages]);
 
     // Fetch session data
     const fetchSession = useCallback(async () => {
@@ -311,14 +319,14 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             });
             const data = await res.json();
             if (data.success && data.messages) {
-                if (ai.setMessages) ai.setMessages(data.messages);
+                if (setMessages) setMessages(data.messages);
                 setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
                 setIsInterviewPanelOpen(true); // Automatically slide open the interviewer panel
             }
         } catch (err) {
             console.error('Chaos timeout failed:', err);
         }
-    }, [id, ai]);
+    }, [id, setMessages]);
 
     // Loading state
     if (authLoading || isLoading) {

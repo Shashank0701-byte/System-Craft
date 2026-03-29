@@ -8,16 +8,16 @@ interface ChaosTimerProps {
     onTimeout: (type: 'warning' | 'penalty', constraintId: string) => void;
 }
 
+// Fast-track values for testing (normally 5 mins and 2 mins)
+// Actually, stick to 5m and 2m per user requirement
+const WARNING_MS = 5 * 60 * 1000;
+const PENALTY_MS = 2 * 60 * 1000;
+
 export function ChaosTimer({ constraint, onTimeout }: ChaosTimerProps) {
     const onTimeoutRef = useRef(onTimeout);
     useEffect(() => {
         onTimeoutRef.current = onTimeout;
     }, [onTimeout]);
-
-    // Fast-track values for testing (normally 5 mins and 2 mins)
-    // Actually, stick to 5m and 2m per user requirement
-    const WARNING_MS = 5 * 60 * 1000;
-    const PENALTY_MS = 2 * 60 * 1000;
 
     const calculateRemaining = useCallback(() => {
         if (constraint.failedAt) return { remaining: 0, mode: 'failed' as const };
@@ -40,25 +40,23 @@ export function ChaosTimer({ constraint, onTimeout }: ChaosTimerProps) {
 
     const [state, setState] = useState(() => calculateRemaining());
     
-    // To prevent spamming the effect while waiting for DB response
-    const hasTriggeredWarning = useRef(false);
-    const hasTriggeredPenalty = useRef(false);
+    // Track if we have already dispatched the timeout API requests
+    const hasPendingWarningRequest = useRef(false);
+    const hasPendingPenaltyRequest = useRef(false);
 
     useEffect(() => {
-        // Reset triggers if DB fields update
-        if (constraint.overtimeAt) hasTriggeredWarning.current = false;
-        if (constraint.failedAt) hasTriggeredPenalty.current = false;
-
+        // Reset timers on DB fields updates have been removed (unnecessary toggles)
+        
         const interval = setInterval(() => {
             const current = calculateRemaining();
             setState(current);
             
             if (current.remaining <= 0) {
-                if (current.mode === 'normal' && !constraint.overtimeAt && !hasTriggeredWarning.current) {
-                    hasTriggeredWarning.current = true;
+                if (current.mode === 'normal' && !constraint.overtimeAt && !hasPendingWarningRequest.current) {
+                    hasPendingWarningRequest.current = true;
                     onTimeoutRef.current('warning', constraint.id);
-                } else if (current.mode === 'overtime' && !constraint.failedAt && !hasTriggeredPenalty.current) {
-                    hasTriggeredPenalty.current = true;
+                } else if (current.mode === 'overtime' && !constraint.failedAt && !hasPendingPenaltyRequest.current) {
+                    hasPendingPenaltyRequest.current = true;
                     onTimeoutRef.current('penalty', constraint.id);
                 }
             }

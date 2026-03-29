@@ -42,7 +42,6 @@ export function SimulationControls({
                     step="5000"
                     value={targetRps}
                     onChange={(e) => onChangeRps(parseInt(e.target.value, 10))}
-                    disabled={!isRunning}
                     className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 dark:bg-slate-700 accent-primary focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <div className="flex justify-between text-[10px] font-mono text-slate-400">

@@ -68,8 +68,8 @@ function generateConstraintChange(
             impactAreas: ['scalability', 'caching', 'load balancing'],
         };
     } else if ((databaseCount <= 1 || mentionsDisconnected) && difficulty !== 'easy') {
-        const candidateNodes = nodes.filter((n) => ['SQL', 'Blob', 'Cache', 'Server'].includes(n.type));
-        const victim = candidateNodes[Math.floor(Math.random() * candidateNodes.length)];
+        const candidateNodes = nodes.filter((n) => ['SQL', 'Blob', 'Cache', 'Server', 'LB', 'Queue', 'Kafka', 'Function', 'CDN'].includes(n.type));
+        const victim = candidateNodes.length > 0 ? candidateNodes[Math.floor(Math.random() * candidateNodes.length)] : undefined;
         selected = {
             type: 'reliability',
             title: 'Node Failure',

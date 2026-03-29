@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
-import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import InterviewSession, { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 
 export async function POST(
     req: NextRequest,
@@ -19,7 +19,7 @@ export async function POST(
 
         // 2. Locate Constraint
         const constraintChanges = session.constraintChanges || [];
-        const constraintIndex = constraintChanges.findIndex((c: { id: string }) => c.id === constraintId);
+        const constraintIndex = constraintChanges.findIndex((c: IConstraintChange) => c.id === constraintId);
         if (constraintIndex === -1) {
             return NextResponse.json({ error: 'Constraint not found' }, { status: 404 });
         }
@@ -45,7 +45,8 @@ export async function POST(
             session.markModified('aiMessages');
         } else if (type === 'penalty') {
             constraint.failedAt = new Date();
-            // We keep status as 'active' so the UI node stays visibly broken
+            constraint.status = 'addressed';
+            // We keep status as 'addressed' but the failedAt timestamp ensures it's tracked as a failure
             session.aiMessages.push({
                 role: 'interviewer',
                 content: `Alright, time's up on the ${constraint.title} scenario. Since we weren't able to establish a complete mitigation plan in time, I'll be noting this gap in high-availability planning for the evaluation. That said, let's keep moving forward with the rest of your system design—what were you thinking for the next component?`,
