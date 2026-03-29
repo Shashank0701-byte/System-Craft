@@ -68,12 +68,15 @@ function generateConstraintChange(
             impactAreas: ['scalability', 'caching', 'load balancing'],
         };
     } else if ((databaseCount <= 1 || mentionsDisconnected) && difficulty !== 'easy') {
+        const candidateNodes = nodes.filter((n) => ['SQL', 'Blob', 'Cache', 'Server'].includes(n.type));
+        const victim = candidateNodes[Math.floor(Math.random() * candidateNodes.length)];
         selected = {
             type: 'reliability',
-            title: 'Regional Failover',
-            description: 'The system must continue serving users during a full regional outage with minimal disruption.',
+            title: 'Node Failure',
+            description: victim ? `The ${victim.label || victim.type} component just went offline unexpectedly. The system must continue serving users with minimal disruption.` : 'The system must continue serving users during a full regional outage with minimal disruption.',
             severity: difficulty === 'hard' ? 'high' : 'moderate',
             impactAreas: ['availability', 'replication', 'disaster recovery'],
+            impactedNodeId: victim?.id,
         };
     } else if (!hasQueue && (hasRealtimePrompt || nodeTypes.has('Server') || nodeTypes.has('Function'))) {
         selected = {

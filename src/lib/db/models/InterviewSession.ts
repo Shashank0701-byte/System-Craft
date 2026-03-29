@@ -37,6 +37,7 @@ export interface IConstraintChange {
     status: ConstraintChangeStatus;
     impactAreas: string[];
     interviewerMessage: string;
+    impactedNodeId?: string;
 }
 
 // Full evaluation result
@@ -141,6 +142,7 @@ const ConstraintChangeSchema = new Schema(
         },
         impactAreas: { type: [String], default: [] },
         interviewerMessage: { type: String, required: true },
+        impactedNodeId: { type: String, default: null },
     },
     { _id: false }
 );

@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import { InterviewTimer } from './InterviewTimer';
+import { ChaosTimer } from './ChaosTimer';
+import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 
 interface InterviewHeaderProps {
     difficulty: 'easy' | 'medium' | 'hard';
     constraintChangeCount?: number;
-    latestConstraintTitle?: string;
+    latestConstraint?: IConstraintChange;
     /** Save status */
     saveStatus: 'idle' | 'saving' | 'saved' | 'error';
     /** Timer state */
@@ -35,7 +37,7 @@ const DIFFICULTY_LABELS: Record<string, { color: string; label: string }> = {
 export function InterviewHeader({
     difficulty,
     constraintChangeCount = 0,
-    latestConstraintTitle,
+    latestConstraint,
     saveStatus,
     timer,
     status,
@@ -97,7 +99,7 @@ export function InterviewHeader({
                 {constraintChangeCount > 0 && (
                     <div
                         className="hidden lg:flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1"
-                        title={latestConstraintTitle || 'Interview requirements updated'}
+                        title={latestConstraint?.title || 'Interview requirements updated'}
                     >
                         <span className="material-symbols-outlined text-[14px] text-amber-400">bolt</span>
                         <span className="text-[11px] font-bold uppercase tracking-wide text-amber-300">
@@ -113,7 +115,11 @@ export function InterviewHeader({
             </div>
 
             <div className="absolute left-1/2 -translate-x-1/2">
-                <InterviewTimer {...timer} />
+                {latestConstraint && latestConstraint.status !== 'addressed' ? (
+                    <ChaosTimer introducedAt={latestConstraint.introducedAt} />
+                ) : (
+                    <InterviewTimer {...timer} />
+                )}
             </div>
 
             <div className="flex items-center gap-3">

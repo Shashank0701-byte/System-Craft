@@ -330,7 +330,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             <InterviewHeader
                 difficulty={session.difficulty}
                 constraintChangeCount={session.constraintChanges?.length || 0}
-                latestConstraintTitle={session.constraintChanges?.at(-1)?.title}
+                latestConstraint={session.constraintChanges?.at(-1)}
                 saveStatus={saveStatus}
                 timer={timer}
                 status={session.status}
@@ -377,6 +377,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                     onSave={isReadOnly ? undefined : saveDesign}
                     readOnly={isReadOnly}
                     stateRef={isReadOnly ? undefined : canvasStateRef}
+                    activeConstraints={session.constraintChanges || []}
                 />
 
                 {/* Properties Panel */}
