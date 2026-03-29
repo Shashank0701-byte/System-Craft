@@ -104,26 +104,35 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const { setMessages } = ai;
 
     // Final Validation Phase Trigger automatically checks and dispatches.
+    const finalValidationInFlight = useRef(false);
     useEffect(() => {
-        if (!finalValidationTriggered && timer.minutes !== undefined && timer.minutes <= 10 && session?.status === 'in_progress') {
-            setFinalValidationTriggered(true);
-            
-            authFetch(`/api/interview/${id}/final-validation`, { method: 'POST' })
-                .then(async res => {
-                    if (!res.ok) {
-                        const errText = await res.text();
-                        throw new Error(errText || res.statusText);
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    if (data.success && data.messages) {
-                        if (setMessages) setMessages(data.messages);
-                        setIsInterviewPanelOpen(true);
-                    }
-                })
-                .catch(err => console.error('Final validation trigger failed:', err));
-        }
+        if (finalValidationTriggered || finalValidationInFlight.current) return;
+        if (timer.minutes === undefined || timer.minutes > 10) return;
+        if (session?.status !== 'in_progress') return;
+
+        finalValidationInFlight.current = true;
+        
+        authFetch(`/api/interview/${id}/final-validation`, { method: 'POST' })
+            .then(async res => {
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(errText || res.statusText);
+                }
+                return res.json();
+            })
+            .then(data => {
+                setFinalValidationTriggered(true);
+                if (data.success && data.messages) {
+                    if (setMessages) setMessages(data.messages);
+                    setIsInterviewPanelOpen(true);
+                }
+            })
+            .catch(err => {
+                console.error('Final validation trigger failed:', err);
+            })
+            .finally(() => {
+                finalValidationInFlight.current = false;
+            });
     }, [timer.minutes, finalValidationTriggered, session?.status, id, setMessages]);
 
     // Fetch session data
