@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useId, useCallback, useEffect, useReducer, MutableRefObject } from 'react';
+import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
@@ -81,6 +82,8 @@ interface DesignCanvasProps {
   readOnly?: boolean;
   /** Live ref to current canvas state — updated on every change */
   stateRef?: MutableRefObject<CanvasStateRef | null>;
+  /** Array of active constraint changes to visually impact the canvas */
+  activeConstraints?: IConstraintChange[];
 }
 
 const MAX_HISTORY = 50;
@@ -139,7 +142,8 @@ export function DesignCanvas({
   initialConnections = DEFAULT_CONNECTIONS,
   onSave,
   readOnly = false,
-  stateRef
+  stateRef,
+  activeConstraints = []
 }: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -803,17 +807,34 @@ export function DesignCanvas({
             const colors = getColorClasses(node.type);
             const isSelected = node.id === selectedNodeId;
 
+            const isImpacted = activeConstraints.some(c => c.impactedNodeId === node.id && c.status === 'active');
+
             return (
               <div
                 key={node.id}
                 data-node
                 style={{ left: node.x, top: node.y }}
-                className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow pointer-events-auto ${isSelected
-                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
-                  : 'border-2 border-transparent hover:border-primary'
+                className={`absolute w-[60px] h-[60px] rounded-xl flex flex-col items-center justify-center select-none shadow-lg ${isImpacted
+                  ? 'bg-red-500/10 border-2 border-red-500/50 opacity-80 grayscale-[50%] cursor-not-allowed'
+                  : 'bg-white dark:bg-[#1e1e24] cursor-move transition-shadow pointer-events-auto ' + (isSelected
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
+                    : 'border-2 border-transparent hover:border-primary')
                   }`}
-                onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
-                onMouseUp={(e) => handleNodeMouseUp(e, node.id)}
+                onMouseDown={(e) => {
+                  if (isImpacted) {
+                    e.stopPropagation();
+                    setSelectedNodeId(node.id);
+                    return;
+                  }
+                  handleNodeMouseDown(e, node.id);
+                }}
+                onMouseUp={(e) => {
+                  if (isImpacted) {
+                    e.stopPropagation();
+                    return;
+                  }
+                  handleNodeMouseUp(e, node.id);
+                }}
               >
                 {/* Delete button - visible when selected and not readOnly */}
                 {isSelected && !readOnly && (
@@ -828,6 +849,12 @@ export function DesignCanvas({
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
                   </button>
+                )}
+
+                {isImpacted && (
+                  <div className="absolute -top-3 -right-3 size-6 bg-red-600 outline outline-2 outline-white dark:outline-[#1e1e24] text-white rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.5)] z-30 animate-pulse">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span>
+                  </div>
                 )}
                 <span
                   className={`material-symbols-outlined ${colors.text} ${colors.darkText}`}

@@ -149,6 +149,7 @@ export function useInterviewAI({
     return {
         messages,
         isThinking,
-        sendReply
+        sendReply,
+        setMessages
     };
 }
