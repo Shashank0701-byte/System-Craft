@@ -72,10 +72,11 @@ export function runSimulation(nodes: ICanvasNode[], edges: IConnection[], target
         edges.forEach(e => { edgeMetrics[e.id].trafficFlow = 0; });
         
         // We need a snapshot of trafficIn for the current frame to distribute it properly
+        const sourceIds = new Set(sources.map(s => s.id));
         const currentTrafficIn = Object.keys(nodeMetrics).reduce((acc, id) => {
             acc[id] = nodeMetrics[id].trafficIn;
             // Clear trafficIn for non-sources so they can receive the fresh wave
-            if (!sources.find(s => s.id === id)) {
+            if (!sourceIds.has(id)) {
                 nodeMetrics[id].trafficIn = 0;
             }
             return acc;

@@ -425,7 +425,7 @@ export function DesignCanvas({
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
-  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly]);
+  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
