@@ -4,11 +4,11 @@ import InterviewSession from '@/src/lib/db/models/InterviewSession';
 
 export async function POST(
     req: NextRequest,
-    context: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         await dbConnect();
-        const id = context.params.id;
+        const { id } = await context.params;
         const { type, constraintId } = await req.json();
 
         // 1. Fetch Session
