@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useRef, useId, useCallback, useEffect, useReducer, MutableRefObject } from 'react';
+import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
+import { useSimulationEngine } from '@/src/hooks/useSimulationEngine';
+import { SimulationControls } from './SimulationControls';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
@@ -81,6 +84,8 @@ interface DesignCanvasProps {
   readOnly?: boolean;
   /** Live ref to current canvas state — updated on every change */
   stateRef?: MutableRefObject<CanvasStateRef | null>;
+  /** Array of active constraint changes to visually impact the canvas */
+  activeConstraints?: IConstraintChange[];
 }
 
 const MAX_HISTORY = 50;
@@ -139,7 +144,8 @@ export function DesignCanvas({
   initialConnections = DEFAULT_CONNECTIONS,
   onSave,
   readOnly = false,
-  stateRef
+  stateRef,
+  activeConstraints = []
 }: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -175,6 +181,12 @@ export function DesignCanvas({
       stateRef.current = { nodes, connections };
     }
   }, [nodes, connections, stateRef]);
+
+  // Simulation Engine State
+  const [isSimulationRunningRaw, setIsSimulationRunning] = useState(false);
+  const isSimulationRunning = isSimulationRunningRaw && !readOnly;
+  const [targetRps, setTargetRps] = useState(10000);
+  const simulationMetrics = useSimulationEngine(nodes, connections, targetRps, isSimulationRunning);
 
   // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -307,14 +319,14 @@ export function DesignCanvas({
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, []);
+  }, [dispatch, setSelectedNodeId, setSelectedConnectionId, setTempNodes]);
 
   const handleRedo = useCallback(() => {
     dispatch({ type: 'REDO' });
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, []);
+  }, [dispatch, setSelectedNodeId, setSelectedConnectionId, setTempNodes]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -414,7 +426,7 @@ export function DesignCanvas({
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
-  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly]);
+  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -476,7 +488,7 @@ export function DesignCanvas({
       x: e.clientX / scale - node.x,
       y: e.clientY / scale - node.y,
     });
-  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly]);
+  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
 
   // Handle completing a connection (mouse up on another node)
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -572,7 +584,7 @@ export function DesignCanvas({
     setSelectedConnectionId(null);
     setEditingNodeId(null); // Cancel any open label editor
     setEditingConnectionId(null); // Cancel any open connection label editor
-  }, []);
+  }, [setSelectedNodeId, setSelectedConnectionId, setEditingConnectionId]);
 
   // Handle double-click on a node's label to start editing
   const handleLabelDoubleClick = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -623,7 +635,7 @@ export function DesignCanvas({
     setEditingConnectionId(connectionId);
     setEditingConnectionLabel(conn.label || '');
     setTimeout(() => connectionLabelInputRef.current?.focus(), 0);
-  }, [readOnly, connections]);
+  }, [readOnly, connections, setEditingConnectionId, setEditingConnectionLabel]);
 
   // Commit the edited connection label
   const handleConnectionLabelSubmit = useCallback((connectionId: string) => {
@@ -654,7 +666,7 @@ export function DesignCanvas({
       skipNextDebouncedSaveRef.current = true;
       onSave(nodes, newConnections);
     }
-  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave]);
+  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave, setEditingConnectionId]);
 
   // Delete selected node or connection
   const handleDeleteSelected = useCallback(() => {
@@ -669,7 +681,7 @@ export function DesignCanvas({
       saveToHistory(nodes, newConnections);
       setSelectedConnectionId(null);
     }
-  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly]);
+  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -721,6 +733,21 @@ export function DesignCanvas({
       onMouseLeave={handleMouseUp}
       onClick={handleCanvasClick}
     >
+      <style>{`
+        @keyframes dash {
+          to { stroke-dashoffset: -12; }
+        }
+      `}</style>
+      
+      {!readOnly && (
+        <SimulationControls 
+           isRunning={isSimulationRunning} 
+           targetRps={targetRps} 
+           onToggle={setIsSimulationRunning} 
+           onChangeRps={setTargetRps} 
+        />
+      )}
+
       {/* Grid Background (fixed) */}
       <div className="absolute inset-0 bg-grid-pattern pointer-events-none" />
 
@@ -771,16 +798,31 @@ export function DesignCanvas({
           {connections.map((conn) => {
             const isSelected = conn.id === selectedConnectionId;
             const pathD = getConnectionPath(conn.from, conn.to);
+            const edgeMetric = simulationMetrics.edgeMetrics[conn.id];
+            const isFlowing = isSimulationRunning && edgeMetric && edgeMetric.trafficFlow > 0;
+
             return (
-              <path
-                key={conn.id}
-                d={pathD}
-                fill="none"
-                markerEnd={`url(#${arrowId})`}
-                stroke={isSelected ? '#4725f4' : '#4f4b64'}
-                strokeWidth={isSelected ? 3 : 2}
-                className={`pointer-events-none ${isSelected ? 'opacity-100' : 'opacity-60'}`}
-              />
+              <g key={conn.id}>
+                <path
+                  d={pathD}
+                  fill="none"
+                  markerEnd={`url(#${arrowId})`}
+                  stroke={isSelected ? '#4725f4' : '#4f4b64'}
+                  strokeWidth={isSelected ? 3 : 2}
+                  className={`pointer-events-none ${isSelected ? 'opacity-100' : 'opacity-60'}`}
+                />
+                {isFlowing && (
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="3"
+                    strokeDasharray="6,6"
+                    className="pointer-events-none opacity-80"
+                    style={{ animation: 'dash 1s linear infinite' }}
+                  />
+                )}
+              </g>
             );
           })}
 
@@ -803,18 +845,57 @@ export function DesignCanvas({
             const colors = getColorClasses(node.type);
             const isSelected = node.id === selectedNodeId;
 
+            const isImpacted = activeConstraints.some(c => c.impactedNodeId === node.id && c.status === 'active');
+            
+            const nodeMetric = simulationMetrics.nodeMetrics[node.id];
+            const isBottlenecked = isSimulationRunning && nodeMetric?.status === 'bottlenecked';
+            const isWarning = isSimulationRunning && nodeMetric?.status === 'warning';
+
             return (
               <div
                 key={node.id}
                 data-node
                 style={{ left: node.x, top: node.y }}
-                className={`absolute w-[60px] h-[60px] bg-white dark:bg-[#1e1e24] shadow-lg rounded-xl flex flex-col items-center justify-center cursor-move group select-none transition-shadow pointer-events-auto ${isSelected
-                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
-                  : 'border-2 border-transparent hover:border-primary'
+                className={`absolute w-[60px] h-[60px] rounded-xl flex flex-col items-center justify-center select-none shadow-lg transition-all duration-300 ${isImpacted
+                  ? 'bg-red-500/10 border-2 border-red-500/50 opacity-80 grayscale-[50%] cursor-not-allowed pointer-events-auto'
+                  : isBottlenecked
+                  ? 'bg-red-600 border-2 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.7)] text-white ring-2 ring-red-500 animate-pulse pointer-events-auto'
+                  : isWarning
+                  ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)] pointer-events-auto'
+                  : 'bg-white dark:bg-[#1e1e24] cursor-move transition-shadow pointer-events-auto ' + (isSelected
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
+                    : 'border-2 border-transparent hover:border-primary')
                   }`}
-                onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
-                onMouseUp={(e) => handleNodeMouseUp(e, node.id)}
+                onMouseDown={(e) => {
+                  if (isImpacted) {
+                    e.stopPropagation();
+                    setSelectedNodeId(node.id);
+                    return;
+                  }
+                  handleNodeMouseDown(e, node.id);
+                }}
+                onMouseUp={(e) => {
+                  if (isImpacted) {
+                    e.stopPropagation();
+                    return;
+                  }
+                  handleNodeMouseUp(e, node.id);
+                }}
               >
+                {isBottlenecked && !isImpacted && (
+                  <div className="absolute -top-6 bg-red-600 text-[9px] text-white font-bold px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)] whitespace-nowrap z-40 outline outline-2 outline-white dark:outline-[#1e1e24] animate-bounce">
+                    BOTTLENECK
+                  </div>
+                )}
+                
+                {isSimulationRunning && nodeMetric && node.type !== 'Client' && (
+                  <div className={`absolute -bottom-8 bg-black/80 dark:bg-black/90 text-white text-[8px] font-mono px-1.5 py-0.5 rounded shadow-sm z-30 whitespace-nowrap flex items-center gap-1 opacity-90 backdrop-blur-sm ${isBottlenecked ? 'text-red-300' : isWarning ? 'text-amber-300' : 'text-slate-300'}`}>
+                    <span>{(nodeMetric.trafficIn / 1000).toFixed(1)}k</span>
+                    <span className="text-slate-500">/</span>
+                    <span className="text-slate-400">{(nodeMetric.capacity / 1000).toFixed(1)}k RPS</span>
+                  </div>
+                )}
+
                 {/* Delete button - visible when selected and not readOnly */}
                 {isSelected && !readOnly && (
                   <button
@@ -828,6 +909,12 @@ export function DesignCanvas({
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
                   </button>
+                )}
+
+                {isImpacted && (
+                  <div className="absolute -top-3 -right-3 size-6 bg-red-600 outline outline-2 outline-white dark:outline-[#1e1e24] text-white rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.5)] z-30 animate-pulse">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span>
+                  </div>
                 )}
                 <span
                   className={`material-symbols-outlined ${colors.text} ${colors.darkText}`}

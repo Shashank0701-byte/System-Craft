@@ -149,6 +149,12 @@ export function useInterviewAI({
     return {
         messages,
         isThinking,
-        sendReply
+        sendReply,
+        /**
+         * Exposed strictly for synchronizing external AI messages generated
+         * via backend webhooks/events (e.g. final-validation, chaos-timeout).
+         * Do not use this to bypass `requestHint` or `sendReply`.
+         */
+        setMessages
     };
 }

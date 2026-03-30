@@ -56,6 +56,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const [showHints, setShowHints] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isInterviewPanelOpen, setIsInterviewPanelOpen] = useState(false);
+    const [finalValidationTriggered, setFinalValidationTriggered] = useState(false);
 
     // Refs for save logic
     const isSavingRef = useRef(false);
@@ -99,6 +100,40 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         initialMessages: session?.aiMessages || [],
         onConstraintChange: handleConstraintChange
     });
+
+    const { setMessages } = ai;
+
+    // Final Validation Phase Trigger automatically checks and dispatches.
+    const finalValidationInFlight = useRef(false);
+    useEffect(() => {
+        if (finalValidationTriggered || finalValidationInFlight.current) return;
+        if (timer.minutes === undefined || timer.minutes > 10) return;
+        if (session?.status !== 'in_progress') return;
+
+        finalValidationInFlight.current = true;
+        
+        authFetch(`/api/interview/${id}/final-validation`, { method: 'POST' })
+            .then(async res => {
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(errText || res.statusText);
+                }
+                return res.json();
+            })
+            .then(data => {
+                setFinalValidationTriggered(true);
+                if (data.success && data.messages) {
+                    if (setMessages) setMessages(data.messages);
+                    setIsInterviewPanelOpen(true);
+                }
+            })
+            .catch(err => {
+                console.error('Final validation trigger failed:', err);
+            })
+            .finally(() => {
+                finalValidationInFlight.current = false;
+            });
+    }, [timer.minutes, finalValidationTriggered, session?.status, id, setMessages]);
 
     // Fetch session data
     const fetchSession = useCallback(async () => {
@@ -284,6 +319,24 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         };
     }, [id]);
 
+    const handleChaosTimeout = useCallback(async (type: 'warning' | 'penalty', constraintId: string) => {
+        try {
+            const res = await authFetch(`/api/interview/${id}/chaos-timeout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, constraintId })
+            });
+            const data = await res.json();
+            if (data.success && data.messages) {
+                if (setMessages) setMessages(data.messages);
+                setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
+                setIsInterviewPanelOpen(true); // Automatically slide open the interviewer panel
+            }
+        } catch (err) {
+            console.error('Chaos timeout failed:', err);
+        }
+    }, [id, setMessages]);
+
     // Loading state
     if (authLoading || isLoading) {
         return (
@@ -330,13 +383,14 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             <InterviewHeader
                 difficulty={session.difficulty}
                 constraintChangeCount={session.constraintChanges?.length || 0}
-                latestConstraintTitle={session.constraintChanges?.at(-1)?.title}
+                latestConstraint={session.constraintChanges?.at(-1)}
                 saveStatus={saveStatus}
                 timer={timer}
                 status={session.status}
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 sessionId={id}
+                onChaosTimeout={handleChaosTimeout}
             />
 
             {/* Submit Error Banner */}
@@ -377,6 +431,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                     onSave={isReadOnly ? undefined : saveDesign}
                     readOnly={isReadOnly}
                     stateRef={isReadOnly ? undefined : canvasStateRef}
+                    activeConstraints={session.constraintChanges || []}
                 />
 
                 {/* Properties Panel */}
