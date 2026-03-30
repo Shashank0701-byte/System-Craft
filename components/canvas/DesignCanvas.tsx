@@ -3,6 +3,7 @@
 import { useState, useRef, useId, useCallback, useEffect, useReducer, MutableRefObject } from 'react';
 import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 import { useSimulationEngine } from '@/src/hooks/useSimulationEngine';
+import { SimulationResult } from '@/src/lib/simulation/engine';
 import { SimulationControls } from './SimulationControls';
 
 // Color mapping for different component types
@@ -80,12 +81,15 @@ export interface CanvasStateRef {
 interface DesignCanvasProps {
   initialNodes?: CanvasNode[];
   initialConnections?: Connection[];
+  initialTargetRps?: number;
   onSave?: (nodes: CanvasNode[], connections: Connection[]) => void;
   readOnly?: boolean;
   /** Live ref to current canvas state — updated on every change */
   stateRef?: MutableRefObject<CanvasStateRef | null>;
   /** Array of active constraint changes to visually impact the canvas */
   activeConstraints?: IConstraintChange[];
+  /** Callback fired when the simulation status changes so parent can validate */
+  onSimulationChange?: (metrics: SimulationResult) => void;
 }
 
 const MAX_HISTORY = 50;
@@ -142,10 +146,12 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
 export function DesignCanvas({
   initialNodes = DEFAULT_NODES,
   initialConnections = DEFAULT_CONNECTIONS,
+  initialTargetRps = 10000,
   onSave,
   readOnly = false,
   stateRef,
-  activeConstraints = []
+  activeConstraints = [],
+  onSimulationChange
 }: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -185,8 +191,21 @@ export function DesignCanvas({
   // Simulation Engine State
   const [isSimulationRunningRaw, setIsSimulationRunning] = useState(false);
   const isSimulationRunning = isSimulationRunningRaw && !readOnly;
-  const [targetRps, setTargetRps] = useState(10000);
+  const [targetRps, setTargetRps] = useState(initialTargetRps);
+
+  // Keep targetRps in sync when the prop changes (async template loads)
+  useEffect(() => {
+    setTargetRps(initialTargetRps);
+  }, [initialTargetRps]);
+
   const simulationMetrics = useSimulationEngine(nodes, connections, targetRps, isSimulationRunning);
+
+  // Expose simulation changes to parent (used by Templates system)
+  useEffect(() => {
+    if (onSimulationChange) {
+        onSimulationChange(simulationMetrics);
+    }
+  }, [simulationMetrics, onSimulationChange]);
 
   // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);

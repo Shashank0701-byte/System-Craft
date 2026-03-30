@@ -1,6 +1,9 @@
 import { ICanvasNode, IConnection } from '../db/models/Design';
 import { NODE_CAPACITIES, NodeMetrics, EdgeMetrics } from './constants';
 
+/** Fraction of traffic that passes through a Cache node (cache misses). 0.1 = 90% hit rate. */
+const CACHE_MISS_RATIO = 0.1;
+
 export interface SimulationResult {
     nodeMetrics: Record<string, NodeMetrics>;
     edgeMetrics: Record<string, EdgeMetrics>;
@@ -111,7 +114,9 @@ export function runSimulation(nodes: ICanvasNode[], edges: IConnection[], target
             // Distribute to children
             const outgoingEdges = adj[node.id];
             if (outgoingEdges && outgoingEdges.length > 0) {
-                const flowPerEdge = outFlow / outgoingEdges.length;
+                // Cache nodes absorb most traffic; only cache misses flow downstream
+                const effectiveOut = node.type === 'Cache' ? outFlow * CACHE_MISS_RATIO : outFlow;
+                const flowPerEdge = effectiveOut / outgoingEdges.length;
                 outgoingEdges.forEach(edge => {
                     edgeMetrics[edge.id].trafficFlow += flowPerEdge;
                     if (nextTrafficIn[edge.to] !== undefined) {
