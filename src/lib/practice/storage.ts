@@ -8,8 +8,18 @@ const progressKey = (id: string) => `practice_progress_${id}`;
 
 export function getSavedProgress(templateId: string): { nodes: CanvasNode[]; connections: Connection[] } | null {
     try {
-        const data = localStorage.getItem(progressKey(templateId));
-        return data ? JSON.parse(data) : null;
+        const raw = localStorage.getItem(progressKey(templateId));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (
+            parsed != null &&
+            typeof parsed === 'object' &&
+            Array.isArray(parsed.nodes) &&
+            Array.isArray(parsed.connections)
+        ) {
+            return parsed as { nodes: CanvasNode[]; connections: Connection[] };
+        }
+        return null;
     } catch { return null; }
 }
 
@@ -25,7 +35,9 @@ export function clearProgress(templateId: string) {
 
 export function getSolvedIds(): string[] {
     try {
-        return JSON.parse(localStorage.getItem(SOLVED_KEY) || '[]') as string[];
+        const parsed = JSON.parse(localStorage.getItem(SOLVED_KEY) || '[]');
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter((v): v is string => typeof v === 'string');
     } catch { return []; }
 }
 
