@@ -7,38 +7,10 @@ import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { CanvasPanelsProvider } from '@/components/canvas/CanvasPanelsContext';
 import { ITemplate } from '@/src/lib/templates/types';
 import { SimulationResult } from '@/src/lib/simulation/engine';
-
-// --- LocalStorage helpers ---
-function getSavedProgress(templateId: string): { nodes: CanvasNode[]; connections: Connection[] } | null {
-    try {
-        const data = localStorage.getItem(`practice_progress_${templateId}`);
-        return data ? JSON.parse(data) : null;
-    } catch { return null; }
-}
-
-function saveProgress(templateId: string, nodes: CanvasNode[], connections: Connection[]) {
-    try {
-        localStorage.setItem(`practice_progress_${templateId}`, JSON.stringify({ nodes, connections }));
-    } catch { /* quota exceeded — silently fail */ }
-}
-
-function markSolved(templateId: string) {
-    try {
-        const solved = JSON.parse(localStorage.getItem('practice_solved') || '[]') as string[];
-        if (!solved.includes(templateId)) {
-            solved.push(templateId);
-            localStorage.setItem('practice_solved', JSON.stringify(solved));
-        }
-    } catch { /* silently fail */ }
-}
-
-export function isSolved(templateId: string): boolean {
-    try {
-        const solved = JSON.parse(localStorage.getItem('practice_solved') || '[]') as string[];
-        return solved.includes(templateId);
-    } catch { return false; }
-}
-// --- End helpers ---
+import {
+    getSavedProgress, saveProgress, clearProgress,
+    isSolved, markSolved, unmarkSolved,
+} from '@/src/lib/practice/storage';
 
 export default function PracticePage() {
     const params = useParams();
@@ -63,11 +35,16 @@ export default function PracticePage() {
     const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
+        const controller = new AbortController();
+
         async function loadTemplate() {
             try {
-                const res = await fetch(`/api/templates/${id}`);
-                if (!res.ok) throw new Error('Template not found');
+                const res = await fetch(`/api/templates/${id}`, { signal: controller.signal });
+                if (!res.ok) throw new Error(`Failed to load template: ${res.status} ${res.statusText}`);
                 const data = await res.json();
+
+                if (controller.signal.aborted) return;
+
                 setTemplate(data.template);
 
                 // Load saved progress from localStorage
@@ -80,12 +57,19 @@ export default function PracticePage() {
                 // Check if already solved
                 setSolved(isSolved(id));
             } catch (err) {
-               setError(err instanceof Error ? err.message : 'Failed to load');
+                if (err instanceof Error && err.name === 'AbortError') return;
+                if (!controller.signal.aborted) {
+                    setError(err instanceof Error ? err.message : 'Failed to load');
+                }
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         }
         if (id) loadTemplate();
+
+        return () => controller.abort();
     }, [id]);
 
     // Auto-save every 3 seconds while actively working
@@ -123,8 +107,14 @@ export default function PracticePage() {
             setFeedback({ type: 'error', text: 'Run the simulation first before submitting your fix.' });
             return;
         }
+
+        // Guard: ensure the bottleneck node is defined and has metrics
+        if (!template.bottleneckNodeId || !simulationState.nodeMetrics[template.bottleneckNodeId]) {
+            setFeedback({ type: 'error', text: 'No bottleneck node defined or metrics unavailable for the target node.' });
+            return;
+        }
         
-        const bottleneckNodeStatus = simulationState.nodeMetrics[template.bottleneckNodeId]?.status;
+        const bottleneckNodeStatus = simulationState.nodeMetrics[template.bottleneckNodeId].status;
         
         if (bottleneckNodeStatus === 'normal' || bottleneckNodeStatus === 'warning') {
             if (simulationState.globalStatus === 'critical') {
@@ -149,11 +139,8 @@ export default function PracticePage() {
         setUserConnections(null);
         setFeedback(null);
         setSolved(false);
-        try {
-            localStorage.removeItem(`practice_progress_${id}`);
-            const solved = JSON.parse(localStorage.getItem('practice_solved') || '[]') as string[];
-            localStorage.setItem('practice_solved', JSON.stringify(solved.filter(s => s !== id)));
-        } catch { /* ignore */ }
+        clearProgress(id);
+        unmarkSolved(id);
     };
 
     if (loading) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { SidebarProvider } from '@/components/dashboard/SidebarContext';
+import { getSolvedIds } from '@/src/lib/practice/storage';
 
 interface TemplateSummary {
   id: string;
@@ -20,24 +21,30 @@ export default function PracticeDirectory() {
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function load() {
       try {
-        const res = await fetch('/api/templates');
+        const res = await fetch('/api/templates', { signal: controller.signal });
+        if (!res.ok) throw new Error(`Failed to load templates: ${res.status} ${res.statusText}`);
         const data = await res.json();
-        setTemplates(data.templates || []);
+        if (!controller.signal.aborted) {
+          setTemplates(data.templates || []);
+        }
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
     load();
 
-    // Read solved state from localStorage
-    try {
-      const solved = JSON.parse(localStorage.getItem('practice_solved') || '[]') as string[];
-      setSolvedIds(solved);
-    } catch { /* ignore */ }
+    setSolvedIds(getSolvedIds());
+
+    return () => controller.abort();
   }, []);
 
   return (

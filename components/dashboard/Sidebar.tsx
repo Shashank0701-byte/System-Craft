@@ -21,7 +21,8 @@ export function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === '#') return false;
-    if (href === '/dashboard' || href === '/practice' || href === '/interview') return pathname === href;
+    if (href === '/dashboard' || href === '/interview') return pathname === href;
+    if (href === '/practice') return pathname === '/practice' || pathname.startsWith('/practice/');
     return pathname === href || pathname.startsWith(href + '/');
   };
 
