@@ -25,6 +25,7 @@ export default function PracticePage() {
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [showSolution, setShowSolution] = useState(false);
     const [solved, setSolved] = useState(false);
+    const [canvasVersion, setCanvasVersion] = useState(0);
 
     // Preserve user's canvas modifications across solution toggles
     const [userNodes, setUserNodes] = useState<CanvasNode[] | null>(null);
@@ -119,8 +120,10 @@ export default function PracticePage() {
         if (bottleneckNodeStatus === 'normal' || bottleneckNodeStatus === 'warning') {
             if (simulationState.globalStatus === 'critical') {
                 setFeedback({ type: 'error', text: `Bottleneck resolved on the target node, but another part of the system is now critical. Keep tweaking!` });
+            } else if (simulationState.globalStatus === 'degraded') {
+                setFeedback({ type: 'error', text: `Target bottleneck resolved, but the system is still degraded. Other nodes are under stress — optimize further.` });
             } else {
-                // SUCCESS — persist solved state
+                // SUCCESS — globalStatus is 'healthy'
                 setSolved(true);
                 markSolved(id);
                 if (canvasStateRef.current) {
@@ -139,6 +142,7 @@ export default function PracticePage() {
         setUserConnections(null);
         setFeedback(null);
         setSolved(false);
+        setCanvasVersion(v => v + 1);
         clearProgress(id);
         unmarkSolved(id);
     };
@@ -226,7 +230,7 @@ export default function PracticePage() {
                     {!showSolution && <ComponentPalette />}
                     
                     <DesignCanvas 
-                        key={`${showSolution ? 'solution' : 'active'}-${userNodes ? 'saved' : 'initial'}`}
+                        key={`${showSolution ? 'solution' : 'active'}-${userNodes ? 'saved' : 'initial'}-${canvasVersion}`}
                         initialNodes={activeNodes}
                         initialConnections={activeConnections}
                         initialTargetRps={template.targetRps}
