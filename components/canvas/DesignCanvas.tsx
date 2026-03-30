@@ -3,6 +3,7 @@
 import { useState, useRef, useId, useCallback, useEffect, useReducer, MutableRefObject } from 'react';
 import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 import { useSimulationEngine } from '@/src/hooks/useSimulationEngine';
+import { SimulationResult } from '@/src/lib/simulation/engine';
 import { SimulationControls } from './SimulationControls';
 
 // Color mapping for different component types
@@ -88,7 +89,7 @@ interface DesignCanvasProps {
   /** Array of active constraint changes to visually impact the canvas */
   activeConstraints?: IConstraintChange[];
   /** Callback fired when the simulation status changes so parent can validate */
-  onSimulationChange?: (metrics: any) => void;
+  onSimulationChange?: (metrics: SimulationResult) => void;
 }
 
 const MAX_HISTORY = 50;
