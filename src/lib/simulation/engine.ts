@@ -55,10 +55,9 @@ export function runSimulation(nodes: ICanvasNode[], edges: IConnection[], target
         if (inDegree[e.to] !== undefined) inDegree[e.to]++;
     });
 
-    // We will do a modified iterative propagation to handle cycles softly.
-    // Instead of strict topological sort, we do a fixed number of iterations (e.g. 5 passes)
-    // For pure DAGs, it propagates cleanly. For cycles, it stabilizes.
-    
+    // Iterative propagation with convergence detection to handle cycles properly
+    // We iterate until traffic distribution stabilizes or we hit maxIterations
+
     // Initial Load
     sources.forEach(s => {
         if (nodeMetrics[s.id]) {
@@ -66,30 +65,40 @@ export function runSimulation(nodes: ICanvasNode[], edges: IConnection[], target
         }
     });
 
-    // 10 passes is enough for most UI architectures
-    for (let pass = 0; pass < 10; pass++) {
-        // Reset edge flows before recalculating this pass's spread
-        edges.forEach(e => { edgeMetrics[e.id].trafficFlow = 0; });
-        
-        // We need a snapshot of trafficIn for the current frame to distribute it properly
-        const sourceIds = new Set(sources.map(s => s.id));
-        const currentTrafficIn = Object.keys(nodeMetrics).reduce((acc, id) => {
-            acc[id] = nodeMetrics[id].trafficIn;
-            // Clear trafficIn for non-sources so they can receive the fresh wave
-            if (!sourceIds.has(id)) {
-                nodeMetrics[id].trafficIn = 0;
-            }
-            return acc;
-        }, {} as Record<string, number>);
+    const maxIterations = 100;
+    const epsilon = 0.01; // Convergence threshold: stop when total change < epsilon
+    const sourceIds = new Set(sources.map(s => s.id));
 
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+        // Store previous trafficIn values to measure convergence
+        const prevTrafficIn: Record<string, number> = {};
+        Object.keys(nodeMetrics).forEach(id => {
+            prevTrafficIn[id] = nodeMetrics[id].trafficIn;
+        });
+
+        // Reset edge flows before recalculating this iteration's spread
+        edges.forEach(e => { edgeMetrics[e.id].trafficFlow = 0; });
+
+        // Create next iteration's trafficIn map, starting with sources
+        const nextTrafficIn: Record<string, number> = {};
+        sourceIds.forEach(id => {
+            nextTrafficIn[id] = targetRps / sources.length;
+        });
+        nodes.forEach(n => {
+            if (!sourceIds.has(n.id)) {
+                nextTrafficIn[n.id] = 0;
+            }
+        });
+
+        // Process each node: compute outFlow and distribute to children
         nodes.forEach(node => {
             const metrics = nodeMetrics[node.id];
-            const processingTraffic = currentTrafficIn[node.id];
-            
+            const processingTraffic = prevTrafficIn[node.id];
+
             // Cap out at capacity
             const outFlow = Math.min(processingTraffic, metrics.capacity);
             metrics.trafficOut = outFlow;
-            
+
             // Update status
             if (processingTraffic > metrics.capacity) {
                 metrics.status = 'bottlenecked';
@@ -105,12 +114,28 @@ export function runSimulation(nodes: ICanvasNode[], edges: IConnection[], target
                 const flowPerEdge = outFlow / outgoingEdges.length;
                 outgoingEdges.forEach(edge => {
                     edgeMetrics[edge.id].trafficFlow += flowPerEdge;
-                    if (nodeMetrics[edge.to]) {
-                        nodeMetrics[edge.to].trafficIn += flowPerEdge;
+                    if (nextTrafficIn[edge.to] !== undefined) {
+                        nextTrafficIn[edge.to] += flowPerEdge;
                     }
                 });
             }
         });
+
+        // Update nodeMetrics with nextTrafficIn
+        Object.keys(nextTrafficIn).forEach(id => {
+            nodeMetrics[id].trafficIn = nextTrafficIn[id];
+        });
+
+        // Measure total delta to check for convergence
+        let totalDelta = 0;
+        Object.keys(nodeMetrics).forEach(id => {
+            totalDelta += Math.abs(nodeMetrics[id].trafficIn - prevTrafficIn[id]);
+        });
+
+        // Stop if converged
+        if (totalDelta < epsilon) {
+            break;
+        }
     }
 
     // Evaluate Global Status
