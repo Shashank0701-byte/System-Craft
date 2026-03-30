@@ -192,6 +192,12 @@ export function DesignCanvas({
   const [isSimulationRunningRaw, setIsSimulationRunning] = useState(false);
   const isSimulationRunning = isSimulationRunningRaw && !readOnly;
   const [targetRps, setTargetRps] = useState(initialTargetRps);
+
+  // Keep targetRps in sync when the prop changes (async template loads)
+  useEffect(() => {
+    setTargetRps(initialTargetRps);
+  }, [initialTargetRps]);
+
   const simulationMetrics = useSimulationEngine(nodes, connections, targetRps, isSimulationRunning);
 
   // Expose simulation changes to parent (used by Templates system)
