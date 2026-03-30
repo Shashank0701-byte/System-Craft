@@ -16,12 +16,12 @@ export function Sidebar() {
     { id: 'my-designs', href: '/dashboard', label: 'My Designs', icon: 'grid_view', filled: true },
     { id: 'analytics', href: '/dashboard/analytics', label: 'Analytics', icon: 'bar_chart', filled: true },
     { id: 'interview', href: '/interview', label: 'Interview Mode', icon: 'play_circle', filled: false },
-    { id: 'templates', href: '#', label: 'Templates', icon: 'library_books', filled: false },
+    { id: 'templates', href: '/practice', label: 'Templates', icon: 'library_books', filled: false },
   ];
 
   const isActive = (href: string) => {
     if (href === '#') return false;
-    if (href === '/dashboard') return pathname === href;
+    if (href === '/dashboard' || href === '/practice' || href === '/interview') return pathname === href;
     return pathname === href || pathname.startsWith(href + '/');
   };
 
@@ -137,6 +137,9 @@ export function Sidebar() {
                 {item.icon}
               </span>
               {item.label}
+              {item.id === 'templates' && (
+                <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">New</span>
+              )}
             </Link>
           );
         })}

@@ -111,7 +111,9 @@ export function runSimulation(nodes: ICanvasNode[], edges: IConnection[], target
             // Distribute to children
             const outgoingEdges = adj[node.id];
             if (outgoingEdges && outgoingEdges.length > 0) {
-                const flowPerEdge = outFlow / outgoingEdges.length;
+                // Cache nodes absorb most traffic (90% hit rate), only forwarding misses
+                const effectiveOut = node.type === 'Cache' ? outFlow * 0.1 : outFlow;
+                const flowPerEdge = effectiveOut / outgoingEdges.length;
                 outgoingEdges.forEach(edge => {
                     edgeMetrics[edge.id].trafficFlow += flowPerEdge;
                     if (nextTrafficIn[edge.to] !== undefined) {
