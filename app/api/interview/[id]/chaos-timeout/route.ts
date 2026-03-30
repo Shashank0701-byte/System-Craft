@@ -1,20 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
 import InterviewSession, { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
+import User from '@/src/lib/db/models/User';
+import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 
 export async function POST(
     req: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
-        await dbConnect();
         const { id } = await context.params;
-        const { type, constraintId } = await req.json();
+        const body = await req.json();
 
-        // 1. Fetch Session
-        const session = await InterviewSession.findOne({ id });
+        // Validate request body
+        const { type, constraintId } = body;
+        if (!type || (type !== 'warning' && type !== 'penalty')) {
+            return new Response(JSON.stringify({ error: 'Invalid type. Must be "warning" or "penalty".' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        if (!constraintId || (typeof constraintId !== 'string' && typeof constraintId !== 'number') || constraintId === '') {
+            return new Response(JSON.stringify({ error: 'Invalid constraintId. Must be a non-empty string or number.' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        // Authenticate user
+        const authHeader = req.headers.get('Authorization');
+        const authenticatedUser = await getAuthenticatedUser(authHeader);
+
+        if (!authenticatedUser) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        await dbConnect();
+
+        const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        // 1. Fetch Session with ownership check
+        const session = await InterviewSession.findOne({ id, userId: user._id });
         if (!session) {
-            return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Session not found or access denied' }, { status: 403 });
         }
         if (session.status !== 'in_progress') {
             return NextResponse.json({ success: true, warning: 'Session is no longer in progress' });

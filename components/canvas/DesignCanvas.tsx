@@ -187,6 +187,13 @@ export function DesignCanvas({
   const [targetRps, setTargetRps] = useState(10000);
   const simulationMetrics = useSimulationEngine(nodes, connections, targetRps, isSimulationRunning);
 
+  // Stop simulation when canvas becomes read-only
+  useEffect(() => {
+    if (readOnly && isSimulationRunning) {
+      setIsSimulationRunning(false);
+    }
+  }, [readOnly, isSimulationRunning]);
+
   // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);

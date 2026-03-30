@@ -45,8 +45,10 @@ export function ChaosTimer({ constraint, onTimeout }: ChaosTimerProps) {
     const hasPendingPenaltyRequest = useRef(false);
 
     useEffect(() => {
-        // Reset timers on DB fields updates have been removed (unnecessary toggles)
-        
+        // Reset pending request flags for each new active constraint
+        hasPendingWarningRequest.current = false;
+        hasPendingPenaltyRequest.current = false;
+
         const interval = setInterval(() => {
             const current = calculateRemaining();
             setState(current);
