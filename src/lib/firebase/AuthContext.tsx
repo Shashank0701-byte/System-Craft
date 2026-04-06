@@ -21,11 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!auth) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+            // No Firebase configured — mark loading as done immediately.
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: single synchronous set at mount, not a cascading render
             setIsLoading(false);
             return;
         }
         return onAuthStateChanged(auth, (u) => {
+            // These state updates happen inside a Firebase subscription callback,
+            // which is the correct effect pattern (external system → setState).
             setUser(u);
             setIsLoading(false);
         });

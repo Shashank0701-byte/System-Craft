@@ -1,0 +1,2 @@
+.next/dev/types/validator.ts(134,39): error TS2306: File 'D:/vertex-club/System-Craft/System-Craft/app/practice/[id]/page.tsx' is not a module.
+app/practice/page.tsx(7,30): error TS2306: File 'D:/vertex-club/System-Craft/System-Craft/src/lib/practice/storage.ts' is not a module.
