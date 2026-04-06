@@ -274,23 +274,13 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             setSession(prev => prev ? { ...prev, status: 'submitted', submittedAt: new Date().toISOString() } : null);
             setSubmitError(null);
 
-            // Trigger evaluation
-            const evalResponse = await authFetch(`/api/interview/${id}/evaluate`, {
-                method: 'POST'
-            });
+            // Fire-and-forget: trigger evaluation in the background.
+            // The result page will poll until evaluation completes.
+            authFetch(`/api/interview/${id}/evaluate`, { method: 'POST' })
+                .catch(err => console.warn('Background evaluation trigger:', err));
 
-            if (!evalResponse.ok) {
-                const evalData = await evalResponse.json().catch(() => ({}));
-                console.error('Evaluation failed:', evalData.error);
-                // We don't throw here to avoid showing an error after successful submission
-                // The status will remain 'submitted' and can be re-evaluated later
-            } else {
-                const evalData = await evalResponse.json();
-                setSession(prev => prev ? { ...prev, status: 'evaluated', evaluation: evalData.evaluation } : null);
-
-                // Redirect to results page now that evaluation is complete
-                router.push(`/interview/${id}/result`);
-            }
+            // Immediately redirect to results page — it will poll for completion
+            router.push(`/interview/${id}/result`);
         } catch (err) {
             console.error('Error submitting:', err);
             setSubmitError(err instanceof Error ? err.message : 'Failed to submit');
@@ -330,7 +320,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             if (data.success && data.messages) {
                 if (setMessages) setMessages(data.messages);
                 setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
-                setIsInterviewPanelOpen(true); // Automatically slide open the interviewer panel
+                setIsInterviewPanelOpen(true);
             }
         } catch (err) {
             console.error('Chaos timeout failed:', err);
