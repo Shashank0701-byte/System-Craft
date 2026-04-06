@@ -25,6 +25,9 @@ const SECTIONS: Section[] = [
       { name: 'Client', icon: 'smartphone', color: 'blue', bgClass: 'bg-blue-500/10', textClass: 'text-blue-500', darkTextClass: 'dark:text-blue-400', groupHoverBg: 'group-hover:bg-blue-500' },
       { name: 'Server', icon: 'dns', color: 'purple', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', darkTextClass: 'dark:text-purple-400', groupHoverBg: 'group-hover:bg-purple-500' },
       { name: 'Function', icon: 'functions', color: 'indigo', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', darkTextClass: 'dark:text-indigo-400', groupHoverBg: 'group-hover:bg-indigo-500' },
+      { name: 'Worker', icon: 'precision_manufacturing', color: 'violet', bgClass: 'bg-violet-500/10', textClass: 'text-violet-500', darkTextClass: 'dark:text-violet-400', groupHoverBg: 'group-hover:bg-violet-500' },
+      { name: 'Container', icon: 'inventory_2', color: 'sky', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500', darkTextClass: 'dark:text-sky-400', groupHoverBg: 'group-hover:bg-sky-500' },
+      { name: 'Gateway', icon: 'router', color: 'amber', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500', darkTextClass: 'dark:text-amber-400', groupHoverBg: 'group-hover:bg-amber-500' },
     ]
   },
   {
@@ -32,14 +35,20 @@ const SECTIONS: Section[] = [
     items: [
       { name: 'LB', icon: 'alt_route', color: 'orange', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500', darkTextClass: 'dark:text-orange-400', groupHoverBg: 'group-hover:bg-orange-500' },
       { name: 'CDN', icon: 'public', color: 'teal', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500', darkTextClass: 'dark:text-teal-400', groupHoverBg: 'group-hover:bg-teal-500' },
+      { name: 'DNS', icon: 'language', color: 'lime', bgClass: 'bg-lime-500/10', textClass: 'text-lime-500', darkTextClass: 'dark:text-lime-400', groupHoverBg: 'group-hover:bg-lime-500' },
+      { name: 'Firewall', icon: 'local_fire_department', color: 'rose', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500', darkTextClass: 'dark:text-rose-400', groupHoverBg: 'group-hover:bg-rose-500' },
+      { name: 'Proxy', icon: 'vpn_lock', color: 'fuchsia', bgClass: 'bg-fuchsia-500/10', textClass: 'text-fuchsia-500', darkTextClass: 'dark:text-fuchsia-400', groupHoverBg: 'group-hover:bg-fuchsia-500' },
     ]
   },
   {
     title: 'Storage',
     items: [
       { name: 'SQL', icon: 'database', color: 'emerald', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500', darkTextClass: 'dark:text-emerald-400', groupHoverBg: 'group-hover:bg-emerald-500' },
+      { name: 'NoSQL', icon: 'view_cozy', color: 'green', bgClass: 'bg-green-500/10', textClass: 'text-green-500', darkTextClass: 'dark:text-green-400', groupHoverBg: 'group-hover:bg-green-500' },
       { name: 'Cache', icon: 'bolt', color: 'red', bgClass: 'bg-red-500/10', textClass: 'text-red-500', darkTextClass: 'dark:text-red-400', groupHoverBg: 'group-hover:bg-red-500' },
       { name: 'Blob', icon: 'folder_zip', color: 'yellow', bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600', darkTextClass: 'dark:text-yellow-400', groupHoverBg: 'group-hover:bg-yellow-500' },
+      { name: 'Search', icon: 'saved_search', color: 'orange', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500', darkTextClass: 'dark:text-orange-400', groupHoverBg: 'group-hover:bg-orange-500' },
+      { name: 'GraphDB', icon: 'share', color: 'indigo', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', darkTextClass: 'dark:text-indigo-400', groupHoverBg: 'group-hover:bg-indigo-500' },
     ]
   },
   {
@@ -47,6 +56,24 @@ const SECTIONS: Section[] = [
     items: [
       { name: 'Queue', icon: 'mail', color: 'pink', bgClass: 'bg-pink-500/10', textClass: 'text-pink-500', darkTextClass: 'dark:text-pink-400', groupHoverBg: 'group-hover:bg-pink-500' },
       { name: 'Kafka', icon: 'hub', color: 'cyan', bgClass: 'bg-cyan-500/10', textClass: 'text-cyan-500', darkTextClass: 'dark:text-cyan-400', groupHoverBg: 'group-hover:bg-cyan-500' },
+      { name: 'PubSub', icon: 'cell_tower', color: 'purple', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', darkTextClass: 'dark:text-purple-400', groupHoverBg: 'group-hover:bg-purple-500' },
+      { name: 'WebSocket', icon: 'sync_alt', color: 'teal', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500', darkTextClass: 'dark:text-teal-400', groupHoverBg: 'group-hover:bg-teal-500' },
+    ]
+  },
+  {
+    title: 'Observability',
+    items: [
+      { name: 'Logger', icon: 'receipt_long', color: 'slate', bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', darkTextClass: 'dark:text-slate-300', groupHoverBg: 'group-hover:bg-slate-500' },
+      { name: 'Metrics', icon: 'monitoring', color: 'emerald', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500', darkTextClass: 'dark:text-emerald-400', groupHoverBg: 'group-hover:bg-emerald-500' },
+      { name: 'Tracer', icon: 'timeline', color: 'amber', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500', darkTextClass: 'dark:text-amber-400', groupHoverBg: 'group-hover:bg-amber-500' },
+    ]
+  },
+  {
+    title: 'Security',
+    items: [
+      { name: 'Auth', icon: 'passkey', color: 'sky', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500', darkTextClass: 'dark:text-sky-400', groupHoverBg: 'group-hover:bg-sky-500' },
+      { name: 'WAF', icon: 'shield', color: 'rose', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500', darkTextClass: 'dark:text-rose-400', groupHoverBg: 'group-hover:bg-rose-500' },
+      { name: 'Vault', icon: 'lock', color: 'violet', bgClass: 'bg-violet-500/10', textClass: 'text-violet-500', darkTextClass: 'dark:text-violet-400', groupHoverBg: 'group-hover:bg-violet-500' },
     ]
   }
 ];
