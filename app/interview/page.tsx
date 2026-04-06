@@ -74,6 +74,7 @@ export default function InterviewPage() {
     const [isLoadingSessions, setIsLoadingSessions] = useState(true);
     const [isStarting, setIsStarting] = useState<string | null>(null); // difficulty being started
     const [error, setError] = useState<string | null>(null);
+    const [reEvaluatingId, setReEvaluatingId] = useState<string | null>(null);
     const lastFetchedUid = useRef<string | null>(null);
 
     const fetchSessions = useCallback(async () => {
@@ -131,6 +132,44 @@ export default function InterviewPage() {
             console.error('Error starting interview:', err);
             setError(err instanceof Error ? err.message : 'Failed to start interview');
             setIsStarting(null);
+        }
+    };
+
+    const handleReEvaluate = async (e: React.MouseEvent, sessionId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (reEvaluatingId) return;
+
+        try {
+            setReEvaluatingId(sessionId);
+            // Update the card to show evaluating state immediately
+            setSessions(prev => prev.map(s =>
+                s.id === sessionId ? { ...s, status: 'evaluating' as const } : s
+            ));
+
+            const response = await authFetch(`/api/interview/${sessionId}/evaluate`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || 'Re-evaluation failed');
+            }
+
+            const data = await response.json();
+            // Update session with new evaluation result
+            setSessions(prev => prev.map(s =>
+                s.id === sessionId
+                    ? { ...s, status: 'evaluated' as const, finalScore: data.session?.finalScore ?? s.finalScore }
+                    : s
+            ));
+        } catch (err) {
+            console.error('Re-evaluate failed:', err);
+            // Revert status to what it was before (refetch to be safe)
+            fetchSessions();
+            setError(err instanceof Error ? err.message : 'Re-evaluation failed');
+        } finally {
+            setReEvaluatingId(null);
         }
     };
 
@@ -332,6 +371,28 @@ export default function InterviewPage() {
                                                                     {session.finalScore}%
                                                                 </span>
                                                             </div>
+                                                        )}
+
+                                                        {/* Re-evaluate button for stuck/submitted/evaluated sessions */}
+                                                        {['submitted', 'evaluating', 'evaluated'].includes(session.status) && (
+                                                            <button
+                                                                onClick={(e) => handleReEvaluate(e, session.id)}
+                                                                disabled={reEvaluatingId === session.id}
+                                                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                                                                title="Re-evaluate this design"
+                                                            >
+                                                                {reEvaluatingId === session.id ? (
+                                                                    <>
+                                                                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                                        Evaluating
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <span className="material-symbols-outlined text-[14px]">refresh</span>
+                                                                        Re-evaluate
+                                                                    </>
+                                                                )}
+                                                            </button>
                                                         )}
 
                                                         <span className="material-symbols-outlined text-[18px] text-slate-400 dark:text-text-muted-dark group-hover:text-primary transition-colors">

@@ -31,22 +31,34 @@ function getClient(): OpenAI {
  * Uses Google Gemini 2.0 Flash via OpenRouter for high-quality generation.
  * Falls back gracefully with retry logic for transient errors.
  */
-export async function generateJSON<T>(prompt: string, retries = 2): Promise<T> {
+export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 60000): Promise<T> {
     const openrouter = getClient();
 
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
-            const response = await openrouter.chat.completions.create({
-                model: 'google/gemini-2.0-flash-001',
-                messages: [
+            // AbortController with timeout to prevent hanging forever on slow AI responses
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+            let response;
+            try {
+                response = await openrouter.chat.completions.create(
                     {
-                        role: 'user',
-                        content: `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown formatting, no explanations.`,
+                        model: 'google/gemini-2.0-flash-001',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown formatting, no explanations.`,
+                            },
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 2048,
                     },
-                ],
-                temperature: 0.8,
-                max_tokens: 2048,
-            });
+                    { signal: controller.signal }
+                );
+            } finally {
+                clearTimeout(timer);
+            }
 
             const text = response.choices[0]?.message?.content?.trim();
             if (!text) {

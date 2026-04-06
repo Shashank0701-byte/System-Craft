@@ -12,7 +12,6 @@ interface RouteParams {
 }
 
 // POST: Trigger evaluation of a submitted interview session
-// Phase 4 will add the actual structural rule engine + AI reasoning evaluator
 export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
         const { id } = await params;
@@ -37,11 +36,30 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         // Atomic check-and-set: only claim the session if it's currently 'submitted'
         // This prevents race conditions where two concurrent requests both pass the status check
-        const session = await InterviewSession.findOneAndUpdate(
+        let session = await InterviewSession.findOneAndUpdate(
             { _id: id, userId: user._id, status: 'submitted' },
             { $set: { status: 'evaluating' } },
             { new: false } // return the pre-update doc so we can inspect canvas
         );
+
+        // If not found as 'submitted', check if it's stuck in 'evaluating' (stale > 2 min)
+        if (!session) {
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+            session = await InterviewSession.findOneAndUpdate(
+                { _id: id, userId: user._id, status: 'evaluating', updatedAt: { $lt: twoMinutesAgo } },
+                { $set: { status: 'evaluating', updatedAt: new Date() } },
+                { new: false }
+            );
+        }
+
+        // Also allow re-evaluation of already-evaluated sessions (user-triggered)
+        if (!session) {
+            session = await InterviewSession.findOneAndUpdate(
+                { _id: id, userId: user._id, status: 'evaluated' },
+                { $set: { status: 'evaluating' } },
+                { new: false }
+            );
+        }
 
         if (!session) {
             // Distinguish between "not found" and "wrong status"
