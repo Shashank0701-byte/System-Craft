@@ -93,6 +93,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                 console.error('Error fetching results:', err);
                 setError(err instanceof Error ? err.message : 'Failed to load results');
                 setIsLoading(false);
+                setIsEvaluating(false);
             }
         };
 
