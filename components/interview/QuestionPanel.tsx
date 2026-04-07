@@ -9,6 +9,9 @@ interface QuestionPanelProps {
     /** Whether to reveal hints */
     showHints?: boolean;
     onToggleHints?: () => void;
+    /** Whether the panel is collapsed to save space */
+    isCollapsed?: boolean;
+    onToggle?: () => void;
 }
 
 const DIFFICULTY_COLORS = {
@@ -22,12 +25,43 @@ export function QuestionPanel({
     difficulty,
     constraintChanges = [],
     showHints = false,
-    onToggleHints
+    onToggleHints,
+    isCollapsed = false,
+    onToggle
 }: QuestionPanelProps) {
     const colors = DIFFICULTY_COLORS[difficulty];
 
+    if (isCollapsed) {
+        return (
+            <div className="flex flex-col h-full py-4 items-center bg-sidebar-bg-dark border-r border-border-dark flex-shrink-0 w-14 transition-all duration-300">
+                <button
+                    onClick={onToggle}
+                    className="p-1 mb-4 rounded-lg bg-dashboard-card text-slate-400 hover:text-white border border-border-dark hover:border-primary/50 transition-colors"
+                    title="Expand Question Panel"
+                >
+                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                </button>
+
+                <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary border border-primary/20 mb-4"
+                    title="Question details available"
+                >
+                    <span className="material-symbols-outlined text-[20px]">quiz</span>
+                </div>
+                
+                {/* Vertical difficulty indicator */}
+                <div 
+                    className={`w-8 py-3 rounded-full flex flex-col items-center justify-center mt-auto ${colors.bg} ${colors.border} border`}
+                    title={`Difficulty: ${difficulty}`}
+                >
+                    <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-sidebar-bg-dark border-r border-border-dark">
+        <div className="flex flex-col h-full overflow-hidden bg-sidebar-bg-dark border-r border-border-dark w-[320px] flex-shrink-0 transition-all duration-300">
             {/* Header */}
             <div className="p-4 border-b border-border-dark">
                 <div className="flex items-center justify-between mb-3">
@@ -35,9 +69,18 @@ export function QuestionPanel({
                         <span className="material-symbols-outlined text-primary text-[18px]">quiz</span>
                         Question
                     </h2>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${colors.bg} ${colors.text} ${colors.border} border capitalize`}>
-                        {difficulty}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${colors.bg} ${colors.text} ${colors.border} border capitalize`}>
+                            {difficulty}
+                        </span>
+                        <button
+                            onClick={onToggle}
+                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                            title="Collapse panel"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

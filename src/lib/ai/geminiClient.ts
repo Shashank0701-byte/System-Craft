@@ -76,6 +76,12 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
             const errMsg = error instanceof Error ? error.message : String(error);
             const status = (error as { status?: number })?.status;
 
+            // Immediately rethrow abort/timeout errors to avoid masking
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((error instanceof Error && error.name === 'AbortError') || (error as any).code === 'ETIMEDOUT' || errMsg.includes('timeout') || errMsg.includes('timed out')) {
+                throw error;
+            }
+
             // Don't retry non-transient errors
             if (status === 401 || errMsg.includes('Invalid API key')) {
                 console.error('OpenRouter auth error:', errMsg);
