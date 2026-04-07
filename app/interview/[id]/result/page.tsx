@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
@@ -40,6 +40,7 @@ export default function InterviewResultPage({ params }: PageProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEvaluating, setIsEvaluating] = useState(false);
+    const isEvaluatingRef = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -50,7 +51,7 @@ export default function InterviewResultPage({ params }: PageProps) {
         const fetchResult = async () => {
             if (!user?.uid || !id) return;
             try {
-                if (!isEvaluating) setIsLoading(true);
+                if (!isEvaluatingRef.current) setIsLoading(true);
                 const response = await authFetch(`/api/interview/${id}`);
                 if (!response.ok) {
                     throw new Error('Failed to load results');
@@ -61,6 +62,7 @@ export default function InterviewResultPage({ params }: PageProps) {
 
                 if (data.session.status === 'evaluated') {
                     // Evaluation complete — show results
+                    isEvaluatingRef.current = false;
                     setIsEvaluating(false);
                     setSession(data.session);
                     setIsLoading(false);
@@ -70,13 +72,15 @@ export default function InterviewResultPage({ params }: PageProps) {
                 if (['submitted', 'evaluating'].includes(data.session.status)) {
                     pollAttempts++;
                     if (pollAttempts >= MAX_POLLS) {
+                        isEvaluatingRef.current = false;
                         setIsEvaluating(false);
                         setIsLoading(false);
                         setError('Evaluation is taking longer than expected. Please go back and try re-evaluating.');
                         return;
                     }
-                    
+
                     // Still evaluating — show spinner and poll again
+                    isEvaluatingRef.current = true;
                     setIsEvaluating(true);
                     setIsLoading(false);
                     pollTimer = setTimeout(fetchResult, 3000);
@@ -93,6 +97,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                 console.error('Error fetching results:', err);
                 setError(err instanceof Error ? err.message : 'Failed to load results');
                 setIsLoading(false);
+                isEvaluatingRef.current = false;
                 setIsEvaluating(false);
             }
         };
