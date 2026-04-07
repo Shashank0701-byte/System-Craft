@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
@@ -39,39 +39,106 @@ export default function InterviewResultPage({ params }: PageProps) {
     const [session, setSession] = useState<InterviewSessionData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isEvaluating, setIsEvaluating] = useState(false);
+    const isEvaluatingRef = useRef(false);
 
     useEffect(() => {
+        let cancelled = false;
+        let pollTimer: NodeJS.Timeout;
+        let pollAttempts = 0;
+        const MAX_POLLS = 40; // 40 * 3000ms = 2 mins timeout limit
+
         const fetchResult = async () => {
             if (!user?.uid || !id) return;
             try {
-                setIsLoading(true);
+                if (!isEvaluatingRef.current) setIsLoading(true);
                 const response = await authFetch(`/api/interview/${id}`);
                 if (!response.ok) {
                     throw new Error('Failed to load results');
                 }
                 const data = await response.json();
 
-                if (data.session.status !== 'evaluated') {
-                    // If not evaluated yet, it might be in progress, submitted, or evaluating
-                    if (['in_progress', 'submitted', 'evaluating'].includes(data.session.status)) {
-                        router.replace(`/interview/${id}`);
-                        return;
-                    }
+                if (cancelled) return;
+
+                if (data.session.status === 'evaluated') {
+                    // Evaluation complete — show results
+                    isEvaluatingRef.current = false;
+                    setIsEvaluating(false);
+                    setSession(data.session);
+                    setIsLoading(false);
+                    return; // stop polling
                 }
 
-                setSession(data.session);
+                if (['submitted', 'evaluating'].includes(data.session.status)) {
+                    pollAttempts++;
+                    if (pollAttempts >= MAX_POLLS) {
+                        isEvaluatingRef.current = false;
+                        setIsEvaluating(false);
+                        setIsLoading(false);
+                        setError('Evaluation is taking longer than expected. Please go back and try re-evaluating.');
+                        return;
+                    }
+
+                    // Still evaluating — show spinner and poll again
+                    isEvaluatingRef.current = true;
+                    setIsEvaluating(true);
+                    setIsLoading(false);
+                    pollTimer = setTimeout(fetchResult, 3000);
+                    return;
+                }
+
+                // in_progress — shouldn't be on this page
+                if (data.session.status === 'in_progress') {
+                    router.replace(`/interview/${id}`);
+                    return;
+                }
             } catch (err) {
+                if (cancelled) return;
                 console.error('Error fetching results:', err);
                 setError(err instanceof Error ? err.message : 'Failed to load results');
-            } finally {
                 setIsLoading(false);
+                isEvaluatingRef.current = false;
+                setIsEvaluating(false);
             }
         };
 
         if (isAuthenticated && user) {
             fetchResult();
         }
+
+        return () => {
+            cancelled = true;
+            if (pollTimer) clearTimeout(pollTimer);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, user, id, router]);
+
+    // Evaluating state — show a dedicated loading screen
+    if (isEvaluating) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-background-dark">
+                <div className="flex flex-col items-center gap-6 max-w-md text-center">
+                    <div className="relative">
+                        <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                        <span className="absolute inset-0 flex items-center justify-center material-symbols-outlined text-primary text-[24px]">
+                            psychology
+                        </span>
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white mb-2">Evaluating Your Design</h2>
+                        <p className="text-slate-400 text-sm leading-relaxed">
+                            Our AI is analyzing your architecture for structural integrity, trade-off quality, and scalability patterns.
+                            This typically takes 15-30 seconds.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        Processing...
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (authLoading || isLoading) {
         return (
