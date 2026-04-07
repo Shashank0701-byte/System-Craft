@@ -373,18 +373,22 @@ export default function InterviewPage() {
                                                             </div>
                                                         )}
 
-                                                        {/* Re-evaluate button for stuck/submitted/evaluated sessions */}
+                                                        {/* Re-evaluate logic */}
                                                         {['submitted', 'evaluating', 'evaluated'].includes(session.status) && (
                                                             <button
                                                                 onClick={(e) => handleReEvaluate(e, session.id)}
-                                                                disabled={reEvaluatingId === session.id}
-                                                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                                                                disabled={reEvaluatingId === session.id || session.status === 'evaluating'}
+                                                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                                                                    reEvaluatingId === session.id || session.status === 'evaluating'
+                                                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 cursor-wait'
+                                                                        : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer'
+                                                                }`}
                                                                 title="Re-evaluate this design"
                                                             >
-                                                                {reEvaluatingId === session.id ? (
+                                                                {reEvaluatingId === session.id || session.status === 'evaluating' ? (
                                                                     <>
-                                                                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                                                        Evaluating
+                                                                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                                        Evaluating...
                                                                     </>
                                                                 ) : (
                                                                     <>

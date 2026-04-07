@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
             session = await InterviewSession.findOneAndUpdate(
                 { _id: id, userId: user._id, status: 'evaluating', updatedAt: { $lt: twoMinutesAgo } },
-                { $set: { status: 'evaluating', updatedAt: new Date() } },
+                { $set: { status: 'evaluating' } },
                 { new: false }
             );
         }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
             }
             return NextResponse.json(
-                { error: `Cannot evaluate session with status "${exists.status}". Must be "submitted".` },
+                { error: `Cannot evaluate session with status "${exists.status}". Session must be "submitted", "evaluated", or stuck in "evaluating" for >2 minutes to be evaluated.` },
                 { status: 409 }
             );
         }

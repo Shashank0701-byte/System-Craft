@@ -42,8 +42,10 @@ export default function InterviewResultPage({ params }: PageProps) {
     const [isEvaluating, setIsEvaluating] = useState(false);
 
     useEffect(() => {
-        let pollTimer: NodeJS.Timeout | null = null;
         let cancelled = false;
+        let pollTimer: NodeJS.Timeout;
+        let pollAttempts = 0;
+        const MAX_POLLS = 40; // 40 * 3000ms = 2 mins timeout limit
 
         const fetchResult = async () => {
             if (!user?.uid || !id) return;
@@ -66,6 +68,14 @@ export default function InterviewResultPage({ params }: PageProps) {
                 }
 
                 if (['submitted', 'evaluating'].includes(data.session.status)) {
+                    pollAttempts++;
+                    if (pollAttempts >= MAX_POLLS) {
+                        setIsEvaluating(false);
+                        setIsLoading(false);
+                        setError('Evaluation is taking longer than expected. Please go back and try re-evaluating.');
+                        return;
+                    }
+                    
                     // Still evaluating — show spinner and poll again
                     setIsEvaluating(true);
                     setIsLoading(false);

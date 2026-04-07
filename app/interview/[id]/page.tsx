@@ -56,6 +56,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const [showHints, setShowHints] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isInterviewPanelOpen, setIsInterviewPanelOpen] = useState(false);
+    const [isQuestionPanelOpen, setIsQuestionPanelOpen] = useState(true);
     const [finalValidationTriggered, setFinalValidationTriggered] = useState(false);
 
     // Refs for save logic
@@ -401,13 +402,15 @@ export default function InterviewCanvasPage({ params }: PageProps) {
 
             <div className="flex flex-1 overflow-hidden">
                 {/* Question Panel - left sidebar */}
-                <div className="w-[320px] flex-shrink-0">
+                <div className="flex-shrink-0">
                     <QuestionPanel
                         question={session.question}
                         difficulty={session.difficulty}
                         constraintChanges={session.constraintChanges || []}
                         showHints={showHints}
                         onToggleHints={() => setShowHints(prev => !prev)}
+                        isCollapsed={!isQuestionPanelOpen}
+                        onToggle={() => setIsQuestionPanelOpen(prev => !prev)}
                     />
                 </div>
 
