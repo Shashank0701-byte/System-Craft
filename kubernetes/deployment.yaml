@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: system-craft
+  labels:
+    app: system-craft
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: system-craft
+  template:
+    metadata:
+      labels:
+        app: system-craft
+    spec:
+      containers:
+      - name: system-craft
+        image: system-craft:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: uri
