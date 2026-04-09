@@ -29,12 +29,12 @@ export const NODE_CAPACITIES: Record<string, number> = {
 };
 
 export interface NodeMetrics {
-    trafficIn: number;
-    trafficOut: number;
-    capacity: number;
-    status: 'normal' | 'bottlenecked' | 'warning';
+  trafficIn: number;
+  trafficOut: number;
+  capacity: number;
+  status: 'normal' | 'bottlenecked' | 'warning';
 }
 
 export interface EdgeMetrics {
-    trafficFlow: number;
+  trafficFlow: number;
 }
