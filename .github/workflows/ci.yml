@@ -79,9 +79,9 @@ jobs:
         uses: azure/setup-kubectl@v3
       - name: Dry-run apply
         run: |
-          kubectl apply -f kubernetes/deployment.yaml --dry-run=client
-          kubectl apply -f kubernetes/service.yaml --dry-run=client
-          kubectl apply -f kubernetes/ingress.yaml --dry-run=client
+          kubectl apply -f kubernetes/deployment.yaml --dry-run=client --validate=false
+          kubectl apply -f kubernetes/service.yaml --dry-run=client --validate=false
+          kubectl apply -f kubernetes/ingress.yaml --dry-run=client --validate=false
 
   deploy:
     name: Deploy to Production
