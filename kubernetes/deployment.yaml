@@ -14,9 +14,12 @@ spec:
       labels:
         app: system-craft
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
       containers:
       - name: system-craft
-        image: system-craft:latest
+        image: ghcr.io/shashank0701-byte/system-craft/systemcraft-web:latest
         ports:
         - containerPort: 3000
         resources:
@@ -26,10 +29,14 @@ spec:
           requests:
             cpu: "250m"
             memory: "256Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         env:
         - name: NODE_ENV
           value: "production"
-        - name: MONGODB_URI
+        - name: MONGODB_URL
           valueFrom:
             secretKeyRef:
               name: mongodb-secret

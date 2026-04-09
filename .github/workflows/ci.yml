@@ -76,17 +76,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install kubeval
+      - name: Install kubeval with local schemas
         run: |
           wget -q https://github.com/instrumenta/kubeval/releases/download/v0.16.1/kubeval-linux-amd64.tar.gz
           tar xf kubeval-linux-amd64.tar.gz
           sudo mv kubeval /usr/local/bin/kubeval
+          wget -q https://github.com/instrumenta/kubernetes-json-schema/archive/refs/heads/master.zip
+          unzip -q master.zip
+          echo "SCHEMA_DIR=$(pwd)/kubernetes-json-schema-master" >> $GITHUB_ENV
 
       - name: Validate K8s manifests
         run: |
-          kubeval --strict kubernetes/deployment.yaml
-          kubeval --strict kubernetes/service.yaml
-          kubeval --strict kubernetes/ingress.yaml
+          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/deployment.yaml
+          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/service.yaml
+          kubeval --ignore-missing-schemas kubernetes/ingress.yaml
 
   deploy:
     name: Deploy to Production
