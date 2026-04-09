@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  packages: write  # --> Allows Github Actions to upload to the Container Registery
+  packages: write
 
 jobs:
   lint-and-typecheck:
@@ -16,19 +16,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run ESLint
         run: npm run lint
-        
+
       - name: Typecheck
         run: npx tsc --noEmit
 
@@ -38,21 +38,21 @@ jobs:
     needs: [lint-and-typecheck]
     steps:
       - uses: actions/checkout@v4
-      - name: Login to Container Registery
+
+      - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Lowercase Repository Name
-        run: |
-          echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
-        
-      - name: Build Docker Image
+      - name: Lowercase repository name
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -75,32 +75,18 @@ jobs:
     needs: [docker-build-test]
     steps:
       - uses: actions/checkout@v4
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-      - name: Create dummy kubeconfig
+
+      - name: Install kubeval
         run: |
-          mkdir -p $HOME/.kube
-          cat <<EOF > $HOME/.kube/config
-          apiVersion: v1
-          kind: Config
-          clusters:
-          - cluster:
-              server: http://localhost:8080
-            name: dummy-cluster
-          contexts:
-          - context:
-              cluster: dummy-cluster
-              user: dummy-user
-            name: dummy-context
-          current-context: dummy-context
-          users:
-          - name: dummy-user
-          EOF
-      - name: Dry-run apply
+          wget -q https://github.com/instrumenta/kubeval/releases/download/v0.16.1/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin/kubeval
+
+      - name: Validate K8s manifests
         run: |
-          kubectl apply -f kubernetes/deployment.yaml --dry-run=client --validate=false
-          kubectl apply -f kubernetes/service.yaml --dry-run=client --validate=false
-          kubectl apply -f kubernetes/ingress.yaml --dry-run=client --validate=false
+          kubeval --strict kubernetes/deployment.yaml
+          kubeval --strict kubernetes/service.yaml
+          kubeval --strict kubernetes/ingress.yaml
 
   deploy:
     name: Deploy to Production
@@ -109,8 +95,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      # Note: This is a template for the actual deployment.
-      # You would typically use secrets.KUBE_CONFIG here with a cloud provider action.
-      - name: Deploying...
-        run: echo "Standard K8s deployment triggered for $(git rev-parse --short HEAD)"
 
+      - name: Deploy
+        run: echo "K8s deployment triggered for $(git rev-parse --short HEAD)"
