@@ -68,3 +68,30 @@ jobs:
             NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
             NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
             NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+
+  kubernetes-validate:
+    name: K8s Manifest Check
+    runs-on: ubuntu-latest
+    needs: [docker-build-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      - name: Dry-run apply
+        run: |
+          kubectl apply -f kubernetes/deployment.yaml --dry-run=client
+          kubectl apply -f kubernetes/service.yaml --dry-run=client
+          kubectl apply -f kubernetes/ingress.yaml --dry-run=client
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [kubernetes-validate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      # Note: This is a template for the actual deployment.
+      # You would typically use secrets.KUBE_CONFIG here with a cloud provider action.
+      - name: Deploying...
+        run: echo "Standard K8s deployment triggered for $(git rev-parse --short HEAD)"
+
