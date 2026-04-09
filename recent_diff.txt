@@ -1,0 +1,1231 @@
+﻿commit 066396233acff06974f6cb5299bbc783303e4ba8
+Author: Shashank <shashankchakraborty712005@gmail.com>
+Date:   Wed Apr 8 01:13:48 2026 +0530
+
+    fix(ui): The interview question bar now collapsible
+    - This makes sure the canvas gets approx 300px of more space
+
+diff --git a/app/api/interview/[id]/evaluate/route.ts b/app/api/interview/[id]/evaluate/route.ts
+index d654897..9dd7906 100644
+--- a/app/api/interview/[id]/evaluate/route.ts
++++ b/app/api/interview/[id]/evaluate/route.ts
+@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
+             const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+             session = await InterviewSession.findOneAndUpdate(
+                 { _id: id, userId: user._id, status: 'evaluating', updatedAt: { $lt: twoMinutesAgo } },
+-                { $set: { status: 'evaluating', updatedAt: new Date() } },
++                { $set: { status: 'evaluating' } },
+                 { new: false }
+             );
+         }
+@@ -68,7 +68,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
+                 return NextResponse.json({ error: 'Interview session not found' }, { status: 404 });
+             }
+             return NextResponse.json(
+-                { error: `Cannot evaluate session with status "${exists.status}". Must be "submitted".` },
++                { error: `Cannot evaluate session with status "${exists.status}". Session must be "submitted", "evaluated", or stuck in "evaluating" for >2 minutes to be evaluated.` },
+                 { status: 409 }
+             );
+         }
+diff --git a/app/interview/[id]/page.tsx b/app/interview/[id]/page.tsx
+index 39c6324..fd53d2c 100644
+--- a/app/interview/[id]/page.tsx
++++ b/app/interview/[id]/page.tsx
+@@ -56,6 +56,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
+     const [showHints, setShowHints] = useState(false);
+     const [submitError, setSubmitError] = useState<string | null>(null);
+     const [isInterviewPanelOpen, setIsInterviewPanelOpen] = useState(false);
++    const [isQuestionPanelOpen, setIsQuestionPanelOpen] = useState(true);
+     const [finalValidationTriggered, setFinalValidationTriggered] = useState(false);
+ 
+     // Refs for save logic
+@@ -401,13 +402,15 @@ export default function InterviewCanvasPage({ params }: PageProps) {
+ 
+             <div className="flex flex-1 overflow-hidden">
+                 {/* Question Panel - left sidebar */}
+-                <div className="w-[320px] flex-shrink-0">
++                <div className="flex-shrink-0">
+                     <QuestionPanel
+                         question={session.question}
+                         difficulty={session.difficulty}
+                         constraintChanges={session.constraintChanges || []}
+                         showHints={showHints}
+                         onToggleHints={() => setShowHints(prev => !prev)}
++                        isCollapsed={!isQuestionPanelOpen}
++                        onToggle={() => setIsQuestionPanelOpen(prev => !prev)}
+                     />
+                 </div>
+ 
+diff --git a/app/interview/[id]/result/page.tsx b/app/interview/[id]/result/page.tsx
+index 72c1f92..25e4a5a 100644
+--- a/app/interview/[id]/result/page.tsx
++++ b/app/interview/[id]/result/page.tsx
+@@ -42,8 +42,10 @@ export default function InterviewResultPage({ params }: PageProps) {
+     const [isEvaluating, setIsEvaluating] = useState(false);
+ 
+     useEffect(() => {
+-        let pollTimer: NodeJS.Timeout | null = null;
+         let cancelled = false;
++        let pollTimer: NodeJS.Timeout;
++        let pollAttempts = 0;
++        const MAX_POLLS = 40; // 40 * 3000ms = 2 mins timeout limit
+ 
+         const fetchResult = async () => {
+             if (!user?.uid || !id) return;
+@@ -66,6 +68,14 @@ export default function InterviewResultPage({ params }: PageProps) {
+                 }
+ 
+                 if (['submitted', 'evaluating'].includes(data.session.status)) {
++                    pollAttempts++;
++                    if (pollAttempts >= MAX_POLLS) {
++                        setIsEvaluating(false);
++                        setIsLoading(false);
++                        setError('Evaluation is taking longer than expected. Please go back and try re-evaluating.');
++                        return;
++                    }
++                    
+                     // Still evaluating ÔÇö show spinner and poll again
+                     setIsEvaluating(true);
+                     setIsLoading(false);
+diff --git a/app/interview/page.tsx b/app/interview/page.tsx
+index 09b589a..392812f 100644
+--- a/app/interview/page.tsx
++++ b/app/interview/page.tsx
+@@ -373,18 +373,22 @@ export default function InterviewPage() {
+                                                             </div>
+                                                         )}
+ 
+-                                                        {/* Re-evaluate button for stuck/submitted/evaluated sessions */}
++                                                        {/* Re-evaluate logic */}
+                                                         {['submitted', 'evaluating', 'evaluated'].includes(session.status) && (
+                                                             <button
+                                                                 onClick={(e) => handleReEvaluate(e, session.id)}
+-                                                                disabled={reEvaluatingId === session.id}
+-                                                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
++                                                                disabled={reEvaluatingId === session.id || session.status === 'evaluating'}
++                                                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
++                                                                    reEvaluatingId === session.id || session.status === 'evaluating'
++                                                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 cursor-wait'
++                                                                        : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer'
++                                                                }`}
+                                                                 title="Re-evaluate this design"
+                                                             >
+-                                                                {reEvaluatingId === session.id ? (
++                                                                {reEvaluatingId === session.id || session.status === 'evaluating' ? (
+                                                                     <>
+-                                                                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+-                                                                        Evaluating
++                                                                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
++                                                                        Evaluating...
+                                                                     </>
+                                                                 ) : (
+                                                                     <>
+diff --git a/components/interview/QuestionPanel.tsx b/components/interview/QuestionPanel.tsx
+index 50c9431..e14e536 100644
+--- a/components/interview/QuestionPanel.tsx
++++ b/components/interview/QuestionPanel.tsx
+@@ -9,6 +9,9 @@ interface QuestionPanelProps {
+     /** Whether to reveal hints */
+     showHints?: boolean;
+     onToggleHints?: () => void;
++    /** Whether the panel is collapsed to save space */
++    isCollapsed?: boolean;
++    onToggle?: () => void;
+ }
+ 
+ const DIFFICULTY_COLORS = {
+@@ -22,12 +25,43 @@ export function QuestionPanel({
+     difficulty,
+     constraintChanges = [],
+     showHints = false,
+-    onToggleHints
++    onToggleHints,
++    isCollapsed = false,
++    onToggle
+ }: QuestionPanelProps) {
+     const colors = DIFFICULTY_COLORS[difficulty];
+ 
++    if (isCollapsed) {
++        return (
++            <div className="flex flex-col h-full py-4 items-center bg-sidebar-bg-dark border-r border-border-dark flex-shrink-0 w-14 transition-all duration-300">
++                <button
++                    onClick={onToggle}
++                    className="p-1 mb-4 rounded-lg bg-dashboard-card text-slate-400 hover:text-white border border-border-dark hover:border-primary/50 transition-colors"
++                    title="Expand Question Panel"
++                >
++                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
++                </button>
++
++                <div 
++                    className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary border border-primary/20 mb-4"
++                    title="Question details available"
++                >
++                    <span className="material-symbols-outlined text-[20px]">quiz</span>
++                </div>
++                
++                {/* Vertical difficulty indicator */}
++                <div 
++                    className={`w-8 py-3 rounded-full flex flex-col items-center justify-center mt-auto ${colors.bg} ${colors.border} border`}
++                    title={`Difficulty: ${difficulty}`}
++                >
++                    <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
++                </div>
++            </div>
++        );
++    }
++
+     return (
+-        <div className="flex flex-col h-full overflow-hidden bg-sidebar-bg-dark border-r border-border-dark">
++        <div className="flex flex-col h-full overflow-hidden bg-sidebar-bg-dark border-r border-border-dark w-[320px] flex-shrink-0 transition-all duration-300">
+             {/* Header */}
+             <div className="p-4 border-b border-border-dark">
+                 <div className="flex items-center justify-between mb-3">
+@@ -35,9 +69,18 @@ export function QuestionPanel({
+                         <span className="material-symbols-outlined text-primary text-[18px]">quiz</span>
+                         Question
+                     </h2>
+-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${colors.bg} ${colors.text} ${colors.border} border capitalize`}>
+-                        {difficulty}
+-                    </span>
++                    <div className="flex items-center gap-2">
++                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${colors.bg} ${colors.text} ${colors.border} border capitalize`}>
++                            {difficulty}
++                        </span>
++                        <button
++                            onClick={onToggle}
++                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
++                            title="Collapse panel"
++                        >
++                            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
++                        </button>
++                    </div>
+                 </div>
+             </div>
+ 
+diff --git a/src/lib/ai/geminiClient.ts b/src/lib/ai/geminiClient.ts
+index 55edd04..b05d4d1 100644
+--- a/src/lib/ai/geminiClient.ts
++++ b/src/lib/ai/geminiClient.ts
+@@ -76,6 +76,12 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
+             const errMsg = error instanceof Error ? error.message : String(error);
+             const status = (error as { status?: number })?.status;
+ 
++            // Immediately rethrow abort/timeout errors to avoid masking
++            // eslint-disable-next-line @typescript-eslint/no-explicit-any
++            if ((error instanceof Error && error.name === 'AbortError') || (error as any).code === 'ETIMEDOUT' || errMsg.includes('timeout') || errMsg.includes('timed out')) {
++                throw error;
++            }
++
+             // Don't retry non-transient errors
+             if (status === 401 || errMsg.includes('Invalid API key')) {
+                 console.error('OpenRouter auth error:', errMsg);
+
+commit ecb34b356386cf0d08a78bc4add16e2853e8439f
+Author: Shashank <shashankchakraborty712005@gmail.com>
+Date:   Tue Apr 7 02:50:38 2026 +0530
+
+    feat: Added re-evaluate button on the session card to ensure api fallback
+
+diff --git a/app/api/interview/[id]/evaluate/route.ts b/app/api/interview/[id]/evaluate/route.ts
+index 676c900..d654897 100644
+--- a/app/api/interview/[id]/evaluate/route.ts
++++ b/app/api/interview/[id]/evaluate/route.ts
+@@ -12,7 +12,6 @@ interface RouteParams {
+ }
+ 
+ // POST: Trigger evaluation of a submitted interview session
+-// Phase 4 will add the actual structural rule engine + AI reasoning evaluator
+ export async function POST(request: NextRequest, { params }: RouteParams) {
+     try {
+         const { id } = await params;
+@@ -37,12 +36,31 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
+ 
+         // Atomic check-and-set: only claim the session if it's currently 'submitted'
+         // This prevents race conditions where two concurrent requests both pass the status check
+-        const session = await InterviewSession.findOneAndUpdate(
++        let session = await InterviewSession.findOneAndUpdate(
+             { _id: id, userId: user._id, status: 'submitted' },
+             { $set: { status: 'evaluating' } },
+             { new: false } // return the pre-update doc so we can inspect canvas
+         );
+ 
++        // If not found as 'submitted', check if it's stuck in 'evaluating' (stale > 2 min)
++        if (!session) {
++            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
++            session = await InterviewSession.findOneAndUpdate(
++                { _id: id, userId: user._id, status: 'evaluating', updatedAt: { $lt: twoMinutesAgo } },
++                { $set: { status: 'evaluating', updatedAt: new Date() } },
++                { new: false }
++            );
++        }
++
++        // Also allow re-evaluation of already-evaluated sessions (user-triggered)
++        if (!session) {
++            session = await InterviewSession.findOneAndUpdate(
++                { _id: id, userId: user._id, status: 'evaluated' },
++                { $set: { status: 'evaluating' } },
++                { new: false }
++            );
++        }
++
+         if (!session) {
+             // Distinguish between "not found" and "wrong status"
+             const exists = await InterviewSession.findOne({ _id: id, userId: user._id }).select('status').lean();
+diff --git a/app/interview/[id]/page.tsx b/app/interview/[id]/page.tsx
+index 987adf9..39c6324 100644
+--- a/app/interview/[id]/page.tsx
++++ b/app/interview/[id]/page.tsx
+@@ -274,23 +274,13 @@ export default function InterviewCanvasPage({ params }: PageProps) {
+             setSession(prev => prev ? { ...prev, status: 'submitted', submittedAt: new Date().toISOString() } : null);
+             setSubmitError(null);
+ 
+-            // Trigger evaluation
+-            const evalResponse = await authFetch(`/api/interview/${id}/evaluate`, {
+-                method: 'POST'
+-            });
+-
+-            if (!evalResponse.ok) {
+-                const evalData = await evalResponse.json().catch(() => ({}));
+-                console.error('Evaluation failed:', evalData.error);
+-                // We don't throw here to avoid showing an error after successful submission
+-                // The status will remain 'submitted' and can be re-evaluated later
+-            } else {
+-                const evalData = await evalResponse.json();
+-                setSession(prev => prev ? { ...prev, status: 'evaluated', evaluation: evalData.evaluation } : null);
++            // Fire-and-forget: trigger evaluation in the background.
++            // The result page will poll until evaluation completes.
++            authFetch(`/api/interview/${id}/evaluate`, { method: 'POST' })
++                .catch(err => console.warn('Background evaluation trigger:', err));
+ 
+-                // Redirect to results page now that evaluation is complete
+-                router.push(`/interview/${id}/result`);
+-            }
++            // Immediately redirect to results page ÔÇö it will poll for completion
++            router.push(`/interview/${id}/result`);
+         } catch (err) {
+             console.error('Error submitting:', err);
+             setSubmitError(err instanceof Error ? err.message : 'Failed to submit');
+@@ -330,7 +320,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
+             if (data.success && data.messages) {
+                 if (setMessages) setMessages(data.messages);
+                 setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);
+-                setIsInterviewPanelOpen(true); // Automatically slide open the interviewer panel
++                setIsInterviewPanelOpen(true);
+             }
+         } catch (err) {
+             console.error('Chaos timeout failed:', err);
+diff --git a/app/interview/[id]/result/page.tsx b/app/interview/[id]/result/page.tsx
+index f3d98bb..72c1f92 100644
+--- a/app/interview/[id]/result/page.tsx
++++ b/app/interview/[id]/result/page.tsx
+@@ -39,31 +39,49 @@ export default function InterviewResultPage({ params }: PageProps) {
+     const [session, setSession] = useState<InterviewSessionData | null>(null);
+     const [isLoading, setIsLoading] = useState(true);
+     const [error, setError] = useState<string | null>(null);
++    const [isEvaluating, setIsEvaluating] = useState(false);
+ 
+     useEffect(() => {
++        let pollTimer: NodeJS.Timeout | null = null;
++        let cancelled = false;
++
+         const fetchResult = async () => {
+             if (!user?.uid || !id) return;
+             try {
+-                setIsLoading(true);
++                if (!isEvaluating) setIsLoading(true);
+                 const response = await authFetch(`/api/interview/${id}`);
+                 if (!response.ok) {
+                     throw new Error('Failed to load results');
+                 }
+                 const data = await response.json();
+ 
+-                if (data.session.status !== 'evaluated') {
+-                    // If not evaluated yet, it might be in progress, submitted, or evaluating
+-                    if (['in_progress', 'submitted', 'evaluating'].includes(data.session.status)) {
+-                        router.replace(`/interview/${id}`);
+-                        return;
+-                    }
++                if (cancelled) return;
++
++                if (data.session.status === 'evaluated') {
++                    // Evaluation complete ÔÇö show results
++                    setIsEvaluating(false);
++                    setSession(data.session);
++                    setIsLoading(false);
++                    return; // stop polling
+                 }
+ 
+-                setSession(data.session);
++                if (['submitted', 'evaluating'].includes(data.session.status)) {
++                    // Still evaluating ÔÇö show spinner and poll again
++                    setIsEvaluating(true);
++                    setIsLoading(false);
++                    pollTimer = setTimeout(fetchResult, 3000);
++                    return;
++                }
++
++                // in_progress ÔÇö shouldn't be on this page
++                if (data.session.status === 'in_progress') {
++                    router.replace(`/interview/${id}`);
++                    return;
++                }
+             } catch (err) {
++                if (cancelled) return;
+                 console.error('Error fetching results:', err);
+                 setError(err instanceof Error ? err.message : 'Failed to load results');
+-            } finally {
+                 setIsLoading(false);
+             }
+         };
+@@ -71,8 +89,41 @@ export default function InterviewResultPage({ params }: PageProps) {
+         if (isAuthenticated && user) {
+             fetchResult();
+         }
++
++        return () => {
++            cancelled = true;
++            if (pollTimer) clearTimeout(pollTimer);
++        };
++    // eslint-disable-next-line react-hooks/exhaustive-deps
+     }, [isAuthenticated, user, id, router]);
+ 
++    // Evaluating state ÔÇö show a dedicated loading screen
++    if (isEvaluating) {
++        return (
++            <div className="flex h-screen items-center justify-center bg-background-dark">
++                <div className="flex flex-col items-center gap-6 max-w-md text-center">
++                    <div className="relative">
++                        <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
++                        <span className="absolute inset-0 flex items-center justify-center material-symbols-outlined text-primary text-[24px]">
++                            psychology
++                        </span>
++                    </div>
++                    <div>
++                        <h2 className="text-xl font-bold text-white mb-2">Evaluating Your Design</h2>
++                        <p className="text-slate-400 text-sm leading-relaxed">
++                            Our AI is analyzing your architecture for structural integrity, trade-off quality, and scalability patterns.
++                            This typically takes 15-30 seconds.
++                        </p>
++                    </div>
++                    <div className="flex items-center gap-2 text-xs text-slate-500">
++                        <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
++                        Processing...
++                    </div>
++                </div>
++            </div>
++        );
++    }
++
+     if (authLoading || isLoading) {
+         return (
+             <div className="flex h-screen items-center justify-center bg-background-dark">
+diff --git a/app/interview/page.tsx b/app/interview/page.tsx
+index cc097c8..09b589a 100644
+--- a/app/interview/page.tsx
++++ b/app/interview/page.tsx
+@@ -74,6 +74,7 @@ export default function InterviewPage() {
+     const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+     const [isStarting, setIsStarting] = useState<string | null>(null); // difficulty being started
+     const [error, setError] = useState<string | null>(null);
++    const [reEvaluatingId, setReEvaluatingId] = useState<string | null>(null);
+     const lastFetchedUid = useRef<string | null>(null);
+ 
+     const fetchSessions = useCallback(async () => {
+@@ -134,6 +135,44 @@ export default function InterviewPage() {
+         }
+     };
+ 
++    const handleReEvaluate = async (e: React.MouseEvent, sessionId: string) => {
++        e.preventDefault();
++        e.stopPropagation();
++        if (reEvaluatingId) return;
++
++        try {
++            setReEvaluatingId(sessionId);
++            // Update the card to show evaluating state immediately
++            setSessions(prev => prev.map(s =>
++                s.id === sessionId ? { ...s, status: 'evaluating' as const } : s
++            ));
++
++            const response = await authFetch(`/api/interview/${sessionId}/evaluate`, {
++                method: 'POST'
++            });
++
++            if (!response.ok) {
++                const data = await response.json().catch(() => ({}));
++                throw new Error(data.error || 'Re-evaluation failed');
++            }
++
++            const data = await response.json();
++            // Update session with new evaluation result
++            setSessions(prev => prev.map(s =>
++                s.id === sessionId
++                    ? { ...s, status: 'evaluated' as const, finalScore: data.session?.finalScore ?? s.finalScore }
++                    : s
++            ));
++        } catch (err) {
++            console.error('Re-evaluate failed:', err);
++            // Revert status to what it was before (refetch to be safe)
++            fetchSessions();
++            setError(err instanceof Error ? err.message : 'Re-evaluation failed');
++        } finally {
++            setReEvaluatingId(null);
++        }
++    };
++
+     const formatRelativeTime = (dateString: string) => {
+         const date = new Date(dateString);
+         if (isNaN(date.getTime())) return 'Unknown';
+@@ -334,6 +373,28 @@ export default function InterviewPage() {
+                                                             </div>
+                                                         )}
+ 
++                                                        {/* Re-evaluate button for stuck/submitted/evaluated sessions */}
++                                                        {['submitted', 'evaluating', 'evaluated'].includes(session.status) && (
++                                                            <button
++                                                                onClick={(e) => handleReEvaluate(e, session.id)}
++                                                                disabled={reEvaluatingId === session.id}
++                                                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
++                                                                title="Re-evaluate this design"
++                                                            >
++                                                                {reEvaluatingId === session.id ? (
++                                                                    <>
++                                                                        <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
++                                                                        Evaluating
++                                                                    </>
++                                                                ) : (
++                                                                    <>
++                                                                        <span className="material-symbols-outlined text-[14px]">refresh</span>
++                                                                        Re-evaluate
++                                                                    </>
++                                                                )}
++                                                            </button>
++                                                        )}
++
+                                                         <span className="material-symbols-outlined text-[18px] text-slate-400 dark:text-text-muted-dark group-hover:text-primary transition-colors">
+                                                             arrow_forward
+                                                         </span>
+diff --git a/src/lib/ai/geminiClient.ts b/src/lib/ai/geminiClient.ts
+index 76ec1e2..55edd04 100644
+--- a/src/lib/ai/geminiClient.ts
++++ b/src/lib/ai/geminiClient.ts
+@@ -31,22 +31,34 @@ function getClient(): OpenAI {
+  * Uses Google Gemini 2.0 Flash via OpenRouter for high-quality generation.
+  * Falls back gracefully with retry logic for transient errors.
+  */
+-export async function generateJSON<T>(prompt: string, retries = 2): Promise<T> {
++export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 60000): Promise<T> {
+     const openrouter = getClient();
+ 
+     for (let attempt = 0; attempt <= retries; attempt++) {
+         try {
+-            const response = await openrouter.chat.completions.create({
+-                model: 'google/gemini-2.0-flash-001',
+-                messages: [
++            // AbortController with timeout to prevent hanging forever on slow AI responses
++            const controller = new AbortController();
++            const timer = setTimeout(() => controller.abort(), timeoutMs);
++
++            let response;
++            try {
++                response = await openrouter.chat.completions.create(
+                     {
+-                        role: 'user',
+-                        content: `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown formatting, no explanations.`,
++                        model: 'google/gemini-2.0-flash-001',
++                        messages: [
++                            {
++                                role: 'user',
++                                content: `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown formatting, no explanations.`,
++                            },
++                        ],
++                        temperature: 0.8,
++                        max_tokens: 2048,
+                     },
+-                ],
+-                temperature: 0.8,
+-                max_tokens: 2048,
+-            });
++                    { signal: controller.signal }
++                );
++            } finally {
++                clearTimeout(timer);
++            }
+ 
+             const text = response.choices[0]?.message?.content?.trim();
+             if (!text) {
+
+commit 93ad3a91b4d98e00f0e620a2c6bdd3d02a9376c3
+Author: Shashank <shashankchakraborty712005@gmail.com>
+Date:   Tue Apr 7 01:16:42 2026 +0530
+
+    feat(ui/ai): Added more Tool components and expanded the Question Pool massively
+    - Now the ai has more elaborate pool of questions to figure out from
+
+diff --git a/app/layout.tsx b/app/layout.tsx
+index b988c5d..5412e8c 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -20,13 +20,14 @@ export default function RootLayout({
+   children: React.ReactNode;
+ }>) {
+   return (
+-    <html lang="en" className={`${inter.variable} dark`}>
++    <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
+       <head>
+         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+       </head>
+       <body
+         className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen overflow-x-hidden flex flex-col font-body antialiased"
++        suppressHydrationWarning
+       >
+         <AuthProvider>
+           {children}
+diff --git a/components/canvas/ComponentPalette.tsx b/components/canvas/ComponentPalette.tsx
+index 78a9a16..49b1f26 100644
+--- a/components/canvas/ComponentPalette.tsx
++++ b/components/canvas/ComponentPalette.tsx
+@@ -25,6 +25,9 @@ const SECTIONS: Section[] = [
+       { name: 'Client', icon: 'smartphone', color: 'blue', bgClass: 'bg-blue-500/10', textClass: 'text-blue-500', darkTextClass: 'dark:text-blue-400', groupHoverBg: 'group-hover:bg-blue-500' },
+       { name: 'Server', icon: 'dns', color: 'purple', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', darkTextClass: 'dark:text-purple-400', groupHoverBg: 'group-hover:bg-purple-500' },
+       { name: 'Function', icon: 'functions', color: 'indigo', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', darkTextClass: 'dark:text-indigo-400', groupHoverBg: 'group-hover:bg-indigo-500' },
++      { name: 'Worker', icon: 'precision_manufacturing', color: 'violet', bgClass: 'bg-violet-500/10', textClass: 'text-violet-500', darkTextClass: 'dark:text-violet-400', groupHoverBg: 'group-hover:bg-violet-500' },
++      { name: 'Container', icon: 'inventory_2', color: 'sky', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500', darkTextClass: 'dark:text-sky-400', groupHoverBg: 'group-hover:bg-sky-500' },
++      { name: 'Gateway', icon: 'router', color: 'amber', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500', darkTextClass: 'dark:text-amber-400', groupHoverBg: 'group-hover:bg-amber-500' },
+     ]
+   },
+   {
+@@ -32,14 +35,20 @@ const SECTIONS: Section[] = [
+     items: [
+       { name: 'LB', icon: 'alt_route', color: 'orange', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500', darkTextClass: 'dark:text-orange-400', groupHoverBg: 'group-hover:bg-orange-500' },
+       { name: 'CDN', icon: 'public', color: 'teal', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500', darkTextClass: 'dark:text-teal-400', groupHoverBg: 'group-hover:bg-teal-500' },
++      { name: 'DNS', icon: 'language', color: 'lime', bgClass: 'bg-lime-500/10', textClass: 'text-lime-500', darkTextClass: 'dark:text-lime-400', groupHoverBg: 'group-hover:bg-lime-500' },
++      { name: 'Firewall', icon: 'local_fire_department', color: 'rose', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500', darkTextClass: 'dark:text-rose-400', groupHoverBg: 'group-hover:bg-rose-500' },
++      { name: 'Proxy', icon: 'vpn_lock', color: 'fuchsia', bgClass: 'bg-fuchsia-500/10', textClass: 'text-fuchsia-500', darkTextClass: 'dark:text-fuchsia-400', groupHoverBg: 'group-hover:bg-fuchsia-500' },
+     ]
+   },
+   {
+     title: 'Storage',
+     items: [
+       { name: 'SQL', icon: 'database', color: 'emerald', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500', darkTextClass: 'dark:text-emerald-400', groupHoverBg: 'group-hover:bg-emerald-500' },
++      { name: 'NoSQL', icon: 'view_cozy', color: 'green', bgClass: 'bg-green-500/10', textClass: 'text-green-500', darkTextClass: 'dark:text-green-400', groupHoverBg: 'group-hover:bg-green-500' },
+       { name: 'Cache', icon: 'bolt', color: 'red', bgClass: 'bg-red-500/10', textClass: 'text-red-500', darkTextClass: 'dark:text-red-400', groupHoverBg: 'group-hover:bg-red-500' },
+       { name: 'Blob', icon: 'folder_zip', color: 'yellow', bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600', darkTextClass: 'dark:text-yellow-400', groupHoverBg: 'group-hover:bg-yellow-500' },
++      { name: 'Search', icon: 'saved_search', color: 'orange', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500', darkTextClass: 'dark:text-orange-400', groupHoverBg: 'group-hover:bg-orange-500' },
++      { name: 'GraphDB', icon: 'share', color: 'indigo', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', darkTextClass: 'dark:text-indigo-400', groupHoverBg: 'group-hover:bg-indigo-500' },
+     ]
+   },
+   {
+@@ -47,6 +56,24 @@ const SECTIONS: Section[] = [
+     items: [
+       { name: 'Queue', icon: 'mail', color: 'pink', bgClass: 'bg-pink-500/10', textClass: 'text-pink-500', darkTextClass: 'dark:text-pink-400', groupHoverBg: 'group-hover:bg-pink-500' },
+       { name: 'Kafka', icon: 'hub', color: 'cyan', bgClass: 'bg-cyan-500/10', textClass: 'text-cyan-500', darkTextClass: 'dark:text-cyan-400', groupHoverBg: 'group-hover:bg-cyan-500' },
++      { name: 'PubSub', icon: 'cell_tower', color: 'purple', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', darkTextClass: 'dark:text-purple-400', groupHoverBg: 'group-hover:bg-purple-500' },
++      { name: 'WebSocket', icon: 'sync_alt', color: 'teal', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500', darkTextClass: 'dark:text-teal-400', groupHoverBg: 'group-hover:bg-teal-500' },
++    ]
++  },
++  {
++    title: 'Observability',
++    items: [
++      { name: 'Logger', icon: 'receipt_long', color: 'slate', bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', darkTextClass: 'dark:text-slate-300', groupHoverBg: 'group-hover:bg-slate-500' },
++      { name: 'Metrics', icon: 'monitoring', color: 'emerald', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500', darkTextClass: 'dark:text-emerald-400', groupHoverBg: 'group-hover:bg-emerald-500' },
++      { name: 'Tracer', icon: 'timeline', color: 'amber', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500', darkTextClass: 'dark:text-amber-400', groupHoverBg: 'group-hover:bg-amber-500' },
++    ]
++  },
++  {
++    title: 'Security',
++    items: [
++      { name: 'Auth', icon: 'passkey', color: 'sky', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500', darkTextClass: 'dark:text-sky-400', groupHoverBg: 'group-hover:bg-sky-500' },
++      { name: 'WAF', icon: 'shield', color: 'rose', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500', darkTextClass: 'dark:text-rose-400', groupHoverBg: 'group-hover:bg-rose-500' },
++      { name: 'Vault', icon: 'lock', color: 'violet', bgClass: 'bg-violet-500/10', textClass: 'text-violet-500', darkTextClass: 'dark:text-violet-400', groupHoverBg: 'group-hover:bg-violet-500' },
+     ]
+   }
+ ];
+diff --git a/components/canvas/DesignCanvas.tsx b/components/canvas/DesignCanvas.tsx
+index a0b74ab..536129c 100644
+--- a/components/canvas/DesignCanvas.tsx
++++ b/components/canvas/DesignCanvas.tsx
+@@ -11,13 +11,30 @@ const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
+   Client: { text: 'text-blue-500', darkText: 'dark:text-blue-400' },
+   Server: { text: 'text-purple-500', darkText: 'dark:text-purple-400' },
+   Function: { text: 'text-indigo-500', darkText: 'dark:text-indigo-400' },
++  Worker: { text: 'text-violet-500', darkText: 'dark:text-violet-400' },
++  Container: { text: 'text-sky-500', darkText: 'dark:text-sky-400' },
++  Gateway: { text: 'text-amber-500', darkText: 'dark:text-amber-400' },
+   LB: { text: 'text-orange-500', darkText: 'dark:text-orange-400' },
+   CDN: { text: 'text-teal-500', darkText: 'dark:text-teal-400' },
++  DNS: { text: 'text-lime-500', darkText: 'dark:text-lime-400' },
++  Firewall: { text: 'text-rose-500', darkText: 'dark:text-rose-400' },
++  Proxy: { text: 'text-fuchsia-500', darkText: 'dark:text-fuchsia-400' },
+   SQL: { text: 'text-emerald-500', darkText: 'dark:text-emerald-400' },
++  NoSQL: { text: 'text-green-500', darkText: 'dark:text-green-400' },
+   Cache: { text: 'text-red-500', darkText: 'dark:text-red-400' },
+   Blob: { text: 'text-yellow-600', darkText: 'dark:text-yellow-400' },
++  Search: { text: 'text-orange-500', darkText: 'dark:text-orange-400' },
++  GraphDB: { text: 'text-indigo-500', darkText: 'dark:text-indigo-400' },
+   Queue: { text: 'text-pink-500', darkText: 'dark:text-pink-400' },
+   Kafka: { text: 'text-cyan-500', darkText: 'dark:text-cyan-400' },
++  PubSub: { text: 'text-purple-500', darkText: 'dark:text-purple-400' },
++  WebSocket: { text: 'text-teal-500', darkText: 'dark:text-teal-400' },
++  Logger: { text: 'text-slate-400', darkText: 'dark:text-slate-300' },
++  Metrics: { text: 'text-emerald-500', darkText: 'dark:text-emerald-400' },
++  Tracer: { text: 'text-amber-500', darkText: 'dark:text-amber-400' },
++  Auth: { text: 'text-sky-500', darkText: 'dark:text-sky-400' },
++  WAF: { text: 'text-rose-500', darkText: 'dark:text-rose-400' },
++  Vault: { text: 'text-violet-500', darkText: 'dark:text-violet-400' },
+ };
+ 
+ // Friendly default labels assigned when a component is dropped onto the canvas
+@@ -25,13 +42,30 @@ const DEFAULT_LABELS: Record<string, string> = {
+   Client: 'Client App',
+   Server: 'App Server',
+   Function: 'Lambda',
++  Worker: 'Background Worker',
++  Container: 'Container',
++  Gateway: 'API Gateway',
+   LB: 'Load Balancer',
+   CDN: 'CDN',
++  DNS: 'DNS',
++  Firewall: 'Firewall',
++  Proxy: 'Reverse Proxy',
+   SQL: 'SQL Database',
++  NoSQL: 'NoSQL DB',
+   Cache: 'Redis Cache',
+   Blob: 'Blob Storage',
++  Search: 'Search Index',
++  GraphDB: 'Graph DB',
+   Queue: 'Message Queue',
+   Kafka: 'Event Stream',
++  PubSub: 'Pub/Sub',
++  WebSocket: 'WebSocket',
++  Logger: 'Log Aggregator',
++  Metrics: 'Metrics',
++  Tracer: 'Distributed Tracer',
++  Auth: 'Auth Service',
++  WAF: 'WAF',
++  Vault: 'Secret Vault',
+ };
+ 
+ export type CanvasNode = {
+diff --git a/git_status.txt b/git_status.txt
+new file mode 100644
+index 0000000..8af2c43
+--- /dev/null
++++ b/git_status.txt
+@@ -0,0 +1,4 @@
++ M app/practice/[id]/page.tsx
++ M src/lib/practice/storage.ts
++?? git_status.txt
++?? tsc_output.txt
+diff --git a/src/lib/ai/questionGenerator.ts b/src/lib/ai/questionGenerator.ts
+index ff8ab8e..7c5517b 100644
+--- a/src/lib/ai/questionGenerator.ts
++++ b/src/lib/ai/questionGenerator.ts
+@@ -14,8 +14,16 @@ const DIFFICULTY_CONFIG: Record<InterviewDifficulty, {
+         scaleRange: '100KÔÇô1M users, ~1K requests/sec',
+         complexityGuidance: 'Focus on basic CRUD, simple client-server architecture, single database. Suitable for junior-level candidates.',
+         exampleTopics: [
+-            'URL shortener', 'Pastebin', 'Rate limiter', 'Key-value store',
+-            'Task queue', 'Logging system', 'File storage service', 'Polling system',
++            'URL shortener', 'Pastebin clone', 'Rate limiter', 'Key-value store',
++            'Task queue', 'Centralized logging system', 'File storage service', 'Polling/voting system',
++            'API gateway with auth', 'Webhook delivery service', 'Feature flag system',
++            'Leaderboard service', 'Session management store', 'Email verification system',
++            'Image thumbnail generator', 'RSS feed aggregator', 'Markdown note-taking app',
++            'Health check monitor', 'Short-lived secret sharing (like PrivateBin)',
++            'Simple DNS resolver', 'Config management service', 'CAPTCHA verification service',
++            'Invite-code system', 'Link preview generator', 'Tag/bookmark manager',
++            'Audit log service', 'Static site deployment pipeline', 'Simple search engine for blog',
++            'API usage metering dashboard', 'OTP/2FA service',
+         ],
+         timeMinutes: 30,
+     },
+@@ -23,9 +31,20 @@ const DIFFICULTY_CONFIG: Record<InterviewDifficulty, {
+         scaleRange: '1MÔÇô50M users, 1KÔÇô50K requests/sec',
+         complexityGuidance: 'Requires caching, load balancing, database replication, CDN. Needs trade-off discussions. Suitable for mid-level candidates.',
+         exampleTopics: [
+-            'Twitter/X feed', 'Instagram photo sharing', 'Chat application',
+-            'Notification system', 'Search autocomplete', 'E-commerce platform',
+-            'Ride-sharing service', 'News feed aggregator',
++            'Twitter/X feed', 'Instagram photo sharing', 'Real-time chat application',
++            'Notification system', 'Search autocomplete', 'E-commerce product platform',
++            'Ride-sharing matching service', 'News feed aggregator', 'Online multiplayer game lobby',
++            'Video conferencing signaling server', 'Collaborative playlist (like Spotify)',
++            'Food delivery order system', 'IoT device telemetry pipeline',
++            'Real-time sports scoreboard', 'Ticket booking system (concerts/flights)',
++            'Social media stories feature', 'Geofencing alert system',
++            'Content moderation pipeline', 'Customer support ticketing system',
++            'Real-time auction platform', 'Fitness tracker data aggregator',
++            'Markdown-based wiki with versioning', 'Event sourcing-based shopping cart',
++            'Multi-tenant SaaS billing system', 'Podcast hosting and streaming platform',
++            'Parking spot finder with live availability', 'Package delivery tracking system',
++            'Permission and RBAC management system', 'A/B testing framework',
++            'Collaborative kanban board', 'Real-time currency exchange dashboard',
+         ],
+         timeMinutes: 45,
+     },
+@@ -33,21 +52,46 @@ const DIFFICULTY_CONFIG: Record<InterviewDifficulty, {
+         scaleRange: '50MÔÇô500M+ users, 50KÔÇô500K+ requests/sec',
+         complexityGuidance: 'Requires multi-region deployment, CQRS, event sourcing, message queues, sharding, consensus protocols. Deep architectural reasoning required. Suitable for senior-level candidates.',
+         exampleTopics: [
+-            'YouTube video streaming', 'Google Maps', 'Uber/Lyft real-time dispatch',
+-            'Distributed file system', 'Real-time collaborative editor',
++            'YouTube video streaming', 'Google Maps navigation', 'Uber/Lyft real-time dispatch',
++            'Distributed file system (like GFS/HDFS)', 'Real-time collaborative document editor',
+             'Stock trading platform', 'Social media platform at global scale',
+-            'Content delivery network',
++            'Content delivery network from scratch', 'Distributed search engine (like Elasticsearch)',
++            'Real-time fraud detection system', 'Multi-region chat system (like WhatsApp)',
++            'ML model serving platform', 'Distributed workflow engine (like Airflow at scale)',
++            'Live video streaming with chat (like Twitch)', 'Genomics data processing pipeline',
++            'Autonomous vehicle telemetry system', 'Global payment processing system (like Stripe)',
++            'Ad serving platform with real-time bidding', 'Distributed rate limiter at CDN edge',
++            'Real-time recommendation engine', 'Healthcare FHIR-compliant data exchange',
++            'Multi-player real-time game server (like Fortnite)', 'Supply chain tracking system',
++            'Observability platform (logs, metrics, traces)', 'Distributed cron/scheduler',
++            'Event-driven microservices orchestrator', 'Blockchain-based asset registry',
++            'Global DNS system with failover', 'Code deployment pipeline (CI/CD at scale)',
++            'Disaster recovery orchestration platform', 'IoT fleet management for 10M+ devices',
+         ],
+         timeMinutes: 60,
+     },
+ };
+ 
++/**
++ * Pick N random items from an array without replacement.
++ */
++function pickRandom<T>(arr: T[], count: number): T[] {
++    const shuffled = [...arr].sort(() => Math.random() - 0.5);
++    return shuffled.slice(0, count);
++}
++
+ /**
+  * Build the system prompt for question generation.
++ * Uses a random subset of example topics and a session seed to maximize diversity.
+  */
+ function buildQuestionPrompt(difficulty: InterviewDifficulty): string {
+     const config = DIFFICULTY_CONFIG[difficulty];
+ 
++    // Pick a random subset of 6 topics ÔÇö prevents the AI from clustering around the same ones
++    const selectedTopics = pickRandom(config.exampleTopics, 6);
++    // Random seed so repeated calls with the same prompt still vary
++    const seed = Math.random().toString(36).substring(2, 8);
++
+     return `You are a senior system design interviewer at a top tech company.
+ 
+ Generate a unique, realistic system design interview question at the "${difficulty}" difficulty level.
+@@ -55,7 +99,7 @@ Generate a unique, realistic system design interview question at the "${difficul
+ DIFFICULTY GUIDELINES:
+ - Scale: ${config.scaleRange}
+ - ${config.complexityGuidance}
+-- Example topics (for inspiration, DO NOT copy directly ÔÇö create a unique variant): ${config.exampleTopics.join(', ')}
++- Inspiration topics (pick ONE as a starting point, then create a unique, creative variant ÔÇö DO NOT copy directly): ${selectedTopics.join(', ')}
+ 
+ RULES:
+ 1. The question must be a SPECIFIC system (e.g., "Design a real-time collaborative whiteboard" not "Design a system")
+@@ -65,6 +109,10 @@ RULES:
+ 5. Provide 2-3 hints that guide toward good architecture WITHOUT giving the answer
+ 6. DO NOT use generic questions ÔÇö make it specific and interesting
+ 7. Requirements should be achievable within ${config.timeMinutes} minutes of design time
++8. Be CREATIVE. Avoid overly common questions like "URL shortener" or "Twitter clone" ÔÇö think of real-world systems people actually use
++9. The question should naturally require a mix of compute, storage, networking, and messaging components
++
++Session seed: ${seed}
+ 
+ Return ONLY this JSON structure:
+ {
+@@ -92,7 +140,7 @@ Return ONLY this JSON structure:
+ 
+ /**
+  * Curated fallback questions for when AI generation is unavailable.
+- * 3 per difficulty, randomly selected.
++ * 8 per difficulty, randomly selected.
+  */
+ const FALLBACK_QUESTIONS: Record<InterviewDifficulty, IInterviewQuestion[]> = {
+     easy: [
+@@ -150,6 +198,96 @@ const FALLBACK_QUESTIONS: Record<InterviewDifficulty, IInterviewQuestion[]> = {
+                 'Think about accuracy vs performance trade-offs in window algorithms',
+             ],
+         },
++        {
++            prompt: 'Design a webhook delivery service for a developer platform',
++            requirements: [
++                'Customers register HTTPS endpoints to receive event payloads',
++                'Events are delivered with at-least-once guarantee',
++                'Failed deliveries are retried with exponential backoff up to 72 hours',
++                'Provide a delivery log with status, latency, and response body',
++            ],
++            constraints: [
++                'Handle 50K webhook deliveries per minute',
++                'Initial delivery within 5 seconds of event creation',
++            ],
++            trafficProfile: { users: '100K registered endpoints', rps: '800 requests/sec', storage: '200 GB logs' },
++            hints: [
++                'Think about idempotency keys for consumers to deduplicate',
++                'Consider a dead-letter queue for persistently failing endpoints',
++            ],
++        },
++        {
++            prompt: 'Design a feature flag management system',
++            requirements: [
++                'Engineers can create, toggles, and archive feature flags via a dashboard',
++                'Flags support percentage rollouts, user segment targeting, and kill switches',
++                'SDKs in the client apps evaluate flags locally with <10ms latency',
++                'Audit log tracks who changed which flag and when',
++            ],
++            constraints: [
++                'Flag evaluation under 10ms at p99 (client-side)',
++                'Support 200K flag evaluations per second across all SDKs',
++            ],
++            trafficProfile: { users: '500 engineers, 1M end-users', rps: '200K flag evals/sec', storage: '5 GB' },
++            hints: [
++                'Think about pushing flag updates via SSE or WebSocket vs polling',
++                'Consider how to handle flag evaluation when the server is unreachable',
++            ],
++        },
++        {
++            prompt: 'Design an image thumbnail generation service',
++            requirements: [
++                'Users upload images which are resized into 3 standard thumbnail sizes',
++                'Thumbnails are generated asynchronously after upload',
++                'Original and thumbnails are served via CDN with cache headers',
++                'Support JPEG, PNG, and WebP output formats',
++            ],
++            constraints: [
++                'Process up to 5K images per minute',
++                'Thumbnail generation within 10 seconds of upload',
++            ],
++            trafficProfile: { users: '300K DAU', rps: '500 reads/sec', storage: '10 TB' },
++            hints: [
++                'Consider a worker pool consuming from a queue for async processing',
++                'Think about how to handle image uploads larger than expected (abuse prevention)',
++            ],
++        },
++        {
++            prompt: 'Design a real-time leaderboard system for an online game',
++            requirements: [
++                'Track player scores and rank them globally in real-time',
++                'Support daily, weekly, and all-time leaderboards',
++                'Players can query their rank and the top-N players',
++                'Scores update reflect within 1 second',
++            ],
++            constraints: [
++                'Handle 100K score updates per minute',
++                'Rank lookup under 20ms at p95',
++            ],
++            trafficProfile: { users: '1M gamers', rps: '2K requests/sec', storage: '50 GB' },
++            hints: [
++                'Consider Redis sorted sets for O(logN) rank operations',
++                'Think about how to reset periodic leaderboards efficiently',
++            ],
++        },
++        {
++            prompt: 'Design an OTP/two-factor authentication service',
++            requirements: [
++                'Generate time-based OTPs (TOTP) and SMS-based OTPs',
++                'Validate OTP within a configurable window (default 30 seconds)',
++                'Rate limit OTP verification attempts to prevent brute force',
++                'Support backup codes for account recovery',
++            ],
++            constraints: [
++                'Verification latency under 50ms',
++                'Support 500K active users with MFA enabled',
++            ],
++            trafficProfile: { users: '500K MFA users', rps: '1K verifications/sec', storage: '2 GB' },
++            hints: [
++                'Consider HMAC-based one-time password algorithm (RFC 6238)',
++                'Think about secure secret storage and how to prevent replay attacks',
++            ],
++        },
+     ],
+     medium: [
+         {
+@@ -212,6 +350,105 @@ const FALLBACK_QUESTIONS: Record<InterviewDifficulty, IInterviewQuestion[]> = {
+                 'Think about how to handle high-density urban areas vs rural',
+             ],
+         },
++        {
++            prompt: 'Design a food delivery order management system like DoorDash',
++            requirements: [
++                'Customers browse restaurant menus and place orders',
++                'Orders are dispatched to the nearest available driver',
++                'Real-time order tracking from restaurant to doorstep',
++                'Support promo codes and loyalty points',
++                'Estimated delivery time shown before checkout',
++            ],
++            constraints: [
++                'Handle 500K concurrent orders during dinner peak',
++                'Order dispatch latency under 30 seconds',
++                '99.9% order accuracy (no lost or duplicated orders)',
++            ],
++            trafficProfile: { users: '8M MAU', rps: '15K requests/sec peak', storage: '5 TB' },
++            hints: [
++                'Think about a state machine for order lifecycle (placed ÔåÆ accepted ÔåÆ picked up ÔåÆ delivered)',
++                'Consider how to handle restaurant capacity and order throttling',
++            ],
++        },
++        {
++            prompt: 'Design an IoT sensor telemetry ingestion pipeline',
++            requirements: [
++                'Ingest telemetry data from 500K IoT devices reporting every 10 seconds',
++                'Store time-series data for 90-day hot storage, 2-year cold archive',
++                'Real-time anomaly detection with alerting within 30 seconds',
++                'Dashboard with per-device and fleet-wide metrics',
++            ],
++            constraints: [
++                'Ingest 50K data points per second sustained',
++                'Query latency for last-24h data under 200ms',
++                'Zero data loss ÔÇö every reading must be persisted',
++            ],
++            trafficProfile: { users: '500K devices', rps: '50K writes/sec', storage: '50 TB/year' },
++            hints: [
++                'Consider a time-series database for efficient storage and queries',
++                'Think about partitioning by device ID and time range',
++            ],
++        },
++        {
++            prompt: 'Design an online multiplayer game lobby and matchmaking system',
++            requirements: [
++                'Players create or join game lobbies with configurable settings',
++                'Skill-based matchmaking pairs players of similar rank',
++                'Support 2v2, 5v5, and battle-royale (100-player) modes',
++                'Real-time lobby chat and ready-check before game start',
++                'Handle player disconnects and reconnection within 60 seconds',
++            ],
++            constraints: [
++                'Find a match within 30 seconds for 95% of players',
++                'Support 200K concurrent players in matchmaking queues',
++                'WebSocket connections must support 100K concurrent sessions',
++            ],
++            trafficProfile: { users: '2M DAU', rps: '10K requests/sec', storage: '1 TB' },
++            hints: [
++                'Consider Elo/Glicko rating systems for skill ranking',
++                'Think about regional sharding to minimize latency',
++            ],
++        },
++        {
++            prompt: 'Design a real-time ticket booking system for live events',
++            requirements: [
++                'Users browse events and select specific seats from a venue map',
++                'Seats are held for 10 minutes during checkout to prevent double-booking',
++                'Support waitlists when an event sells out',
++                'Generate and validate unique QR-code tickets',
++                'Handle flash sales where 50K users try to book simultaneously',
++            ],
++            constraints: [
++                'Zero double-bookings ÔÇö strong consistency on seat inventory',
++                'Checkout flow completes within 3 seconds under load',
++                'Handle 50K concurrent users during on-sale events',
++            ],
++            trafficProfile: { users: '5M MAU', rps: '20K requests/sec peak', storage: '500 GB' },
++            hints: [
++                'Consider optimistic vs pessimistic locking for seat reservation',
++                'Think about a virtual waiting room to smooth traffic spikes',
++            ],
++        },
++        {
++            prompt: 'Design an A/B testing and experimentation platform',
++            requirements: [
++                'Data scientists create experiments with multiple variants and traffic splits',
++                'SDK assigns users to variants deterministically (consistent hashing)',
++                'Compute statistical significance in near-real-time',
++                'Support guardrail metrics that auto-stop harmful experiments',
++                'Dashboard shows conversion rates, confidence intervals, and impact',
++            ],
++            constraints: [
++                'Variant assignment latency under 5ms (client-side SDK)',
++                'Handle 10M events per day for metric computation',
++                'Support 500 concurrent experiments',
++            ],
++            trafficProfile: { users: '10M DAU', rps: '5K events/sec', storage: '10 TB/year' },
++            hints: [
++                'Consider consistent hashing for sticky variant assignment',
++                'Think about how to handle interaction effects between overlapping experiments',
++            ],
++        },
+     ],
+     hard: [
+         {
+@@ -280,6 +517,115 @@ const FALLBACK_QUESTIONS: Record<InterviewDifficulty, IInterviewQuestion[]> = {
+                 'How would you handle network partitions without losing trades?',
+             ],
+         },
++        {
++            prompt: 'Design a real-time fraud detection system for a global payment processor',
++            requirements: [
++                'Evaluate every transaction in real-time against ML fraud models',
++                'Support rule-based and model-based detection in a pipeline',
++                'Flag suspicious transactions for manual review with confidence scores',
++                'Feedback loop: analyst decisions retrain models nightly',
++                'Audit trail and compliance reporting for regulators',
++            ],
++            constraints: [
++                'Decision latency under 100ms per transaction',
++                'Process 50K transactions per second at peak',
++                'False positive rate below 0.1% to avoid blocking legitimate users',
++                '99.999% availability ÔÇö downtime blocks all payments',
++            ],
++            trafficProfile: { users: '100M cardholders', rps: '50K transactions/sec', storage: '200 TB/year' },
++            hints: [
++                'Consider feature stores for real-time ML feature serving',
++                'Think about how to handle model versioning and shadow scoring',
++                'How would you design the system to handle cold-start fraud patterns?',
++            ],
++        },
++        {
++            prompt: 'Design an ML model serving platform for production inference at scale',
++            requirements: [
++                'Data scientists deploy trained models via API with zero-downtime rollouts',
++                'Support A/B testing between model versions with traffic splitting',
++                'Auto-scale GPU/CPU inference workers based on request load',
++                'Monitor model drift, latency, and prediction quality in real-time',
++                'Support batch inference for nightly reprocessing',
++            ],
++            constraints: [
++                'Inference latency under 50ms at p99 for real-time models',
++                'Handle 100K inference requests per second',
++                'Support models ranging from 100MB to 10GB in size',
++                '99.95% availability SLA',
++            ],
++            trafficProfile: { users: '500 ML engineers, 50M end-users', rps: '100K inferences/sec', storage: '50 TB models' },
++            hints: [
++                'Consider model registry, container-based serving, and Kubernetes autoscaling',
++                'Think about model warm-up to avoid cold-start latency spikes',
++            ],
++        },
++        {
++            prompt: 'Design a real-time ad serving platform with bidding (like Google Ads)',
++            requirements: [
++                'Serve targeted ads to users based on context, profile, and intent',
++                'Run real-time bidding (RTB) auctions completing within 100ms',
++                'Support budget pacing to spread advertiser spend across the day',
++                'Track impressions and clicks for billing with exactly-once counting',
++                'Fraud detection for click farms and bot traffic',
++            ],
++            constraints: [
++                'Serve 1M ad requests per second globally',
++                'RTB auction latency under 100ms end-to-end',
++                'Click tracking accuracy 99.99% ÔÇö billing depends on it',
++                'Multi-region with consistent auction results',
++            ],
++            trafficProfile: { users: '500M DAU', rps: '1M requests/sec', storage: '500 TB/year' },
++            hints: [
++                'Consider how to build a fast user feature lookup for ad targeting',
++                'Think about second-price vs first-price auction mechanics',
++                'How would you handle sudden budget exhaustion mid-day?',
++            ],
++        },
++        {
++            prompt: 'Design a full-stack observability platform (logs, metrics, traces)',
++            requirements: [
++                'Ingest structured logs, time-series metrics, and distributed traces',
++                'Unified query engine to correlate logs Ôåö metrics Ôåö traces',
++                'Real-time alerting with configurable thresholds and anomaly detection',
++                'Dashboards with custom charts and shared views',
++                'Support 90-day hot retention, 1-year cold archive',
++            ],
++            constraints: [
++                'Ingest 5M events per second across all signal types',
++                'Query latency under 2 seconds for last-24h data',
++                'Zero data loss during ingestion spikes',
++                '99.9% platform availability',
++            ],
++            trafficProfile: { users: '10K engineering orgs', rps: '5M events/sec', storage: '2 PB/year' },
++            hints: [
++                'Consider column-oriented storage for efficient metric queries',
++                'Think about how to implement trace-to-log correlation at ingest time',
++                'How would you handle a 10x traffic spike during an incident?',
++            ],
++        },
++        {
++            prompt: 'Design a global payment processing system like Stripe',
++            requirements: [
++                'Process credit card, bank transfer, and wallet payments worldwide',
++                'Support multi-currency with real-time exchange rate conversion',
++                'Idempotent API to prevent duplicate charges',
++                'Webhook-based event notifications for payment lifecycle',
++                'PCI-DSS compliant data handling with tokenized card storage',
++            ],
++            constraints: [
++                'Payment authorization latency under 500ms at p99',
++                'Handle 100K transactions per second globally',
++                'Zero tolerance for double-charging or lost payments',
++                '99.999% availability ÔÇö downtime directly causes revenue loss',
++            ],
++            trafficProfile: { users: '1M merchants', rps: '100K transactions/sec', storage: '500 TB/year' },
++            hints: [
++                'Consider saga pattern for multi-step payment workflows',
++                'Think about how to handle partial failures (auth succeeds, capture fails)',
++                'How would you design the vault for PCI-compliant card storage?',
++            ],
++        },
+     ],
+ };
+ 
+diff --git a/src/lib/firebase/AuthContext.tsx b/src/lib/firebase/AuthContext.tsx
+index 97c777b..552066b 100644
+--- a/src/lib/firebase/AuthContext.tsx
++++ b/src/lib/firebase/AuthContext.tsx
+@@ -21,11 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
+ 
+     useEffect(() => {
+         if (!auth) {
+-            // eslint-disable-next-line react-hooks/set-state-in-effect
++            // No Firebase configured ÔÇö mark loading as done immediately.
++            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: single synchronous set at mount, not a cascading render
+             setIsLoading(false);
+             return;
+         }
+         return onAuthStateChanged(auth, (u) => {
++            // These state updates happen inside a Firebase subscription callback,
++            // which is the correct effect pattern (external system ÔåÆ setState).
+             setUser(u);
+             setIsLoading(false);
+         });
+diff --git a/src/lib/simulation/constants.ts b/src/lib/simulation/constants.ts
+index 300f3d9..bb223ac 100644
+--- a/src/lib/simulation/constants.ts
++++ b/src/lib/simulation/constants.ts
+@@ -2,13 +2,30 @@ export const NODE_CAPACITIES: Record<string, number> = {
+   Client: Infinity,     // Clients generate load, no limits
+   Server: 5000,         // Standard app server handles 5k RPS
+   Function: 2000,       // Serverless function handles 2k concurrent
++  Worker: 3000,         // Background worker handles 3k jobs/s
++  Container: 6000,      // Containerized service handles 6k RPS
++  Gateway: 50000,       // API Gateway handles 50k RPS
+   LB: 100000,           // Load Balancer handles 100k RPS
+   CDN: 500000,          // CDN handles 500k RPS (edge cached)
++  DNS: Infinity,        // DNS resolution is effectively unlimited
++  Firewall: 200000,     // Network firewall handles 200k RPS
++  Proxy: 80000,         // Reverse proxy handles 80k RPS
+   SQL: 3000,            // Relational DB handles 3k writes/reads
++  NoSQL: 15000,         // Document DB handles 15k RPS
+   Cache: 50000,         // Redis Cache handles 50k RPS
+   Blob: 10000,          // S3 handles 10k RPS
++  Search: 8000,         // Search engine handles 8k queries/s
++  GraphDB: 5000,        // Graph DB handles 5k traversals/s
+   Queue: 20000,         // Message queue handles 20k RPS
+   Kafka: 100000,        // Distributed log handles 100k RPS
++  PubSub: 50000,        // Pub/Sub handles 50k messages/s
++  WebSocket: 10000,     // WebSocket server handles 10k concurrent
++  Logger: Infinity,     // Log aggregator is a sink, no limits
++  Metrics: Infinity,    // Metrics collector is a sink, no limits
++  Tracer: Infinity,     // Tracer is a sink, no limits
++  Auth: 10000,          // Auth service handles 10k verifications/s
++  WAF: 150000,          // Web App Firewall handles 150k RPS
++  Vault: 5000,          // Secret manager handles 5k reads/s
+ };
+ 
+ export interface NodeMetrics {
+diff --git a/tsc_output.txt b/tsc_output.txt
+new file mode 100644
+index 0000000..c4e161e
+--- /dev/null
++++ b/tsc_output.txt
+@@ -0,0 +1,2 @@
++.next/dev/types/validator.ts(134,39): error TS2306: File 'D:/vertex-club/System-Craft/System-Craft/app/practice/[id]/page.tsx' is not a module.
++app/practice/page.tsx(7,30): error TS2306: File 'D:/vertex-club/System-Craft/System-Craft/src/lib/practice/storage.ts' is not a module.
+diff --git a/tsc_output_2.txt b/tsc_output_2.txt
+new file mode 100644
+index 0000000..e69de29
