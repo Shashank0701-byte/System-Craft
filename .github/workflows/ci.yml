@@ -89,6 +89,7 @@ jobs:
         run: |
           kubeval --schema-location file://${SCHEMA_DIR} kubernetes/deployment.yaml
           kubeval --schema-location file://${SCHEMA_DIR} kubernetes/service.yaml
+          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/hpa.yaml
           kubeval --ignore-missing-schemas kubernetes/ingress.yaml
 
   deploy:
