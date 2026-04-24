@@ -319,7 +319,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             });
             const data = await res.json();
             if (data.success && data.messages) {
-                // Merge server messages into local state rather than replacing
+                // Replace local messages with server state
                 setMessages(data.messages);
                 if (data.constraintChanges) {
                     setSession(prev => prev ? { ...prev, constraintChanges: data.constraintChanges } : null);

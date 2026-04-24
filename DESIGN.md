@@ -261,6 +261,7 @@ What truly distinguishes Stripe is its shadow system. Rather than the flat or si
 ## 8. Responsive Behavior
 
 ### Breakpoints
+
 | Name | Width | Key Changes |
 |------|-------|-------------|
 | Mobile | <640px | Single column, reduced heading sizes, stacked cards |
