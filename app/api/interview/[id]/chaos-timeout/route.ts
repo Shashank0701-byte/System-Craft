@@ -43,7 +43,7 @@ export async function POST(
         }
 
         // 1. Fetch Session with ownership check
-        const session = await InterviewSession.findOne({ id, userId: user._id });
+        const session = await InterviewSession.findOne({ _id: id, userId: user._id });
         if (!session) {
             return NextResponse.json({ error: 'Session not found or access denied' }, { status: 403 });
         }
