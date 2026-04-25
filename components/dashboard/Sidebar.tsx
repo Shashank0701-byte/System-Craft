@@ -15,6 +15,7 @@ export function Sidebar() {
   const navItems = [
     { id: 'my-designs', href: '/dashboard', label: 'My Designs', icon: 'grid_view', filled: true },
     { id: 'analytics', href: '/dashboard/analytics', label: 'Analytics', icon: 'bar_chart', filled: true },
+    { id: 'report-card', href: '/dashboard/report-card', label: 'Report Card', icon: 'workspace_premium', filled: true },
     { id: 'interview', href: '/interview', label: 'Interview Mode', icon: 'play_circle', filled: false },
     { id: 'templates', href: '/practice', label: 'Templates', icon: 'library_books', filled: false },
   ];
