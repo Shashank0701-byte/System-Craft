@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export interface ExpandCard {
   src: string;
@@ -45,12 +46,29 @@ export const SYSTEMCRAFT_CARDS: ExpandCard[] = [
 export default function ExpandCards({ cards = SYSTEMCRAFT_CARDS, height = "22rem" }: Partial<ExpandCardsProps> & { cards?: ExpandCard[] }) {
   const [expanded, setExpanded] = useState(0);
 
+  const handleExpand = (index: number) => {
+    setExpanded(index);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleExpand(index);
+    }
+  };
+
   return (
     <div className="flex w-full items-stretch gap-2">
       {cards.map((card, i) => (
         <div
           key={i}
-          onMouseEnter={() => setExpanded(i)}
+          onMouseEnter={() => handleExpand(i)}
+          onFocus={() => handleExpand(i)}
+          onClick={() => handleExpand(i)}
+          onKeyDown={(e) => handleKeyDown(e, i)}
+          tabIndex={0}
+          role="button"
+          aria-label={card.alt}
           className="relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 transition-all duration-500 ease-in-out"
           style={{
             flex: expanded === i ? '0 0 40%' : '1 1 0%',
@@ -59,41 +77,44 @@ export default function ExpandCards({ cards = SYSTEMCRAFT_CARDS, height = "22rem
           }}
         >
           {/* Image */}
-          <img
+          <Image
             src={card.src}
             alt={card.alt}
-            className="w-full h-full object-cover"
-            loading="lazy"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 40vw"
           />
 
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
           {/* Label — only visible when expanded */}
-          <div
-            className="absolute bottom-4 left-4 right-4 transition-all duration-300"
-            style={{ opacity: expanded === i ? 1 : 0 }}
-          >
-            {card.label && (
+          {card.label && (
+            <div
+              className="absolute bottom-4 left-4 right-4 transition-all duration-300"
+              style={{ opacity: expanded === i ? 1 : 0 }}
+            >
               <span className="text-xs font-bold uppercase tracking-widest text-primary/80 block mb-1">
                 Feature
               </span>
-            )}
-            <p className="text-sm font-semibold text-white leading-tight">{card.label}</p>
-          </div>
+              <p className="text-sm font-semibold text-white leading-tight">{card.label}</p>
+            </div>
+          )}
 
           {/* Collapsed vertical label */}
-          <div
-            className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
-            style={{ opacity: expanded === i ? 0 : 1 }}
-          >
-            <span
-              className="text-[10px] font-bold uppercase tracking-widest text-white/50 whitespace-nowrap"
-              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          {card.label && (
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
+              style={{ opacity: expanded === i ? 0 : 1 }}
             >
-              {card.label}
-            </span>
-          </div>
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest text-white/50 whitespace-nowrap"
+                style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+              >
+                {card.label}
+              </span>
+            </div>
+          )}
 
           {/* Purple glow on active */}
           {expanded === i && (

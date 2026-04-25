@@ -2,7 +2,7 @@ import AuthCard from "../../components/AuthCard";
 
 export default function SignupPage() {
     return (
-        <main className="h-screen w-screen flex overflow-hidden">
+        <main className="min-h-dvh w-screen flex">
             {/* Left panel — brand visual */}
             <div className="hidden lg:flex flex-1 relative overflow-hidden bg-[#0b0618]">
                 <div
