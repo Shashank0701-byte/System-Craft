@@ -62,10 +62,41 @@ export default function ReportCardPage() {
 
     const handleShare = () => {
         const text = `I scored ${data?.averageScore}/100 on system design interviews (${data?.level.label} level) on SystemCraft! 🚀\n\nPractice system design interviews with real AI feedback → systemcraft.app`;
-        navigator.clipboard.writeText(text).then(() => {
+
+        // Check if clipboard API is available
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                })
+                .catch(() => {
+                    setCopied(false);
+                    // Fallback to legacy method
+                    fallbackCopyToClipboard(text);
+                });
+        } else {
+            // Use fallback for browsers without clipboard API
+            fallbackCopyToClipboard(text);
+        }
+    };
+
+    const fallbackCopyToClipboard = (text: string) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        });
+        } catch (err) {
+            setCopied(false);
+        } finally {
+            document.body.removeChild(textarea);
+        }
     };
 
     if (authLoading || isLoading) {
@@ -261,7 +292,7 @@ export default function ReportCardPage() {
 
                                 {/* Strength */}
                                 {data.topStrength && (
-                                    <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-4">
+                                    <div className="rounded-xl bg-emerald-500/[8%] border border-emerald-500/20 p-4">
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="material-symbols-outlined text-emerald-400 text-[18px]">thumb_up</span>
                                             <p className="text-[10px] text-emerald-500 uppercase tracking-widest font-bold">Top Strength</p>
@@ -272,7 +303,7 @@ export default function ReportCardPage() {
 
                                 {/* Weakness */}
                                 {data.topWeakness && (
-                                    <div className="rounded-xl bg-red-500/8 border border-red-500/20 p-4">
+                                    <div className="rounded-xl bg-red-500/[8%] border border-red-500/20 p-4">
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="material-symbols-outlined text-red-400 text-[18px]">flag</span>
                                             <p className="text-[10px] text-red-500 uppercase tracking-widest font-bold">Focus Area</p>
@@ -284,7 +315,7 @@ export default function ReportCardPage() {
                         </div>
 
                         {/* Card footer */}
-                        <div className="px-8 py-4 border-t border-white/5 flex items-center justify-between bg-white/2">
+                        <div className="px-8 py-4 border-t border-white/5 flex items-center justify-between bg-white/[2%]">
                             <div className="flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary text-[16px]">hub</span>
                                 <span className="text-xs text-slate-500 font-medium">SystemCraft · systemcraft.app</span>

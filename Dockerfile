@@ -2,12 +2,18 @@ FROM node:20-alpine AS base
 
 FROM base AS deps
 
+ARG ALLOW_LOCKFILE_REGEN=false
+
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
 # Use --prefer-offline and retries to handle flaky registry connections in CI
 RUN npm ci --prefer-offline --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-retries=5 \
-    || npm install --prefer-offline --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-retries=5
+    || (if [ "$ALLOW_LOCKFILE_REGEN" = "true" ]; then \
+        npm install --prefer-offline --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-retries=5; \
+    else \
+        exit 1; \
+    fi)
 
 FROM base AS builder
 WORKDIR /app
