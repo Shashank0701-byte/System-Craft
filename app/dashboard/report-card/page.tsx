@@ -58,7 +58,7 @@ export default function ReportCardPage() {
             .finally(() => setIsLoading(false));
 
         return () => controller.abort();
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user?.uid]);
 
     const handleShare = () => {
         const text = `I scored ${data?.averageScore}/100 on system design interviews (${data?.level.label} level) on SystemCraft! 🚀\n\nPractice system design interviews with real AI feedback → systemcraft.app`;
