@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { GalaxyHero } from "@/components/ui/galaxy-hero";
-import { Features } from "@/components/Features";
+import { CyberneticBentoGrid } from "@/components/ui/cybernetic-bento-grid";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
       <Navbar />
       <main className="flex-grow relative overflow-hidden">
         <GalaxyHero />
-        <Features />
+        <CyberneticBentoGrid />
         <Footer />
       </main>
     </>
