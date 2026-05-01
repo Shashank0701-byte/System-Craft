@@ -2,6 +2,8 @@ import {
     GoogleAuthProvider,
     GithubAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut,
     AuthError,
     updateProfile,
@@ -56,10 +58,12 @@ export const signInWithGoogle = async () => {
         return res.user;
     } catch (error) {
         const authError = error as AuthError;
-        console.error("Google sign-in error:", {
-            code: authError.code,
-            message: authError.message,
-        });
+        // Popup blocked — fall back to redirect
+        if (authError.code === "auth/popup-blocked" || authError.code === "auth/popup-cancelled-by-user") {
+            await signInWithRedirect(auth, googleProvider);
+            return null;
+        }
+        console.error("Google sign-in error:", { code: authError.code, message: authError.message });
         if (authError.code === "auth/account-exists-with-different-credential") {
             throw new Error(await buildProviderConflictMessage(authError, "Google"));
         }
@@ -74,16 +78,20 @@ export const signInWithGitHub = async () => {
         return res.user;
     } catch (error) {
         const authError = error as AuthError;
-        console.error("GitHub sign-in error:", {
-            code: authError.code,
-            message: authError.message,
-        });
+        // Popup blocked — fall back to redirect
+        if (authError.code === "auth/popup-blocked" || authError.code === "auth/popup-cancelled-by-user") {
+            await signInWithRedirect(auth, githubProvider);
+            return null;
+        }
+        console.error("GitHub sign-in error:", { code: authError.code, message: authError.message });
         if (authError.code === "auth/account-exists-with-different-credential") {
             throw new Error(await buildProviderConflictMessage(authError, "GitHub"));
         }
         throw new Error(authError.message || "Failed to sign in with GitHub");
     }
 };
+
+export { getRedirectResult };
 
 export const logout = async () => {
     if (!auth) throw new Error("Firebase Auth is not initialized.");
