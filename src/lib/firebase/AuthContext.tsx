@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     await fetch('/api/user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ displayName: result.user.displayName, photoURL: result.user.photoURL, provider: 'google' }),
+                        body: JSON.stringify({ displayName: result.user.displayName, photoURL: result.user.photoURL, provider: result.providerId === 'github.com' ? 'github' : 'google' }),
                     });
                 } catch {
                     // best-effort sync
