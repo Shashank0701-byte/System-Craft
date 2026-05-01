@@ -6,7 +6,7 @@ import { authFetch } from '@/src/lib/firebase/authClient';
 import { CanvasHeader } from '@/components/canvas/CanvasHeader';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas, CanvasNode, Connection } from '@/components/canvas/DesignCanvas';
-import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import PropertiesPanel from '@/components/canvas/PropertiesPanel';
 import { CanvasPanelsProvider } from '@/components/canvas/CanvasPanelsContext';
 
 interface DesignData {

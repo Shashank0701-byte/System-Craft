@@ -10,7 +10,8 @@ import { InterviewHeader } from '@/components/interview/InterviewHeader';
 import { QuestionPanel } from '@/components/interview/QuestionPanel';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas, CanvasNode, Connection, CanvasStateRef } from '@/components/canvas/DesignCanvas';
-import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import PropertiesPanel from '@/components/canvas/PropertiesPanel';
+import { CanvasPanelsProvider } from '@/components/canvas/CanvasPanelsContext';
 import { useInterviewAI, AIMessage } from '@/src/hooks/useInterviewAI';
 import { InterviewerPanel } from '@/components/interview/InterviewerPanel';
 import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
@@ -373,6 +374,7 @@ export default function InterviewCanvasPage({ params }: PageProps) {
     const isReadOnly = session.status !== 'in_progress';
 
     return (
+        <CanvasPanelsProvider>
         <div className="relative flex flex-col h-screen overflow-hidden bg-background-dark text-white font-display">
             <InterviewHeader
                 difficulty={session.difficulty}
@@ -464,5 +466,6 @@ export default function InterviewCanvasPage({ params }: PageProps) {
                 </div>
             )}
         </div>
+        </CanvasPanelsProvider>
     );
 }

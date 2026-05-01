@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { CanvasHeader } from '@/components/canvas/CanvasHeader';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas } from '@/components/canvas/DesignCanvas';
-import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import PropertiesPanel from '@/components/canvas/PropertiesPanel';
 import { AIFeedbackPanel } from '@/components/canvas/AIFeedbackPanel';
 
 export default function CanvasPage() {

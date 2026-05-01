@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-        const sessions = await InterviewSession.find({
+        const sessions = (await InterviewSession.find({
             userId: user._id,
             status: 'evaluated',
-        }).sort({ createdAt: 1 }).limit(50).lean();
+        }).sort({ createdAt: -1 }).limit(50).lean()).reverse();
 
         if (sessions.length < 3) {
             return NextResponse.json({ error: 'Need at least 3 evaluated interviews', code: 'INSUFFICIENT_DATA' }, { status: 400 });

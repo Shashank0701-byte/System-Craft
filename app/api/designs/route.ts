@@ -35,16 +35,25 @@ export async function GET(request: NextRequest) {
             .lean();
 
         return NextResponse.json({
-            designs: designs.map((design) => ({
-                id: design._id.toString(),
-                title: design.title,
-                description: design.description,
-                status: design.status,
-                thumbnail: design.thumbnail,
-                nodeCount: (design.nodes || []).length,
-                createdAt: design.createdAt,
-                updatedAt: design.updatedAt,
-            })),
+            designs: designs.map((design) => {
+                const nodeCount = (design.nodes || []).length;
+                const connectionCount = (design.connections || []).length;
+                // Auto-derive status from canvas content
+                let derivedStatus: 'draft' | 'reviewed' | 'completed' = 'draft';
+                if (nodeCount > 0 && connectionCount > 0) derivedStatus = 'completed';
+                else if (nodeCount > 0) derivedStatus = 'reviewed';
+
+                return {
+                    id: design._id.toString(),
+                    title: design.title,
+                    description: design.description,
+                    status: derivedStatus,
+                    thumbnail: design.thumbnail,
+                    nodeCount,
+                    createdAt: design.createdAt,
+                    updatedAt: design.updatedAt,
+                };
+            }),
         });
     } catch (error) {
         console.error('Error fetching designs:', error);

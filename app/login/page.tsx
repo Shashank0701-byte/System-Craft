@@ -3,7 +3,7 @@ import AuthCard from "../../components/AuthCard";
 export default function LoginPage() {
     return (
         <main className="h-screen w-screen flex overflow-hidden">
-            {/* Left panel — Spline/brand visual */}
+            {/* Left panel — brand visual */}
             <div className="hidden lg:flex flex-1 relative overflow-hidden bg-[#0b0618]">
                 <div
                     className="absolute inset-0 bg-cover bg-center"
