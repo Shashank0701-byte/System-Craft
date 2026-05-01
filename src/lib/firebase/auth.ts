@@ -59,7 +59,7 @@ export const signInWithGoogle = async () => {
     } catch (error) {
         const authError = error as AuthError;
         // Popup blocked — fall back to redirect
-        if (authError.code === "auth/popup-blocked" || authError.code === "auth/popup-cancelled-by-user") {
+        if (authError.code === "auth/popup-blocked" || authError.code === "auth/popup-closed-by-user") {
             await signInWithRedirect(auth, googleProvider);
             return null;
         }
@@ -79,7 +79,7 @@ export const signInWithGitHub = async () => {
     } catch (error) {
         const authError = error as AuthError;
         // Popup blocked — fall back to redirect
-        if (authError.code === "auth/popup-blocked" || authError.code === "auth/popup-cancelled-by-user") {
+        if (authError.code === "auth/popup-blocked" || authError.code === "auth/popup-closed-by-user") {
             await signInWithRedirect(auth, githubProvider);
             return null;
         }
