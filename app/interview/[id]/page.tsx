@@ -10,7 +10,7 @@ import { InterviewHeader } from '@/components/interview/InterviewHeader';
 import { QuestionPanel } from '@/components/interview/QuestionPanel';
 import { ComponentPalette } from '@/components/canvas/ComponentPalette';
 import { DesignCanvas, CanvasNode, Connection, CanvasStateRef } from '@/components/canvas/DesignCanvas';
-import { PropertiesPanel } from '@/components/canvas/PropertiesPanel';
+import PropertiesPanel from '@/components/canvas/PropertiesPanel';
 import { useInterviewAI, AIMessage } from '@/src/hooks/useInterviewAI';
 import { InterviewerPanel } from '@/components/interview/InterviewerPanel';
 import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';

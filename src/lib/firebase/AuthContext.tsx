@@ -3,8 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "./firebaseClient";
+import { getRedirectResult } from "./auth";
 
-// Auth context type that includes loading state
 type AuthContextType = {
     user: User | null;
     isLoading: boolean;
@@ -21,14 +21,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!auth) {
-            // No Firebase configured — mark loading as done immediately.
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: single synchronous set at mount, not a cascading render
             setIsLoading(false);
             return;
         }
+
+        // Handle redirect result (popup-blocked fallback)
+        getRedirectResult(auth).then(async (result) => {
+            if (result?.user) {
+                // Sync the redirect-returned user with DB
+                try {
+                    const token = await result.user.getIdToken();
+                    await fetch('/api/user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ displayName: result.user.displayName, photoURL: result.user.photoURL, provider: 'google' }),
+                    });
+                } catch {
+                    // best-effort sync
+                }
+            }
+        }).catch(() => {
+            // no redirect result — normal flow
+        });
+
         return onAuthStateChanged(auth, (u) => {
-            // These state updates happen inside a Firebase subscription callback,
-            // which is the correct effect pattern (external system → setState).
             setUser(u);
             setIsLoading(false);
         });

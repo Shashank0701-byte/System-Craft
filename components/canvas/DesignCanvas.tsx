@@ -5,6 +5,7 @@ import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 import { useSimulationEngine } from '@/src/hooks/useSimulationEngine';
 import { SimulationResult } from '@/src/lib/simulation/engine';
 import { SimulationControls } from './SimulationControls';
+import { useCanvasPanels } from './CanvasPanelsContext';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
@@ -202,6 +203,9 @@ export function DesignCanvas({
   const { nodes, connections } = historyState.present;
   const canUndo = historyState.past.length > 0;
   const canRedo = historyState.future.length > 0;
+
+  // Panels context — sync selected node so PropertiesPanel can react
+  const { setSelectedNode } = useCanvasPanels();
 
   // Sync reducer when initial data arrives asynchronously (e.g. result page fetch)
   const initialDataLoadedRef = useRef(initialNodes.length > 0 || initialConnections.length > 0);
@@ -475,7 +479,8 @@ export function DesignCanvas({
       const newNodes = [...nodes, newNode];
       saveToHistory(newNodes, connections);
       setSelectedNodeId(newNode.id);
-      setSelectedConnectionId(null); // Clear connection selection
+      setSelectedNode({ id: newNode.id, type: newNode.type, label: newNode.label, icon: newNode.icon });
+      setSelectedConnectionId(null);
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
@@ -532,6 +537,7 @@ export function DesignCanvas({
     setSelectedConnectionId(null); // Clear connection selection
     const node = nodes.find((n) => n.id === nodeId);
     if (!node) return;
+    setSelectedNode({ id: node.id, type: node.type, label: node.label, icon: node.icon });
 
     setDraggedNodeId(nodeId);
     setTempNodes([...nodes]); // Start with current nodes for dragging
@@ -635,7 +641,8 @@ export function DesignCanvas({
     }
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
-    setEditingNodeId(null); // Cancel any open label editor
+    setSelectedNode(null);
+    setEditingNodeId(null);
     setEditingConnectionId(null); // Cancel any open connection label editor
   }, [setSelectedNodeId, setSelectedConnectionId, setEditingConnectionId]);
 
