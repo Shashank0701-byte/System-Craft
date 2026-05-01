@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  turbo: {},
   experimental: {
     turbopackUseSystemTlsCerts: true,
   },
@@ -14,7 +13,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  /* config options here */
 };
 
 export default nextConfig;
