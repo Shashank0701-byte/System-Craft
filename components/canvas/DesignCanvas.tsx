@@ -278,45 +278,61 @@ export function DesignCanvas({
   const hasAutoFitRef = useRef(false);
   useEffect(() => {
     if (!readOnly || hasAutoFitRef.current || nodes.length === 0) return;
-    const container = canvasRef.current;
-    if (!container) return;
 
-    const NODE_SIZE = 60;
-    const PADDING = 60; // px around the bounding box
+    let rafId: number;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 20; // ~20 frames ≈ 330ms at 60fps
 
-    // Bounding box of all nodes
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const node of nodes) {
-      minX = Math.min(minX, node.x);
-      minY = Math.min(minY, node.y);
-      maxX = Math.max(maxX, node.x + NODE_SIZE);
-      maxY = Math.max(maxY, node.y + NODE_SIZE);
-    }
+    const tryAutoFit = () => {
+      const container = canvasRef.current;
+      if (!container) return;
 
-    const contentW = maxX - minX + PADDING * 2;
-    const contentH = maxY - minY + PADDING * 2;
-    const containerW = container.clientWidth;
-    const containerH = container.clientHeight;
+      const containerW = container.clientWidth;
+      const containerH = container.clientHeight;
 
-    // Container has no dimensions yet (layout hasn't painted). We intentionally
-    // don't set hasAutoFitRef.current = true so the effect retries on the next
-    // render once the container has non-zero dimensions.
-    // Alternative: use a ResizeObserver or requestAnimationFrame retry loop.
-    if (containerW === 0 || containerH === 0) return;
+      // Container has no dimensions yet — retry on next animation frame
+      if (containerW === 0 || containerH === 0) {
+        attempts++;
+        if (attempts < MAX_ATTEMPTS) {
+          rafId = requestAnimationFrame(tryAutoFit);
+        }
+        return;
+      }
 
-    // Scale to fit, clamped between 50% and 100%
-    const scaleX = containerW / contentW;
-    const scaleY = containerH / contentH;
-    const fitScale = Math.min(scaleX, scaleY, 1); // never zoom in past 100%
-    const clampedScale = Math.max(0.5, Math.round(fitScale * 100) / 100);
+      const NODE_SIZE = 60;
+      const PADDING = 60; // px around the bounding box
 
-    // Center the content
-    const offsetX = (containerW - contentW * clampedScale) / 2 - (minX - PADDING) * clampedScale;
-    const offsetY = (containerH - contentH * clampedScale) / 2 - (minY - PADDING) * clampedScale;
+      // Bounding box of all nodes
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const node of nodes) {
+        minX = Math.min(minX, node.x);
+        minY = Math.min(minY, node.y);
+        maxX = Math.max(maxX, node.x + NODE_SIZE);
+        maxY = Math.max(maxY, node.y + NODE_SIZE);
+      }
 
-    setZoom(Math.round(clampedScale * 100));
-    setPanOffset({ x: offsetX, y: offsetY });
-    hasAutoFitRef.current = true;
+      const contentW = maxX - minX + PADDING * 2;
+      const contentH = maxY - minY + PADDING * 2;
+
+      // Scale to fit, clamped between 50% and 100%
+      const scaleX = containerW / contentW;
+      const scaleY = containerH / contentH;
+      const fitScale = Math.min(scaleX, scaleY, 1); // never zoom in past 100%
+      const clampedScale = Math.max(0.5, Math.round(fitScale * 100) / 100);
+
+      // Center the content
+      const offsetX = (containerW - contentW * clampedScale) / 2 - (minX - PADDING) * clampedScale;
+      const offsetY = (containerH - contentH * clampedScale) / 2 - (minY - PADDING) * clampedScale;
+
+      setZoom(Math.round(clampedScale * 100));
+      setPanOffset({ x: offsetX, y: offsetY });
+      hasAutoFitRef.current = true;
+    };
+
+    // Kick off the first attempt after a rAF so the layout has a chance to paint
+    rafId = requestAnimationFrame(tryAutoFit);
+
+    return () => cancelAnimationFrame(rafId);
   }, [readOnly, nodes]);
 
   // Drag state for moving nodes
