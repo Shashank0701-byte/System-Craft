@@ -18,12 +18,14 @@ export function Sidebar() {
     { id: 'report-card', href: '/dashboard/report-card', label: 'Report Card', icon: 'workspace_premium', filled: true },
     { id: 'interview', href: '/interview', label: 'Interview Mode', icon: 'play_circle', filled: false },
     { id: 'templates', href: '/practice', label: 'Templates', icon: 'library_books', filled: false },
+    { id: 'reference-architectures', href: '/dashboard/reference-architectures', label: 'Reference Archs', icon: 'account_tree', filled: false },
   ];
 
   const isActive = (href: string) => {
     if (href === '#') return false;
     if (href === '/dashboard' || href === '/interview') return pathname === href;
     if (href === '/practice') return pathname === '/practice' || pathname.startsWith('/practice/');
+    if (href === '/dashboard/reference-architectures') return pathname.startsWith('/dashboard/reference-architectures');
     return pathname === href || pathname.startsWith(href + '/');
   };
 
