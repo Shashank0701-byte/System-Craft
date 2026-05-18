@@ -356,8 +356,8 @@ function AnalysisPanel({
         </div>
       )}
 
-      {/* Rendered markdown content */}
-      <div dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+      {/* Rendered markdown content — sanitized to prevent XSS from model output */}
+      <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(content)) }} />
 
       {/* Blinking cursor while streaming */}
       {isLoading && (
@@ -402,3 +402,21 @@ function renderMarkdown(md: string): string {
     .replace(/\n/g, '');
 }
 
+/* ── HTML Sanitizer (allowlist-based) ─────────────────────────────── */
+
+const ALLOWED_TAGS = new Set(['h3', 'p', 'ul', 'li', 'strong', 'em', 'code', 'span', 'br']);
+
+function sanitizeHtml(html: string): string {
+  return html
+    // Remove <script> blocks entirely
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    // Remove event handler attributes (onclick, onerror, onload, etc.)
+    .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/\s+on\w+\s*=\s*\S+/gi, '')
+    // Remove javascript: protocol URLs
+    .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '')
+    // Remove any tags not in the allowlist
+    .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (match, tag) => {
+      return ALLOWED_TAGS.has(tag.toLowerCase()) ? match : '';
+    });
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const UPSTREAM_TIMEOUT_MS = 60_000; // 60s timeout for OpenRouter
 
 export async function POST(req: NextRequest) {
   if (!OPENROUTER_API_KEY) {
@@ -12,6 +13,10 @@ export async function POST(req: NextRequest) {
 
     if (!title || !nodes || !connections) {
       return NextResponse.json({ error: 'Missing architecture data' }, { status: 400 });
+    }
+
+    if (!Array.isArray(nodes) || !Array.isArray(connections)) {
+      return NextResponse.json({ error: 'Malformed nodes or connections — expected arrays' }, { status: 400 });
     }
 
     // Build a compact text representation of the architecture
@@ -72,30 +77,51 @@ How each tier scales horizontally. 3-4 bullet points max.
 
 Keep the entire response under 600 words. Be dense and precise.`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://systemcraft.app',
-        'X-Title': 'SystemCraft',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2048,
-        stream: true,
-      }),
-    });
+    // Abort controller that races client disconnect and a hard timeout
+    const upstreamAbort = new AbortController();
+    const timeout = setTimeout(() => upstreamAbort.abort(), UPSTREAM_TIMEOUT_MS);
+
+    // Forward client abort to upstream
+    const onClientAbort = () => upstreamAbort.abort();
+    req.signal.addEventListener('abort', onClientAbort);
+
+    let response: Response;
+    try {
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://systemcraft.app',
+          'X-Title': 'SystemCraft',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.0-flash-001',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 2048,
+          stream: true,
+        }),
+        signal: upstreamAbort.signal,
+      });
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      req.signal.removeEventListener('abort', onClientAbort);
+      if ((fetchError as Error).name === 'AbortError') {
+        return NextResponse.json({ error: 'Request timed out or was cancelled' }, { status: 504 });
+      }
+      throw fetchError;
+    }
 
     if (!response.ok) {
+      clearTimeout(timeout);
+      req.signal.removeEventListener('abort', onClientAbort);
       const errorText = await response.text();
       console.error('OpenRouter error:', response.status, errorText);
       return NextResponse.json({ error: 'AI generation failed' }, { status: 502 });
     }
 
-    // Stream the response back to the client
+    // Stream the response back to the client with carry-over buffer
     const stream = new ReadableStream({
       async start(controller) {
         const reader = response.body?.getReader();
@@ -105,17 +131,27 @@ Keep the entire response under 600 words. Be dense and precise.`;
         }
 
         const decoder = new TextDecoder();
+        let buffer = '';
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n').filter((l) => l.startsWith('data: '));
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n');
 
-            for (const line of lines) {
-              const data = line.slice(6).trim();
-              if (data === '[DONE]') continue;
+            // Last element may be an incomplete line — keep it in the buffer
+            buffer = parts.pop() || '';
+
+            for (const line of parts) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data: ')) continue;
+
+              const data = trimmed.slice(6).trim();
+              if (data === '[DONE]') {
+                buffer = '';
+                continue;
+              }
 
               try {
                 const parsed = JSON.parse(data);
@@ -124,11 +160,29 @@ Keep the entire response under 600 words. Be dense and precise.`;
                   controller.enqueue(new TextEncoder().encode(content));
                 }
               } catch {
-                // skip malformed chunks
+                // skip malformed JSON chunks
+              }
+            }
+          }
+
+          // Process any remaining buffer content
+          if (buffer.trim().startsWith('data: ')) {
+            const data = buffer.trim().slice(6).trim();
+            if (data && data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  controller.enqueue(new TextEncoder().encode(content));
+                }
+              } catch {
+                // skip
               }
             }
           }
         } finally {
+          clearTimeout(timeout);
+          req.signal.removeEventListener('abort', onClientAbort);
           reader.releaseLock();
           controller.close();
         }
