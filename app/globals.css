@@ -55,12 +55,10 @@
   }
 }
 
-/* Dot grid pattern for the canvas */
-@layer utilities {
-  .bg-grid-pattern {
-    background-size: 24px 24px;
-    background-image: radial-gradient(circle, #3f3b54 1px, transparent 1px);
-  }
+/* Dot grid pattern for the canvas - using @utility for Tailwind v4 */
+@utility bg-grid-pattern {
+  background-size: 24px 24px;
+  background-image: radial-gradient(circle, #3f3b54 1px, transparent 1px);
 }
 
 @layer utilities {

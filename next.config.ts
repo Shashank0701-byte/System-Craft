@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   experimental: {
     turbopackUseSystemTlsCerts: true,
   },
-  turbo: undefined,
   images: {
     remotePatterns: [
       {
