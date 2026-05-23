@@ -92,7 +92,7 @@ export default function ReportCardPage() {
             document.execCommand('copy');
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
+        } catch {
             setCopied(false);
         } finally {
             document.body.removeChild(textarea);

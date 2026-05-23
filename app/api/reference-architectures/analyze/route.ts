@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { llmRequestsTotal, llmRequestDuration, llmTokensTotal } from '@/src/lib/metrics';
+import { llmRequestsTotal, llmRequestDuration } from '@/src/lib/metrics';
 import { withMetrics } from '@/src/lib/withMetrics';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
