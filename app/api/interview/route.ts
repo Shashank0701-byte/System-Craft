@@ -4,6 +4,7 @@ import InterviewSession, { InterviewDifficulty } from '@/src/lib/db/models/Inter
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 import { generateInterviewQuestion } from '@/src/lib/ai/questionGenerator';
+import { withMetrics } from '@/src/lib/withMetrics';
 
 // Free tier limit
 const FREE_WEEKLY_LIMIT = 2;
@@ -36,7 +37,7 @@ function getWeeklyUsage(user: { interviewAttempts?: { count: number; weekStart: 
 }
 
 // GET: List user's interview sessions
-export async function GET(request: NextRequest) {
+export const GET = withMetrics('/api/interview', async (request: NextRequest) => {
     try {
         const authHeader = request.headers.get('Authorization');
         const authenticatedUser = await getAuthenticatedUser(authHeader);
@@ -107,10 +108,10 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});
 
 // POST: Start a new interview session
-export async function POST(request: NextRequest) {
+export const POST = withMetrics('/api/interview', async (request: NextRequest) => {
     try {
         // Parse body
         let body;
@@ -281,4 +282,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+});

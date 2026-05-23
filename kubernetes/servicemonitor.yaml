@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: system-craft-monitor
+  labels:
+    app: system-craft
+    release: prometheus  # Match your Prometheus Operator's label selector
+spec:
+  selector:
+    matchLabels:
+      app: system-craft
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 15s

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { llmRequestsTotal, llmRequestDuration } from '@/src/lib/metrics';
+import { withMetrics } from '@/src/lib/withMetrics';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const UPSTREAM_TIMEOUT_MS = 60_000; // 60s timeout for OpenRouter
+const LLM_MODEL = 'google/gemini-2.0-flash-001';
 
-export async function POST(req: NextRequest) {
+export const POST = withMetrics('/api/reference-architectures/analyze', async (req: NextRequest) => {
   if (!OPENROUTER_API_KEY) {
     return NextResponse.json({ error: 'AI API key not configured' }, { status: 500 });
   }
@@ -80,6 +83,7 @@ Keep the entire response under 600 words. Be dense and precise.`;
     // Abort controller that races client disconnect and a hard timeout
     const upstreamAbort = new AbortController();
     const timeout = setTimeout(() => upstreamAbort.abort(), UPSTREAM_TIMEOUT_MS);
+    const llmTimer = llmRequestDuration.startTimer({ model: LLM_MODEL });
 
     // Forward client abort to upstream
     const onClientAbort = () => upstreamAbort.abort();
@@ -96,7 +100,7 @@ Keep the entire response under 600 words. Be dense and precise.`;
           'X-Title': 'SystemCraft',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-001',
+          model: LLM_MODEL,
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.7,
           max_tokens: 2048,
@@ -106,7 +110,9 @@ Keep the entire response under 600 words. Be dense and precise.`;
       });
     } catch (fetchError) {
       clearTimeout(timeout);
+      llmTimer();
       req.signal.removeEventListener('abort', onClientAbort);
+      llmRequestsTotal.inc({ model: LLM_MODEL, status: 'error' });
       if ((fetchError as Error).name === 'AbortError') {
         return NextResponse.json({ error: 'Request timed out or was cancelled' }, { status: 504 });
       }
@@ -115,7 +121,9 @@ Keep the entire response under 600 words. Be dense and precise.`;
 
     if (!response.ok) {
       clearTimeout(timeout);
+      llmTimer();
       req.signal.removeEventListener('abort', onClientAbort);
+      llmRequestsTotal.inc({ model: LLM_MODEL, status: 'error' });
       const errorText = await response.text();
       console.error('OpenRouter error:', response.status, errorText);
       return NextResponse.json({ error: 'AI generation failed' }, { status: 502 });
@@ -182,6 +190,8 @@ Keep the entire response under 600 words. Be dense and precise.`;
           }
         } finally {
           clearTimeout(timeout);
+          llmTimer();
+          llmRequestsTotal.inc({ model: LLM_MODEL, status: 'success' });
           req.signal.removeEventListener('abort', onClientAbort);
           reader.releaseLock();
           controller.close();
@@ -200,4 +210,4 @@ Keep the entire response under 600 words. Be dense and precise.`;
     console.error('Analysis API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+});

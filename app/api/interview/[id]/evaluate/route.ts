@@ -6,13 +6,14 @@ import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 import { evaluateStructure } from '@/src/lib/evaluation/structuralRules';
 import { evaluateReasoning } from '@/src/lib/evaluation/reasoningEvaluator';
 import { combineEvaluations } from '@/src/lib/evaluation/scoringEngine';
+import { withMetrics } from '@/src/lib/withMetrics';
 
 interface RouteParams {
     params: Promise<{ id: string }>;
 }
 
 // POST: Trigger evaluation of a submitted interview session
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export const POST = withMetrics('/api/interview/[id]/evaluate', async (request: NextRequest, { params }: RouteParams) => {
     try {
         const { id } = await params;
 
@@ -143,4 +144,4 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             { status: 500 }
         );
     }
-}
+});

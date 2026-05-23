@@ -1,0 +1,14 @@
+# Prometheus Configuration for SystemCraft
+# Retention: 15 days (local dev), bump to 30d for staging/prod
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'systemcraft'
+    metrics_path: '/api/metrics'
+    static_configs:
+      - targets: ['web:3000']
+        labels:
+          environment: 'development'

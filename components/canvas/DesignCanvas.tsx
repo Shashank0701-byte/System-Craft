@@ -500,7 +500,7 @@ export function DesignCanvas({
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
-  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
+  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly, setSelectedNodeId, setSelectedNode, setSelectedConnectionId]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -563,7 +563,7 @@ export function DesignCanvas({
       x: e.clientX / scale - node.x,
       y: e.clientY / scale - node.y,
     });
-  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
+  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly, setSelectedNodeId, setSelectedNode, setSelectedConnectionId]);
 
   // Handle completing a connection (mouse up on another node)
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -660,7 +660,7 @@ export function DesignCanvas({
     setSelectedNode(null);
     setEditingNodeId(null);
     setEditingConnectionId(null); // Cancel any open connection label editor
-  }, [setSelectedNodeId, setSelectedConnectionId, setEditingConnectionId]);
+  }, [setSelectedNodeId, setSelectedNode, setSelectedConnectionId, setEditingConnectionId]);
 
   // Handle double-click on a node's label to start editing
   const handleLabelDoubleClick = useCallback((e: React.MouseEvent, nodeId: string) => {
