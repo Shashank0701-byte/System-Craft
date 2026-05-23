@@ -21,7 +21,8 @@ spec:
       - name: system-craft
         image: ghcr.io/shashank0701-byte/system-craft/systemcraft-web:latest
         ports:
-        - containerPort: 3000
+        - name: http
+          containerPort: 3000
         resources:
           limits:
             cpu: "500m"
@@ -33,6 +34,22 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
         env:
         - name: NODE_ENV
           value: "production"
