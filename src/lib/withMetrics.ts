@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { httpRequestsTotal, httpRequestDuration } from './metrics';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AppRouteHandler = (req: NextRequest, ...args: any[]) => Promise<NextResponse | Response> | NextResponse | Response;
 
 export function withMetrics(routePattern: string, handler: AppRouteHandler): AppRouteHandler {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return async (req: NextRequest, ...args: any[]) => {
         const method = req.method;
         const timer = httpRequestDuration.startTimer({ method, route: routePattern });

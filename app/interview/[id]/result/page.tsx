@@ -110,7 +110,6 @@ export default function InterviewResultPage({ params }: PageProps) {
             cancelled = true;
             if (pollTimer) clearTimeout(pollTimer);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, user, id, router]);
 
     // Evaluating state — show a dedicated loading screen
