@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { llmRequestsTotal, llmRequestDuration, llmTokensTotal } from '@/src/lib/metrics';
 
 let client: OpenAI | null = null;
 
@@ -39,6 +40,7 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
             // AbortController with timeout to prevent hanging forever on slow AI responses
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
+            const llmTimer = llmRequestDuration.startTimer({ model: 'google/gemini-2.0-flash-001' });
 
             let response;
             try {
@@ -56,6 +58,18 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
                     },
                     { signal: controller.signal }
                 );
+                llmTimer();
+                llmRequestsTotal.inc({ model: 'google/gemini-2.0-flash-001', status: 'success' });
+                
+                // Track tokens if provided by OpenRouter
+                if (response.usage) {
+                    if (response.usage.prompt_tokens) llmTokensTotal.inc({ model: 'google/gemini-2.0-flash-001', type: 'prompt' }, response.usage.prompt_tokens);
+                    if (response.usage.completion_tokens) llmTokensTotal.inc({ model: 'google/gemini-2.0-flash-001', type: 'completion' }, response.usage.completion_tokens);
+                }
+            } catch(e) {
+                llmTimer();
+                llmRequestsTotal.inc({ model: 'google/gemini-2.0-flash-001', status: 'error' });
+                throw e;
             } finally {
                 clearTimeout(timer);
             }
