@@ -40,6 +40,40 @@ SystemCraft is built on a modern, serverless-first stack designed for speed and 
 
 ---
 
+## Performance & Scalability
+
+SystemCraft is engineered to handle significant concurrent loads. We validated our architecture using `k6` load testing, simulating 500 concurrent virtual users hitting the API.
+
+Our load testing revealed the following scaling characteristics when moving from a single container to a dynamically scaled Kubernetes cluster utilizing the Horizontal Pod Autoscaler (HPA).
+
+### Load Test Results (500 Concurrent Users)
+
+| Metric | Single Container | Kubernetes HPA (3 Replicas) | Improvement |
+| :--- | :--- | :--- | :--- |
+| **Total Requests** | 23,381 | 61,026 | **+161%** |
+| **Throughput (req/s)** | ~155 req/s | ~351 req/s | **+126%** |
+| **Latency p(95)** | 3.33s | 861ms | **74% Faster** |
+
+*Note: The single Node.js instance experienced event-loop saturation at 155 req/s. By enabling Kubernetes HPA, traffic was distributed across multiple pods, drastically reducing the 95th percentile latency while more than doubling the system's throughput.*
+
+```mermaid
+xychart-beta
+    title "System Throughput (Requests per Second)"
+    x-axis ["Single Container", "Kubernetes HPA (3 Pods)"]
+    y-axis "Requests / Sec" 0 --> 400
+    bar [155, 351]
+```
+
+```mermaid
+xychart-beta
+    title "P(95) Latency in ms (Lower is Better)"
+    x-axis ["Single Container", "Kubernetes HPA (3 Pods)"]
+    y-axis "Latency (ms)" 0 --> 4000
+    bar [3330, 861]
+```
+
+---
+
 ## Getting Started
 
 ### Prerequisites
