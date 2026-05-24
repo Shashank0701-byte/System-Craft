@@ -17,7 +17,7 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 40
+          averageUtilization: 60
     - type: Resource
       resource:
         name: memory
@@ -26,10 +26,10 @@ spec:
           averageUtilization: 80
   behavior:
     scaleUp:
-      stabilizationWindowSeconds: 0
+      stabilizationWindowSeconds: 60
       policies:
         - type: Pods
-          value: 4
-          periodSeconds: 15
+          value: 2
+          periodSeconds: 30
     scaleDown:
       stabilizationWindowSeconds: 300
