@@ -95,7 +95,9 @@ jobs:
         with:
           context: .
           load: true
-          tags: ghcr.io/${{ env.REPO }}/systemcraft-web:latest
+          tags: |
+            ghcr.io/${{ env.REPO }}/systemcraft-web:latest
+            ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -119,7 +121,9 @@ jobs:
 
       - name: Push Docker image
         if: github.event_name != 'pull_request'
-        run: docker push ghcr.io/${{ env.REPO }}/systemcraft-web:latest
+        run: |
+          docker push ghcr.io/${{ env.REPO }}/systemcraft-web:latest
+          docker push ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
 
   kubernetes-validate:
     name: K8s Manifest Check
@@ -153,4 +157,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Deploy
-        run: echo "K8s deployment triggered for $(git rev-parse --short HEAD)"
+        run: |
+          echo "K8s deployment triggered for $(git rev-parse --short HEAD)"
+          # Example of how you would deploy this via kubectl or CD tool like ArgoCD:
+          # sed -i "s|systemcraft-web:latest|systemcraft-web:${{ github.sha }}|g" kubernetes/deployment.yaml
+          # kubectl apply -f kubernetes/

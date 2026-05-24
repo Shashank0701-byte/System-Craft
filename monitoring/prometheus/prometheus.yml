@@ -11,4 +11,4 @@ scrape_configs:
     static_configs:
       - targets: ['web:3000']
         labels:
-          environment: 'development'
+          environment: 'production'
