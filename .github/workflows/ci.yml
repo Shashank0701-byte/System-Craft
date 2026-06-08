@@ -156,9 +156,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy
+      - name: Update Deployment for ArgoCD
         run: |
-          echo "K8s deployment triggered for $(git rev-parse --short HEAD)"
-          # Example of how you would deploy this via kubectl or CD tool like ArgoCD:
-          # sed -i "s|systemcraft-web:latest|systemcraft-web:${{ github.sha }}|g" kubernetes/deployment.yaml
-          # kubectl apply -f kubernetes/
+          # Use sed to replace the existing image tag with the new GitHub SHA
+          sed -i "s|systemcraft-web:.*|systemcraft-web:${{ github.sha }}|g" kubernetes/deployment.yaml
+          
+          # Commit the change back to the repository
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add kubernetes/deployment.yaml
+          # We use [skip ci] so this commit doesn't trigger another workflow run
+          git commit -m "chore(cd): update image tag to ${{ github.sha }} [skip ci]" || echo "No changes to commit"
+          git push
