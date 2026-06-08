@@ -6,8 +6,13 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Prevent concurrent deploy jobs from racing on manifest updates
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -155,16 +160,44 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Deployment for ArgoCD
         run: |
-          # Use sed to replace the existing image tag with the new GitHub SHA
+          # Replace the image tag with the current commit SHA
           sed -i "s|systemcraft-web:.*|systemcraft-web:${{ github.sha }}|g" kubernetes/deployment.yaml
-          
-          # Commit the change back to the repository
+
+          # Verify the replacement actually worked
+          if ! grep -q "systemcraft-web:${{ github.sha }}" kubernetes/deployment.yaml; then
+            echo "::error::sed replacement failed — deployment.yaml does not contain expected image tag"
+            exit 1
+          fi
+          echo "✅ Image tag verified: systemcraft-web:${{ github.sha }}"
+
+          # Configure git for the bot commit
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           git add kubernetes/deployment.yaml
-          # We use [skip ci] so this commit doesn't trigger another workflow run
-          git commit -m "chore(cd): update image tag to ${{ github.sha }} [skip ci]" || echo "No changes to commit"
-          git push
+
+          # Only commit and push if there are staged changes
+          if git diff --staged --quiet; then
+            echo "ℹ️  No changes to commit — image tag already up to date"
+            exit 0
+          fi
+
+          git commit -m "chore(cd): update image tag to ${{ github.sha }} [skip ci]"
+
+          # Retry push with rebase to handle race conditions
+          MAX_RETRIES=3
+          for i in $(seq 1 $MAX_RETRIES); do
+            if git push; then
+              echo "✅ Push succeeded on attempt $i"
+              exit 0
+            fi
+            echo "⚠️  Push failed (attempt $i/$MAX_RETRIES), rebasing and retrying..."
+            git pull --rebase origin main
+          done
+
+          echo "::error::Push failed after $MAX_RETRIES attempts"
+          exit 1
