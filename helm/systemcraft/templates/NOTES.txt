@@ -2,7 +2,7 @@
 
 Get the application URL:
 {{- if .Values.ingress.enabled }}
-  https://{{ .Values.ingress.host }}
+  {{- if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
 {{- else }}
   kubectl port-forward svc/{{ include "systemcraft.fullname" . }}-service {{ .Values.service.port }}:{{ .Values.service.port }}
   Then visit: http://localhost:{{ .Values.service.port }}

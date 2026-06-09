@@ -7,7 +7,8 @@ replicaCount: 3
 
 image:
   repository: ghcr.io/shashank0701-byte/system-craft/systemcraft-web
-  tag: latest
+  # Pinned default — CI/CD overrides with --set image.tag=$SHA per deploy
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
 
 # ── Service ──────────────────────────────────────────────────
