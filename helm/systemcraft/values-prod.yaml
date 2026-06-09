@@ -6,7 +6,8 @@
 replicaCount: 3
 
 image:
-  tag: latest  # Overridden by CI/CD with --set image.tag=$SHA
+  # REQUIRED: CI/CD must override with --set image.tag=$SHA; never deploy unpinned
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
 
 ingress:
