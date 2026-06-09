@@ -1,0 +1,30 @@
+# ──────────────────────────────────────────────────────────────
+# Dev environment overrides
+# Usage: helm install systemcraft-dev ./helm/systemcraft -f helm/systemcraft/values-dev.yaml
+# ──────────────────────────────────────────────────────────────
+
+replicaCount: 1
+
+image:
+  tag: latest
+  pullPolicy: Always
+
+ingress:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+
+env:
+  NODE_ENV: development
+
+hpa:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
