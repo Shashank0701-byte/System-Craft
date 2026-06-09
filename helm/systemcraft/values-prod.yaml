@@ -1,0 +1,35 @@
+# ──────────────────────────────────────────────────────────────
+# Production environment overrides
+# Usage: helm install systemcraft-prod ./helm/systemcraft -f helm/systemcraft/values-prod.yaml
+# ──────────────────────────────────────────────────────────────
+
+replicaCount: 3
+
+image:
+  tag: latest  # Overridden by CI/CD with --set image.tag=$SHA
+  pullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  host: system-craft-kohl.vercel.app
+  tls:
+    enabled: true
+    secretName: system-craft-tls
+
+resources:
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+
+hpa:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    cpu:
+      averageUtilization: 40
+    memory:
+      averageUtilization: 80
