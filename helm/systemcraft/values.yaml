@@ -1,0 +1,102 @@
+# ──────────────────────────────────────────────────────────────
+# Default values for SystemCraft Helm chart
+# Override per-environment with values-dev.yaml / values-prod.yaml
+# ──────────────────────────────────────────────────────────────
+
+replicaCount: 3
+
+image:
+  repository: ghcr.io/shashank0701-byte/system-craft/systemcraft-web
+  # Pinned default — CI/CD overrides with --set image.tag=$SHA per deploy
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+# ── Service ──────────────────────────────────────────────────
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+# ── Ingress ──────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  host: system-craft-kohl.vercel.app
+  tls:
+    enabled: true
+    secretName: system-craft-tls
+
+# ── Container Resources ─────────────────────────────────────
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+
+# ── Health Probes ────────────────────────────────────────────
+probes:
+  liveness:
+    path: /api/health
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /api/health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# ── Pod Security ─────────────────────────────────────────────
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# ── Environment Variables ────────────────────────────────────
+env:
+  NODE_ENV: production
+
+# ── Secrets ──────────────────────────────────────────────────
+secrets:
+  mongodb:
+    secretName: mongodb-secret
+    key: uri
+
+# ── Horizontal Pod Autoscaler ────────────────────────────────
+hpa:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    cpu:
+      averageUtilization: 40
+    memory:
+      averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+
+# ── ServiceMonitor (Prometheus) ──────────────────────────────
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  path: /api/metrics
+  releaseLabel: prometheus
