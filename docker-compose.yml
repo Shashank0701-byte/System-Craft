@@ -51,6 +51,7 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -59,6 +60,25 @@ services:
     depends_on:
       web:
         condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - systemcraft_net
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.template.yml:ro
+    environment:
+      - ALERTMANAGER_DISCORD_WEBHOOK_URL=${ALERTMANAGER_DISCORD_WEBHOOK_URL}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat /etc/alertmanager/alertmanager.template.yml | sed "s|\$${ALERTMANAGER_DISCORD_WEBHOOK_URL}|$$ALERTMANAGER_DISCORD_WEBHOOK_URL|g" > /etc/alertmanager/alertmanager.yml
+        exec /bin/alertmanager --config.file=/etc/alertmanager/alertmanager.yml --storage.path=/alertmanager
+    depends_on:
+      - prometheus
     restart: unless-stopped
     networks:
       - systemcraft_net
@@ -76,8 +96,10 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_UNIFIED_ALERTING_ENABLED=true
     depends_on:
       - prometheus
+      - alertmanager
     restart: unless-stopped
     networks:
       - systemcraft_net
