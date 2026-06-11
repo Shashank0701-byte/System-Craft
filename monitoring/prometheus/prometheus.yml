@@ -5,6 +5,17 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# ── Alert Rules ──────────────────────────────────────────────
+rule_files:
+  - 'alert-rules.yml'
+
+# ── AlertManager Connection ──────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+# ── Scrape Targets ───────────────────────────────────────────
 scrape_configs:
   - job_name: 'systemcraft'
     metrics_path: '/api/metrics'

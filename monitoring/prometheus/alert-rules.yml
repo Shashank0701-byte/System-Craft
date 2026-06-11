@@ -1,0 +1,143 @@
+# ──────────────────────────────────────────────────────────────
+# Prometheus Alert Rules for SystemCraft
+# These rules fire when app health/performance degrades.
+# ──────────────────────────────────────────────────────────────
+
+groups:
+  # ── Application Health ──────────────────────────────────────
+  - name: systemcraft.health
+    rules:
+      # App is completely down — no successful scrapes for 2 minutes
+      - alert: SystemCraftDown
+        expr: up{job="systemcraft"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SystemCraft is DOWN"
+          description: "Prometheus has failed to scrape the SystemCraft target for over 2 minutes."
+
+      # Health endpoint returning errors
+      - alert: HealthCheckFailing
+        expr: |
+          rate(http_requests_total{route="/api/health", status=~"5.."}[5m]) > 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Health check returning 5xx errors"
+          description: "The /api/health endpoint is returning server errors for over 3 minutes."
+
+  # ── HTTP Error Rates ────────────────────────────────────────
+  - name: systemcraft.http
+    rules:
+      # More than 5% of requests are 5xx errors
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total[5m])), 1)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate (> 5%)"
+          description: "{{ $value | humanizePercentage }} of requests are returning 5xx errors over the last 5 minutes."
+
+      # Critical: more than 20% of requests are 5xx
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total[5m])), 1)
+          ) > 0.20
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL HTTP error rate (> 20%)"
+          description: "{{ $value | humanizePercentage }} of requests are failing. Immediate investigation required."
+
+      # Slow responses — p95 latency above 5 seconds
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+          > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 latency (> 5s)"
+          description: "The 95th percentile response time is {{ $value | humanizeDuration }} over the last 5 minutes."
+
+  # ── LLM / AI Service ───────────────────────────────────────
+  - name: systemcraft.llm
+    rules:
+      # LLM API calls failing
+      - alert: LLMHighFailureRate
+        expr: |
+          (
+            sum(rate(llm_requests_total{status="error"}[10m]))
+            /
+            sum(rate(llm_requests_total[10m]))
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM API failure rate > 10%"
+          description: "{{ $value | humanizePercentage }} of LLM requests are failing. Check OpenRouter status or API key."
+
+      # LLM responses are very slow
+      - alert: LLMSlowResponses
+        expr: |
+          histogram_quantile(0.95, sum(rate(llm_request_duration_seconds_bucket[10m])) by (le))
+          > 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM p95 latency > 30 seconds"
+          description: "LLM responses are taking {{ $value | humanizeDuration }} at the 95th percentile."
+
+  # ── Node.js Runtime ─────────────────────────────────────────
+  - name: systemcraft.runtime
+    rules:
+      # Heap usage above 85% of the limit
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="systemcraft"}
+          /
+          clamp_min(container_memory_limit_bytes{job="systemcraft"}, 1)
+          > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage (> 85% of container limit)"
+          description: "Resident memory is {{ $value | humanizePercentage }} of the container limit. Risk of OOMKill."
+
+      # Event loop lag above 100ms — app becoming unresponsive
+      - alert: HighEventLoopLag
+        expr: |
+          nodejs_eventloop_lag_seconds{job="systemcraft"} > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node.js event loop lag > 100ms"
+          description: "Event loop delay is {{ $value | humanizeDuration }}. The app may feel slow or unresponsive."
+
+      # Too many active handles — possible resource leak
+      - alert: ActiveHandleLeak
+        expr: |
+          nodejs_active_handles_total{job="systemcraft"} > 500
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Possible resource leak — active handles > 500"
+          description: "{{ $value }} active handles detected. Investigate potential connection or file descriptor leaks."
