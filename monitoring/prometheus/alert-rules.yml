@@ -37,7 +37,7 @@ groups:
           (
             sum(rate(http_requests_total{status=~"5.."}[5m]))
             /
-            sum(rate(http_requests_total[5m]))
+            clamp_min(sum(rate(http_requests_total[5m])), 1)
           ) > 0.05
         for: 5m
         labels:
@@ -52,7 +52,7 @@ groups:
           (
             sum(rate(http_requests_total{status=~"5.."}[5m]))
             /
-            sum(rate(http_requests_total[5m]))
+            clamp_min(sum(rate(http_requests_total[5m])), 1)
           ) > 0.20
         for: 2m
         labels:
@@ -111,13 +111,13 @@ groups:
         expr: |
           process_resident_memory_bytes{job="systemcraft"}
           /
-          (512 * 1024 * 1024)
+          clamp_min(container_memory_limit_bytes{job="systemcraft"}, 1)
           > 0.85
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage (> 85% of 512Mi limit)"
+          summary: "High memory usage (> 85% of container limit)"
           description: "Resident memory is {{ $value | humanizePercentage }} of the container limit. Risk of OOMKill."
 
       # Event loop lag above 100ms — app becoming unresponsive

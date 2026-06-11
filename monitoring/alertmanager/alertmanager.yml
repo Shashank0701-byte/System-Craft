@@ -36,7 +36,7 @@ receivers:
   # Discord webhook — receives all alerts as formatted messages
   # Replace the webhook_url with your actual Discord webhook URL
   - name: 'discord-webhook'
-    webhook_configs:
+    discord_configs:
       - url: '${ALERTMANAGER_DISCORD_WEBHOOK_URL}'
         send_resolved: true
 

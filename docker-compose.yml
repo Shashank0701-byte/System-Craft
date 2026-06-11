@@ -71,7 +71,7 @@ services:
     volumes:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.template.yml:ro
     environment:
-      - ALERTMANAGER_DISCORD_WEBHOOK_URL=${ALERTMANAGER_DISCORD_WEBHOOK_URL}
+      - ALERTMANAGER_DISCORD_WEBHOOK_URL=${ALERTMANAGER_DISCORD_WEBHOOK_URL:?}
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
