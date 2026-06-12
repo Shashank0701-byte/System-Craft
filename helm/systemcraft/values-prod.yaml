@@ -34,3 +34,17 @@ hpa:
       averageUtilization: 40
     memory:
       averageUtilization: 80
+
+# ── Sealed Secrets (Bitnami) ────────────────────────────────
+# Generate real values with:
+#   kubectl create secret generic systemcraft-secrets \
+#     --from-literal=mongodb-uri='...' \
+#     --from-literal=openrouter-api-key='...' \
+#     --from-literal=firebase-service-account-key='...' \
+#     --dry-run=client -o yaml | kubeseal --format yaml
+sealedSecrets:
+  enabled: true
+  encryptedData:
+    mongodb-uri: "<kubeseal encrypted value>"
+    openrouter-api-key: "<kubeseal encrypted value>"
+    firebase-service-account-key: "<kubeseal encrypted value>"
