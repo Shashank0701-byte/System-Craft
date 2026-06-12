@@ -28,3 +28,6 @@ hpa:
 
 serviceMonitor:
   enabled: false
+
+sealedSecrets:
+  enabled: false
