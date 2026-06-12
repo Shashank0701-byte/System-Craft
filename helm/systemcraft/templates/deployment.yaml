@@ -50,5 +50,15 @@ spec:
         - name: MONGODB_URL
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.secrets.mongodb.secretName }}
-              key: {{ .Values.secrets.mongodb.key }}
+              name: {{ .Values.secrets.secretName }}
+              key: mongodb-uri
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secrets.secretName }}
+              key: openrouter-api-key
+        - name: FIREBASE_SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secrets.secretName }}
+              key: firebase-service-account-key

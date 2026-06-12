@@ -69,10 +69,20 @@ env:
   NODE_ENV: production
 
 # ── Secrets ──────────────────────────────────────────────────
+# Name of the K8s Secret the deployment mounts.
+# In prod this Secret is auto-created by the Sealed Secrets controller;
+# in dev you create it manually with kubectl.
 secrets:
-  mongodb:
-    secretName: mongodb-secret
-    key: uri
+  secretName: systemcraft-secrets
+
+# ── Sealed Secrets (Bitnami) ────────────────────────────────
+# When enabled, a SealedSecret resource is rendered by the Helm
+# chart.  The sealed-secrets controller decrypts it into a
+# regular Secret named {{ .Values.secrets.secretName }}.
+sealedSecrets:
+  enabled: false
+  # Override in values-prod.yaml with kubeseal-encrypted values
+  encryptedData: {}
 
 # ── Horizontal Pod Autoscaler ────────────────────────────────
 hpa:
