@@ -110,3 +110,15 @@ serviceMonitor:
   interval: 15s
   path: /api/metrics
   releaseLabel: prometheus
+
+# ── Network Policy ───────────────────────────────────────────
+networkPolicy:
+  enabled: true
+  ingress:
+    # Labels for the namespace where the ingress controller runs
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: ingress-nginx
+  egress:
+    # By default allow HTTPS and DNS, plus MongoDB (27017)
+    allowExternal: true

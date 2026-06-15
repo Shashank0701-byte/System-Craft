@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: systemcraft-network-policy
+  labels:
+    app.kubernetes.io/name: systemcraft
+    app.kubernetes.io/instance: systemcraft
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: systemcraft
+      app.kubernetes.io/instance: systemcraft
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from the ingress controller to the app port
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow HTTPS for external APIs (Firebase, OpenRouter, etc.)
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Allow MongoDB default port
+    - ports:
+        - protocol: TCP
+          port: 27017
