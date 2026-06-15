@@ -1,0 +1,41 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "systemcraft.fullname" . }}
+  labels:
+    {{- include "systemcraft.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "systemcraft.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from the ingress controller to the app port
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{- toYaml .Values.networkPolicy.ingress.namespaceSelector.matchLabels | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.targetPort }}
+  egress:
+    {{- if .Values.networkPolicy.egress.allowExternal }}
+    # Allow DNS resolution
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow HTTPS for external APIs (Firebase, OpenRouter, etc.)
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Allow MongoDB default port
+    - ports:
+        - protocol: TCP
+          port: 27017
+    {{- end }}
+{{- end }}
