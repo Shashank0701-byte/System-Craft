@@ -19,7 +19,7 @@ spec:
         runAsUser: 1001
       containers:
       - name: system-craft
-        image: ghcr.io/shashank0701-byte/system-craft/systemcraft-web:12c57b84c2a9f773ba176adc5fb95011ffecc456
+        image: ghcr.io/shashank0701-byte/system-craft/systemcraft-web:24e7d939e3e82bf74141b8c9d4b4afe79556f4c4
         ports:
         - name: http
           containerPort: 3000
