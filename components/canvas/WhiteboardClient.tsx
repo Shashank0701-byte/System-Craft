@@ -1,7 +1,8 @@
 'use client';
 
-import { Tldraw, Editor, getSnapshot, loadSnapshot } from '@tldraw/tldraw';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { Excalidraw, serializeAsJSON } from '@excalidraw/excalidraw';
+import type { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from '@excalidraw/excalidraw/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface WhiteboardProps {
     initialData?: string;
@@ -10,52 +11,81 @@ interface WhiteboardProps {
 }
 
 export default function WhiteboardClient({ initialData, onSave, readOnly = false }: WhiteboardProps) {
-    const [editor, setEditor] = useState<Editor | null>(null);
+    const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isInitialLoadRef = useRef(true);
 
-    const handleMount = useCallback((editor: Editor) => {
-        setEditor(editor);
-
-        if (initialData) {
-            try {
-                const snapshot = JSON.parse(initialData);
-                loadSnapshot(editor.store, snapshot);
-            } catch (error) {
-                console.error("Failed to load whiteboard data", error);
-            }
+    // Parse initial data for Excalidraw
+    const initialDataState: ExcalidrawInitialDataState | undefined = (() => {
+        if (!initialData) return undefined;
+        try {
+            const parsed = JSON.parse(initialData);
+            return {
+                elements: parsed.elements || [],
+                appState: parsed.appState || {},
+                files: parsed.files || undefined,
+            };
+        } catch {
+            return undefined;
         }
-    }, [initialData]);
+    })();
 
-    // Track changes for saving
+    const handleChange = useCallback((elements: readonly any[], appState: any, files: any) => {
+        if (!onSave || readOnly) return;
+
+        // Skip the initial load event
+        if (isInitialLoadRef.current) {
+            isInitialLoadRef.current = false;
+            return;
+        }
+
+        // Debounce saves
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = setTimeout(() => {
+            const data = JSON.stringify({
+                elements: elements,
+                appState: {
+                    // Only persist view-related state, not transient UI state
+                    viewBackgroundColor: appState.viewBackgroundColor,
+                    gridSize: appState.gridSize,
+                    gridColor: appState.gridColor,
+                    gridStep: appState.gridStep,
+                    zoom: appState.zoom,
+                    scrollX: appState.scrollX,
+                    scrollY: appState.scrollY,
+                },
+                files: files || {},
+            });
+            onSave(data);
+        }, 1500);
+    }, [onSave, readOnly]);
+
+    // Cleanup timeout on unmount
     useEffect(() => {
-        if (!editor || readOnly || !onSave) return;
-
-        let timeoutId: NodeJS.Timeout;
-
-        const cleanup = editor.store.listen(() => {
-            if (isInitialLoadRef.current) {
-                isInitialLoadRef.current = false;
-                return;
-            }
-
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-                const snapshot = getSnapshot(editor.store);
-                onSave(JSON.stringify(snapshot));
-            }, 1000);
-        });
-
         return () => {
-            cleanup();
-            clearTimeout(timeoutId);
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
         };
-    }, [editor, readOnly, onSave]);
+    }, []);
 
     return (
         <div style={{ position: 'absolute', inset: 0 }}>
-            <Tldraw 
-                onMount={handleMount}
-                hideUi={readOnly}
+            <Excalidraw
+                excalidrawAPI={(api) => setExcalidrawAPI(api)}
+                initialData={initialDataState}
+                onChange={handleChange}
+                viewModeEnabled={readOnly}
+                theme="dark"
+                UIOptions={{
+                    canvasActions: {
+                        loadScene: false,
+                        export: false,
+                    },
+                }}
             />
         </div>
     );
