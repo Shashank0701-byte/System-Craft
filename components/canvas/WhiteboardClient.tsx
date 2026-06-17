@@ -49,6 +49,20 @@ const STROKE_WIDTHS = [2, 4, 6, 10];
 
 const genId = () => Math.random().toString(36).slice(2, 10);
 
+const ToolBtn = ({ t, icon, label, currentTool, setTool }: { t: ToolType; icon: string; label: string; currentTool: ToolType; setTool: (t: ToolType) => void }) => (
+    <button
+        onClick={() => setTool(t)}
+        title={label}
+        className={`size-9 flex items-center justify-center rounded-lg transition-all ${
+            currentTool === t
+                ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
+                : 'text-slate-400 hover:text-white hover:bg-white/10'
+        }`}
+    >
+        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
+    </button>
+);
+
 // ─── Component ─────────────────────────────────────────────────
 
 export default function WhiteboardClient({ initialData, onSave, readOnly = false }: WhiteboardProps) {
@@ -88,13 +102,16 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
     // ─── Load initial data ─────────────────────────────────────
     useEffect(() => {
         if (!initialData) return;
-        try {
-            const parsed: WhiteboardData = JSON.parse(initialData);
-            if (parsed.elements) setElements(parsed.elements);
-            if (parsed.viewport) setViewport(parsed.viewport);
-        } catch {
-            // ignore invalid data
-        }
+        const timer = setTimeout(() => {
+            try {
+                const parsed: WhiteboardData = JSON.parse(initialData);
+                if (parsed.elements) setElements(parsed.elements);
+                if (parsed.viewport) setViewport(parsed.viewport);
+            } catch {
+                // ignore invalid data
+            }
+        }, 0);
+        return () => clearTimeout(timer);
     }, [initialData]);
 
     // ─── Auto-save on element changes ──────────────────────────
@@ -578,20 +595,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         };
     }, [handleUndo, handleRedo, textInput.visible]);
 
-    // ─── Tool icon helper ──────────────────────────────────────
-    const ToolBtn = ({ t, icon, label }: { t: ToolType; icon: string; label: string }) => (
-        <button
-            onClick={() => setTool(t)}
-            title={label}
-            className={`size-9 flex items-center justify-center rounded-lg transition-all ${
-                tool === t
-                    ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                    : 'text-slate-400 hover:text-white hover:bg-white/10'
-            }`}
-        >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
-        </button>
-    );
+
 
     // ─── Render ────────────────────────────────────────────────
     return (
@@ -633,16 +637,16 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
             {!readOnly && (
                 <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-3 py-2 bg-[#0f0e17]/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
                     {/* Drawing Tools */}
-                    <ToolBtn t="pen" icon="draw" label="Pen (P)" />
-                    <ToolBtn t="line" icon="pen_size_1" label="Line (L)" />
-                    <ToolBtn t="arrow" icon="arrow_right_alt" label="Arrow (A)" />
-                    <ToolBtn t="rect" icon="rectangle" label="Rectangle (R)" />
-                    <ToolBtn t="circle" icon="circle" label="Circle (C)" />
-                    <ToolBtn t="text" icon="title" label="Text (T)" />
+                    <ToolBtn t="pen" icon="draw" label="Pen (P)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="line" icon="pen_size_1" label="Line (L)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="arrow" icon="arrow_right_alt" label="Arrow (A)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="rect" icon="rectangle" label="Rectangle (R)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="circle" icon="circle" label="Circle (C)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="text" icon="title" label="Text (T)" currentTool={tool} setTool={setTool} />
 
                     <div className="w-px h-6 bg-white/10 mx-1" />
 
-                    <ToolBtn t="eraser" icon="ink_eraser" label="Eraser (E)" />
+                    <ToolBtn t="eraser" icon="ink_eraser" label="Eraser (E)" currentTool={tool} setTool={setTool} />
 
                     <div className="w-px h-6 bg-white/10 mx-1" />
 
