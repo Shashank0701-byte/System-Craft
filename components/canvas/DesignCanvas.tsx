@@ -211,7 +211,23 @@ export function DesignCanvas({
   const { setSelectedNode } = useCanvasPanels();
 
   const [activeView, setActiveView] = useState<'architecture' | 'whiteboard'>('architecture');
+
+  // Restore the last active tab from session storage
+  useEffect(() => {
+    const saved = sessionStorage.getItem('canvasActiveView');
+    if (saved === 'whiteboard' || saved === 'architecture') {
+      setActiveView(saved);
+    }
+  }, []);
+
+  // Save the tab to session storage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('canvasActiveView', activeView);
+  }, [activeView]);
+
   const [whiteboardData, setWhiteboardData] = useState<string | undefined>(initialWhiteboardData);
+  const whiteboardDataRef = useRef(whiteboardData);
+  useEffect(() => { whiteboardDataRef.current = whiteboardData; }, [whiteboardData]);
 
   // Sync reducer when initial data arrives asynchronously (e.g. result page fetch)
   const initialDataLoadedRef = useRef(initialNodes.length > 0 || initialConnections.length > 0);
@@ -223,7 +239,7 @@ export function DesignCanvas({
       initialDataLoadedRef.current = true;
       dispatch({ type: 'RESET', payload: { nodes: initialNodes, connections: initialConnections } });
     }
-    if (initialWhiteboardData && !whiteboardData) {
+    if (initialWhiteboardData && !whiteboardDataRef.current) {
         setWhiteboardData(initialWhiteboardData);
     }
   }, [initialNodes, initialConnections, initialWhiteboardData]);
@@ -385,7 +401,7 @@ export function DesignCanvas({
 
     // Debounce save by 2 seconds
     saveTimeoutRef.current = setTimeout(() => {
-      onSave(nodes, connections, whiteboardData);
+      onSave(nodes, connections, whiteboardDataRef.current);
     }, 2000);
 
     return () => {
@@ -706,7 +722,7 @@ export function DesignCanvas({
         saveTimeoutRef.current = null;
       }
       skipNextDebouncedSaveRef.current = true; // Suppress the debounced echo
-      onSave(newNodes, connections, whiteboardData);
+      onSave(newNodes, connections, whiteboardDataRef.current);
     }
   }, [editingLabel, nodes, connections, saveToHistory, onSave]);
 
@@ -749,7 +765,7 @@ export function DesignCanvas({
         saveTimeoutRef.current = null;
       }
       skipNextDebouncedSaveRef.current = true;
-      onSave(nodes, newConnections, whiteboardData);
+      onSave(nodes, newConnections, whiteboardDataRef.current);
     }
   }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave, setEditingConnectionId]);
 
@@ -851,6 +867,7 @@ export function DesignCanvas({
       {activeView === 'whiteboard' ? (
         <div 
             className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]"
+            style={{ touchAction: 'none' }}
             onPointerDown={(e) => e.stopPropagation()}
             onPointerMove={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
