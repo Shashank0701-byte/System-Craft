@@ -271,16 +271,15 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
     }, [drawElement]);
 
     // ─── Animation loop ────────────────────────────────────────
-    const animFrameRef = useRef<number>(0);
-    const renderLoop = useCallback(() => {
-        render();
-        animFrameRef.current = requestAnimationFrame(renderLoop);
-    }, [render]);
-
     useEffect(() => {
-        animFrameRef.current = requestAnimationFrame(renderLoop);
-        return () => cancelAnimationFrame(animFrameRef.current);
-    }, [renderLoop]);
+        let frameId: number;
+        const loop = () => {
+            render();
+            frameId = requestAnimationFrame(loop);
+        };
+        frameId = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(frameId);
+    }, [render]);
 
     // ─── History helpers ───────────────────────────────────────
     const pushHistory = useCallback((prev: WhiteboardElement[]) => {
