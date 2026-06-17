@@ -1,8 +1,8 @@
 'use client';
 
-import { Excalidraw, serializeAsJSON } from '@excalidraw/excalidraw';
-import type { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from '@excalidraw/excalidraw/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Excalidraw } from '@excalidraw/excalidraw';
+import type { ExcalidrawInitialDataState, AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface WhiteboardProps {
     initialData?: string;
@@ -11,7 +11,6 @@ interface WhiteboardProps {
 }
 
 export default function WhiteboardClient({ initialData, onSave, readOnly = false }: WhiteboardProps) {
-    const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isInitialLoadRef = useRef(true);
 
@@ -30,7 +29,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         }
     })();
 
-    const handleChange = useCallback((elements: readonly any[], appState: any, files: any) => {
+    const handleChange = useCallback((elements: readonly Record<string, unknown>[], appState: AppState, files: BinaryFiles) => {
         if (!onSave || readOnly) return;
 
         // Skip the initial load event
@@ -51,7 +50,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                     // Only persist view-related state, not transient UI state
                     viewBackgroundColor: appState.viewBackgroundColor,
                     gridSize: appState.gridSize,
-                    gridColor: appState.gridColor,
                     gridStep: appState.gridStep,
                     zoom: appState.zoom,
                     scrollX: appState.scrollX,
@@ -75,7 +73,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
     return (
         <div style={{ position: 'absolute', inset: 0 }}>
             <Excalidraw
-                excalidrawAPI={(api) => setExcalidrawAPI(api)}
                 initialData={initialDataState}
                 onChange={handleChange}
                 viewModeEnabled={readOnly}
