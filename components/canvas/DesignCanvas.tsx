@@ -851,6 +851,7 @@ export function DesignCanvas({
       {activeView === 'whiteboard' ? (
         <div 
             className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]"
+            style={{ touchAction: 'none' }}
             onPointerDown={(e) => e.stopPropagation()}
             onPointerMove={(e) => e.stopPropagation()}
             onPointerUp={(e) => e.stopPropagation()}
