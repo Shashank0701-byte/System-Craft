@@ -869,8 +869,8 @@ export function DesignCanvas({
           </div>
       )}
 
-      {activeView === 'whiteboard' ? (
-        <div 
+      {activeView === 'whiteboard' && enableWhiteboard ? (
+        <div
             className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => e.stopPropagation()}
@@ -883,10 +883,10 @@ export function DesignCanvas({
             onWheel={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
         >
-            <Whiteboard 
-                initialData={whiteboardData} 
-                onSave={handleWhiteboardSave} 
-                readOnly={readOnly} 
+            <Whiteboard
+                initialData={whiteboardData}
+                onSave={handleWhiteboardSave}
+                readOnly={readOnly}
             />
         </div>
       ) : (
