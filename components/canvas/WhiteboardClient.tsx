@@ -1,7 +1,6 @@
 'use client';
 
 import { Tldraw, Editor, getSnapshot, loadSnapshot } from '@tldraw/tldraw';
-import '@tldraw/tldraw/tldraw.css';
 import { useCallback, useEffect, useState, useRef } from 'react';
 
 interface WhiteboardProps {
@@ -31,7 +30,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
     useEffect(() => {
         if (!editor || readOnly || !onSave) return;
 
-        // Debounced save
         let timeoutId: NodeJS.Timeout;
 
         const cleanup = editor.store.listen(() => {
@@ -44,7 +42,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
             timeoutId = setTimeout(() => {
                 const snapshot = getSnapshot(editor.store);
                 onSave(JSON.stringify(snapshot));
-            }, 1000); // Save after 1 second of inactivity
+            }, 1000);
         });
 
         return () => {
@@ -54,7 +52,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
     }, [editor, readOnly, onSave]);
 
     return (
-        <div className="w-full h-full relative" style={{ zIndex: 10 }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
             <Tldraw 
                 onMount={handleMount}
                 hideUi={readOnly}
