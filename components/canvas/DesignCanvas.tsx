@@ -127,6 +127,8 @@ interface DesignCanvasProps {
   activeConstraints?: IConstraintChange[];
   /** Callback fired when the simulation status changes so parent can validate */
   onSimulationChange?: (metrics: SimulationResult) => void;
+  /** Whether to show the Whiteboard tab */
+  enableWhiteboard?: boolean;
 }
 
 const MAX_HISTORY = 50;
@@ -189,7 +191,8 @@ export function DesignCanvas({
   readOnly = false,
   stateRef,
   activeConstraints = [],
-  onSimulationChange
+  onSimulationChange,
+  enableWhiteboard = false,
 }: DesignCanvasProps) {
   const arrowId = useId();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -841,31 +844,33 @@ export function DesignCanvas({
       onDrop={handleDrop}
     >
       {/* View Toggle Tabs */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex bg-white/10 dark:bg-black/20 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-white/10 shadow-lg">
-        <button
-            onClick={() => setActiveView('architecture')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                activeView === 'architecture' 
-                ? 'bg-primary text-white shadow-md' 
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
-            }`}
-        >
-            Architecture
-        </button>
-        <button
-            onClick={() => setActiveView('whiteboard')}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                activeView === 'whiteboard' 
-                ? 'bg-primary text-white shadow-md' 
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
-            }`}
-        >
-            Whiteboard
-        </button>
-      </div>
+      {enableWhiteboard && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex bg-white/10 dark:bg-black/20 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-white/10 shadow-lg">
+            <button
+                onClick={() => setActiveView('architecture')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    activeView === 'architecture' 
+                    ? 'bg-primary text-white shadow-md' 
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+                }`}
+            >
+                Architecture
+            </button>
+            <button
+                onClick={() => setActiveView('whiteboard')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    activeView === 'whiteboard' 
+                    ? 'bg-primary text-white shadow-md' 
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+                }`}
+            >
+                Whiteboard
+            </button>
+          </div>
+      )}
 
-      {activeView === 'whiteboard' ? (
-        <div 
+      {activeView === 'whiteboard' && enableWhiteboard ? (
+        <div
             className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => e.stopPropagation()}
@@ -878,10 +883,10 @@ export function DesignCanvas({
             onWheel={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
         >
-            <Whiteboard 
-                initialData={whiteboardData} 
-                onSave={handleWhiteboardSave} 
-                readOnly={readOnly} 
+            <Whiteboard
+                initialData={whiteboardData}
+                onSave={handleWhiteboardSave}
+                readOnly={readOnly}
             />
         </div>
       ) : (

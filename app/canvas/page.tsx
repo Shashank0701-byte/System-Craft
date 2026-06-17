@@ -15,7 +15,7 @@ export default function CanvasPage() {
       <CanvasHeader onRunAIReview={() => setShowAIPanel(true)} />
       <div className="flex flex-1 overflow-hidden">
         <ComponentPalette />
-        <DesignCanvas />
+        <DesignCanvas enableWhiteboard />
         {showAIPanel ? (
           <AIFeedbackPanel onClose={() => setShowAIPanel(false)} />
         ) : (

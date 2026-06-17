@@ -342,6 +342,7 @@ export default function CanvasPage({ params }: PageProps) {
                         initialConnections={design?.connections || []}
                         initialWhiteboardData={design?.whiteboardData}
                         onSave={saveDesign}
+                        enableWhiteboard
                     />
                     <PropertiesPanel />
                 </div>
