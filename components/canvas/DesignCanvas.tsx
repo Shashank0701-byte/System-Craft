@@ -242,7 +242,6 @@ export function DesignCanvas({
     if (initialWhiteboardData && !whiteboardDataRef.current) {
         setWhiteboardData(initialWhiteboardData);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNodes, initialConnections, initialWhiteboardData]);
 
   // Keep stateRef in sync so parent can read current canvas state at any time
