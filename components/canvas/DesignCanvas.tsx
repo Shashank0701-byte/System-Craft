@@ -212,6 +212,8 @@ export function DesignCanvas({
 
   const [activeView, setActiveView] = useState<'architecture' | 'whiteboard'>('architecture');
   const [whiteboardData, setWhiteboardData] = useState<string | undefined>(initialWhiteboardData);
+  const whiteboardDataRef = useRef(whiteboardData);
+  useEffect(() => { whiteboardDataRef.current = whiteboardData; }, [whiteboardData]);
 
   // Sync reducer when initial data arrives asynchronously (e.g. result page fetch)
   const initialDataLoadedRef = useRef(initialNodes.length > 0 || initialConnections.length > 0);
@@ -223,9 +225,10 @@ export function DesignCanvas({
       initialDataLoadedRef.current = true;
       dispatch({ type: 'RESET', payload: { nodes: initialNodes, connections: initialConnections } });
     }
-    if (initialWhiteboardData && !whiteboardData) {
+    if (initialWhiteboardData && !whiteboardDataRef.current) {
         setWhiteboardData(initialWhiteboardData);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNodes, initialConnections, initialWhiteboardData]);
 
   // Keep stateRef in sync so parent can read current canvas state at any time
@@ -385,7 +388,7 @@ export function DesignCanvas({
 
     // Debounce save by 2 seconds
     saveTimeoutRef.current = setTimeout(() => {
-      onSave(nodes, connections, whiteboardData);
+      onSave(nodes, connections, whiteboardDataRef.current);
     }, 2000);
 
     return () => {
@@ -706,7 +709,7 @@ export function DesignCanvas({
         saveTimeoutRef.current = null;
       }
       skipNextDebouncedSaveRef.current = true; // Suppress the debounced echo
-      onSave(newNodes, connections, whiteboardData);
+      onSave(newNodes, connections, whiteboardDataRef.current);
     }
   }, [editingLabel, nodes, connections, saveToHistory, onSave]);
 
@@ -749,7 +752,7 @@ export function DesignCanvas({
         saveTimeoutRef.current = null;
       }
       skipNextDebouncedSaveRef.current = true;
-      onSave(nodes, newConnections, whiteboardData);
+      onSave(nodes, newConnections, whiteboardDataRef.current);
     }
   }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave, setEditingConnectionId]);
 
