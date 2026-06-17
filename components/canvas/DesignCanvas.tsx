@@ -211,6 +211,20 @@ export function DesignCanvas({
   const { setSelectedNode } = useCanvasPanels();
 
   const [activeView, setActiveView] = useState<'architecture' | 'whiteboard'>('architecture');
+
+  // Restore the last active tab from session storage
+  useEffect(() => {
+    const saved = sessionStorage.getItem('canvasActiveView');
+    if (saved === 'whiteboard' || saved === 'architecture') {
+      setActiveView(saved);
+    }
+  }, []);
+
+  // Save the tab to session storage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('canvasActiveView', activeView);
+  }, [activeView]);
+
   const [whiteboardData, setWhiteboardData] = useState<string | undefined>(initialWhiteboardData);
   const whiteboardDataRef = useRef(whiteboardData);
   useEffect(() => { whiteboardDataRef.current = whiteboardData; }, [whiteboardData]);
