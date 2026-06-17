@@ -849,7 +849,18 @@ export function DesignCanvas({
       </div>
 
       {activeView === 'whiteboard' ? (
-        <div className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]">
+        <div 
+            className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerMove={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseMove={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+        >
             <Whiteboard 
                 initialData={whiteboardData} 
                 onSave={handleWhiteboardSave} 
