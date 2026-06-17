@@ -56,6 +56,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 nodes: design.nodes,
                 connections: design.connections,
                 thumbnail: design.thumbnail,
+                whiteboardData: design.whiteboardData,
                 createdAt: design.createdAt,
                 updatedAt: design.updatedAt,
             },
@@ -92,7 +93,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 { status: 400 }
             );
         }
-        const { title, description, status, nodes, connections, thumbnail } = body;
+        const { title, description, status, nodes, connections, thumbnail, whiteboardData } = body;
 
         // Verify Firebase ID token
         const authHeader = request.headers.get('Authorization');
@@ -127,6 +128,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (nodes !== undefined) updateData.nodes = nodes;
         if (connections !== undefined) updateData.connections = connections;
         if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
+        if (whiteboardData !== undefined) updateData.whiteboardData = whiteboardData;
 
         const design = await Design.findOneAndUpdate(
             { _id: id, userId: user._id },
