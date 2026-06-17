@@ -26,6 +26,7 @@ export interface IDesign extends Document {
     nodes: ICanvasNode[];
     connections: IConnection[];
     thumbnail?: string;
+    whiteboardData?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -84,6 +85,10 @@ const DesignSchema = new Schema<IDesign>(
             default: [],
         },
         thumbnail: {
+            type: String,
+            default: null,
+        },
+        whiteboardData: {
             type: String,
             default: null,
         },

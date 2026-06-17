@@ -6,6 +6,7 @@ import { useSimulationEngine } from '@/src/hooks/useSimulationEngine';
 import { SimulationResult } from '@/src/lib/simulation/engine';
 import { SimulationControls } from './SimulationControls';
 import { useCanvasPanels } from './CanvasPanelsContext';
+import { Whiteboard } from './Whiteboard';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
@@ -117,7 +118,8 @@ interface DesignCanvasProps {
   initialNodes?: CanvasNode[];
   initialConnections?: Connection[];
   initialTargetRps?: number;
-  onSave?: (nodes: CanvasNode[], connections: Connection[]) => void;
+  initialWhiteboardData?: string;
+  onSave?: (nodes: CanvasNode[], connections: Connection[], whiteboardData?: string) => void;
   readOnly?: boolean;
   /** Live ref to current canvas state — updated on every change */
   stateRef?: MutableRefObject<CanvasStateRef | null>;
@@ -182,6 +184,7 @@ export function DesignCanvas({
   initialNodes = DEFAULT_NODES,
   initialConnections = DEFAULT_CONNECTIONS,
   initialTargetRps = 10000,
+  initialWhiteboardData,
   onSave,
   readOnly = false,
   stateRef,
@@ -207,6 +210,9 @@ export function DesignCanvas({
   // Panels context — sync selected node so PropertiesPanel can react
   const { setSelectedNode } = useCanvasPanels();
 
+  const [activeView, setActiveView] = useState<'architecture' | 'whiteboard'>('architecture');
+  const [whiteboardData, setWhiteboardData] = useState<string | undefined>(initialWhiteboardData);
+
   // Sync reducer when initial data arrives asynchronously (e.g. result page fetch)
   const initialDataLoadedRef = useRef(initialNodes.length > 0 || initialConnections.length > 0);
   useEffect(() => {
@@ -217,7 +223,10 @@ export function DesignCanvas({
       initialDataLoadedRef.current = true;
       dispatch({ type: 'RESET', payload: { nodes: initialNodes, connections: initialConnections } });
     }
-  }, [initialNodes, initialConnections]);
+    if (initialWhiteboardData && !whiteboardData) {
+        setWhiteboardData(initialWhiteboardData);
+    }
+  }, [initialNodes, initialConnections, initialWhiteboardData]);
 
   // Keep stateRef in sync so parent can read current canvas state at any time
   useEffect(() => {
@@ -376,7 +385,7 @@ export function DesignCanvas({
 
     // Debounce save by 2 seconds
     saveTimeoutRef.current = setTimeout(() => {
-      onSave(nodes, connections);
+      onSave(nodes, connections, whiteboardData);
     }, 2000);
 
     return () => {
@@ -697,7 +706,7 @@ export function DesignCanvas({
         saveTimeoutRef.current = null;
       }
       skipNextDebouncedSaveRef.current = true; // Suppress the debounced echo
-      onSave(newNodes, connections);
+      onSave(newNodes, connections, whiteboardData);
     }
   }, [editingLabel, nodes, connections, saveToHistory, onSave]);
 
@@ -740,7 +749,7 @@ export function DesignCanvas({
         saveTimeoutRef.current = null;
       }
       skipNextDebouncedSaveRef.current = true;
-      onSave(nodes, newConnections);
+      onSave(nodes, newConnections, whiteboardData);
     }
   }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave, setEditingConnectionId]);
 
@@ -789,26 +798,78 @@ export function DesignCanvas({
         handleRedo();
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo, readOnly]);
+
+  const handleWhiteboardSave = useCallback((data: string) => {
+    setWhiteboardData(data);
+    if (onSave) {
+        onSave(nodes, connections, data);
+    }
+  }, [nodes, connections, onSave]);
 
   return (
     <main
       ref={canvasRef}
       tabIndex={0}
-      className={`flex-1 relative bg-white dark:bg-[#0f1115] overflow-hidden transition-colors outline-none ${isDragOver ? 'ring-2 ring-inset ring-primary/50 bg-primary/5' : ''
-        } ${isPanning ? 'cursor-grabbing' : toolMode === 'pan' ? 'cursor-grab' : toolMode === 'erase' ? 'cursor-crosshair' : draggedNodeId ? 'cursor-grabbing' : isDrawingConnection ? 'cursor-crosshair' : 'cursor-default'}`}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+      className={`relative flex-1 bg-dashboard-bg dark:bg-[#1A1825] overflow-hidden focus:outline-none select-none ${toolMode === 'pan' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-default'
+        }`}
       onMouseDown={handleCanvasMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onClick={handleCanvasClick}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* View Toggle Tabs */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex bg-white/10 dark:bg-black/20 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-white/10 shadow-lg">
+        <button
+            onClick={() => setActiveView('architecture')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                activeView === 'architecture' 
+                ? 'bg-primary text-white shadow-md' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+            }`}
+        >
+            Architecture
+        </button>
+        <button
+            onClick={() => setActiveView('whiteboard')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                activeView === 'whiteboard' 
+                ? 'bg-primary text-white shadow-md' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+            }`}
+        >
+            Whiteboard
+        </button>
+      </div>
+
+      {activeView === 'whiteboard' ? (
+        <div className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]">
+            <Whiteboard 
+                initialData={whiteboardData} 
+                onSave={handleWhiteboardSave} 
+                readOnly={readOnly} 
+            />
+        </div>
+      ) : (
+        <>
+            {/* Grid background */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                backgroundImage: `
+                    linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
+                `,
+                backgroundSize: `${20 * (zoom / 100)}px ${20 * (zoom / 100)}px`,
+                backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
+                }}
+            />
       <style>{`
         @keyframes dash {
           to { stroke-dashoffset: -12; }
@@ -1265,6 +1326,8 @@ export function DesignCanvas({
           <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add</span>
         </button>
       </div>
+      </>
+      )}
     </main>
   );
 }

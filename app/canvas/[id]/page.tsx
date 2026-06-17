@@ -16,11 +16,13 @@ interface DesignData {
     status: string;
     nodes: CanvasNode[];
     connections: Connection[];
+    whiteboardData?: string;
 }
 
 interface PendingSave {
     nodes: CanvasNode[];
     connections: Connection[];
+    whiteboardData?: string;
     retryCount: number;
 }
 
@@ -48,7 +50,7 @@ export default function CanvasPage({ params }: PageProps) {
     const isMountedRef = useRef(true);
 
     // Track latest debounced data so it can be flushed on unmount
-    const latestDebouncedDataRef = useRef<{ nodes: CanvasNode[]; connections: Connection[] } | null>(null);
+    const latestDebouncedDataRef = useRef<{ nodes: CanvasNode[]; connections: Connection[]; whiteboardData?: string } | null>(null);
 
     // Fetch design data
     const fetchDesign = useCallback(async () => {
@@ -85,7 +87,7 @@ export default function CanvasPage({ params }: PageProps) {
     }, [isAuthenticated, user, fetchDesign]);
 
     // Perform save with retry logic and exponential backoff
-    const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[], retryCount = 0) => {
+    const performSave = useCallback(async (nodes: CanvasNode[], connections: Connection[], whiteboardData?: string, retryCount = 0) => {
         if (!isMountedRef.current) return;
 
         isSavingRef.current = true;
@@ -94,7 +96,7 @@ export default function CanvasPage({ params }: PageProps) {
         try {
             const response = await authFetch(`/api/designs/${id}`, {
                 method: 'PUT',
-                body: JSON.stringify({ nodes, connections }),
+                body: JSON.stringify({ nodes, connections, whiteboardData }),
             });
 
             if (!isMountedRef.current) return;
@@ -110,7 +112,7 @@ export default function CanvasPage({ params }: PageProps) {
 
                     retryTimeoutRef.current = setTimeout(() => {
                         if (isMountedRef.current) {
-                            performSave(nodes, connections, retryCount + 1);
+                            performSave(nodes, connections, whiteboardData, retryCount + 1);
                         }
                     }, delay);
                     return; // Don't set isSavingRef to false yet
@@ -141,7 +143,7 @@ export default function CanvasPage({ params }: PageProps) {
 
                 retryTimeoutRef.current = setTimeout(() => {
                     if (isMountedRef.current) {
-                        performSave(nodes, connections, retryCount + 1);
+                        performSave(nodes, connections, whiteboardData, retryCount + 1);
                     }
                 }, delay);
                 return; // Don't set isSavingRef to false yet
@@ -163,7 +165,7 @@ export default function CanvasPage({ params }: PageProps) {
                 // Use setTimeout to break potential tight loop
                 setTimeout(() => {
                     if (isMountedRef.current) {
-                        performSave(pending.nodes, pending.connections, 0);
+                        performSave(pending.nodes, pending.connections, pending.whiteboardData, 0);
                     }
                 }, 100);
             }
@@ -171,7 +173,7 @@ export default function CanvasPage({ params }: PageProps) {
     }, [id]);
 
     // Save design with debounce and queue for pending changes
-    const saveDesign = useCallback((nodes: CanvasNode[], connections: Connection[]) => {
+    const saveDesign = useCallback((nodes: CanvasNode[], connections: Connection[], whiteboardData?: string) => {
         // Clear any pending debounce timeout
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
@@ -179,16 +181,16 @@ export default function CanvasPage({ params }: PageProps) {
         }
 
         // Always store latest data for potential unmount flush
-        latestDebouncedDataRef.current = { nodes, connections };
+        latestDebouncedDataRef.current = { nodes, connections, whiteboardData };
 
         // If already saving, queue this save with reset retry count
         if (isSavingRef.current) {
-            pendingSaveRef.current = { nodes, connections, retryCount: 0 };
+            pendingSaveRef.current = { nodes, connections, whiteboardData, retryCount: 0 };
             return;
         }
 
         // Also store in pendingSaveRef so unmount can detect pending debounced saves
-        pendingSaveRef.current = { nodes, connections, retryCount: 0 };
+        pendingSaveRef.current = { nodes, connections, whiteboardData, retryCount: 0 };
 
         // Debounce by 1.5 seconds
         saveTimeoutRef.current = setTimeout(() => {
@@ -198,7 +200,7 @@ export default function CanvasPage({ params }: PageProps) {
             if (pendingSaveRef.current) {
                 const data = pendingSaveRef.current;
                 pendingSaveRef.current = null;
-                performSave(data.nodes, data.connections, 0);
+                performSave(data.nodes, data.connections, data.whiteboardData, 0);
             }
         }, 1500);
     }, [performSave]);
@@ -231,7 +233,7 @@ export default function CanvasPage({ params }: PageProps) {
             if (dataToFlush) {
                 authFetch(`/api/designs/${id}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ nodes: dataToFlush.nodes, connections: dataToFlush.connections }),
+                    body: JSON.stringify({ nodes: dataToFlush.nodes, connections: dataToFlush.connections, whiteboardData: dataToFlush.whiteboardData }),
                 }).catch(() => {
                     // Silently fail - component is unmounting
                 });
@@ -338,6 +340,7 @@ export default function CanvasPage({ params }: PageProps) {
                     <DesignCanvas
                         initialNodes={design?.nodes || []}
                         initialConnections={design?.connections || []}
+                        initialWhiteboardData={design?.whiteboardData}
                         onSave={saveDesign}
                     />
                     <PropertiesPanel />
