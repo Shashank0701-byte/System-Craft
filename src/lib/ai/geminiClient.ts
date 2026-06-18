@@ -40,17 +40,17 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
             // AbortController with timeout to prevent hanging forever on slow AI responses
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
-            const llmTimer = llmRequestDuration.startTimer({ model: 'google/gemini-2.0-flash-001' });
+            const llmTimer = llmRequestDuration.startTimer({ model: 'google/gemini-2.5-flash' });
 
             let response;
             try {
                 response = await openrouter.chat.completions.create(
                     {
-                        model: 'google/gemini-2.0-flash-001',
+                        model: 'google/gemini-2.5-flash',
                         messages: [
                             {
                                 role: 'user',
-                                content: `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown formatting, no explanations.`,
+                                content: `${prompt}\n\nIMPORTANT: You must return ONLY valid JSON. Do not include markdown formatting (like \`\`\`json), do not include any conversational text before or after the JSON. Your entire response must be parseable by JSON.parse().`,
                             },
                         ],
                         temperature: 0.8,
@@ -59,16 +59,16 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
                     { signal: controller.signal }
                 );
                 llmTimer();
-                llmRequestsTotal.inc({ model: 'google/gemini-2.0-flash-001', status: 'success' });
+                llmRequestsTotal.inc({ model: 'google/gemini-2.5-flash', status: 'success' });
                 
                 // Track tokens if provided by OpenRouter
                 if (response.usage) {
-                    if (response.usage.prompt_tokens) llmTokensTotal.inc({ model: 'google/gemini-2.0-flash-001', type: 'prompt' }, response.usage.prompt_tokens);
-                    if (response.usage.completion_tokens) llmTokensTotal.inc({ model: 'google/gemini-2.0-flash-001', type: 'completion' }, response.usage.completion_tokens);
+                    if (response.usage.prompt_tokens) llmTokensTotal.inc({ model: 'google/gemini-2.5-flash', type: 'prompt' }, response.usage.prompt_tokens);
+                    if (response.usage.completion_tokens) llmTokensTotal.inc({ model: 'google/gemini-2.5-flash', type: 'completion' }, response.usage.completion_tokens);
                 }
             } catch(e) {
                 llmTimer();
-                llmRequestsTotal.inc({ model: 'google/gemini-2.0-flash-001', status: 'error' });
+                llmRequestsTotal.inc({ model: 'google/gemini-2.5-flash', status: 'error' });
                 throw e;
             } finally {
                 clearTimeout(timer);
@@ -80,10 +80,18 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
             }
 
             // Clean up — strip markdown fences if present
-            const cleaned = text
-                .replace(/^```json\s*/i, '')
-                .replace(/```\s*$/, '')
-                .trim();
+            let cleaned = text.trim();
+            const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (jsonMatch) {
+                cleaned = jsonMatch[1].trim();
+            } else {
+                // Try to find first { and last }
+                const firstBrace = cleaned.indexOf('{');
+                const lastBrace = cleaned.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+                    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+                }
+            }
 
             return JSON.parse(cleaned) as T;
         } catch (error: unknown) {
