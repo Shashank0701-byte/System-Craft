@@ -50,7 +50,7 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
                         messages: [
                             {
                                 role: 'user',
-                                content: `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown formatting, no explanations.`,
+                                content: `${prompt}\n\nIMPORTANT: You must return ONLY valid JSON. Do not include markdown formatting (like \`\`\`json), do not include any conversational text before or after the JSON. Your entire response must be parseable by JSON.parse().`,
                             },
                         ],
                         temperature: 0.8,
@@ -80,10 +80,18 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
             }
 
             // Clean up — strip markdown fences if present
-            const cleaned = text
-                .replace(/^```json\s*/i, '')
-                .replace(/```\s*$/, '')
-                .trim();
+            let cleaned = text.trim();
+            const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (jsonMatch) {
+                cleaned = jsonMatch[1].trim();
+            } else {
+                // Try to find first { and last }
+                const firstBrace = cleaned.indexOf('{');
+                const lastBrace = cleaned.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+                    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+                }
+            }
 
             return JSON.parse(cleaned) as T;
         } catch (error: unknown) {

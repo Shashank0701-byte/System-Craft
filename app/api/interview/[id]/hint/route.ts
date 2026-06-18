@@ -196,7 +196,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
 
         const sanitizeMessage = (msg: string) => {
-            return msg
+            if (!msg) return '';
+            return String(msg)
                 .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
                 .slice(0, 1500);
         };
@@ -307,7 +308,7 @@ Respond strictly in JSON:
 
         const newMessage = {
             role: 'interviewer' as const,
-            content: sanitizeMessage(response.message),
+            content: sanitizeMessage(response?.message || "I'm here to help. Could you elaborate on your current architecture?"),
             timestamp: new Date()
         };
 
