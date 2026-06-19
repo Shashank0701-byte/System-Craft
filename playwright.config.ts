@@ -26,11 +26,11 @@ export default defineConfig({
     },
   ],
 
-  /* Auto-start the dev server before running tests */
-  webServer: {
+  /* Auto-start the dev server before running tests locally. In CI, we run against the Docker container */
+  webServer: process.env.CI ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120_000, // Next.js cold-start can be slow
   },
 });
