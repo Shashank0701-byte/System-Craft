@@ -37,12 +37,32 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-  e2e-tests:
-    name: E2E Tests (Playwright)
+  kubernetes-validate:
+    name: K8s Manifest Check
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubeval with local schemas
+        run: |
+          wget -q https://github.com/instrumenta/kubeval/releases/download/v0.16.1/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin/kubeval
+          wget -q https://github.com/instrumenta/kubernetes-json-schema/archive/refs/heads/master.zip
+          unzip -q master.zip
+          echo "SCHEMA_DIR=$(pwd)/kubernetes-json-schema-master" >> $GITHUB_ENV
+
+      - name: Validate K8s manifests
+        run: |
+          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/deployment.yaml
+          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/service.yaml
+          kubeval --ignore-missing-schemas --schema-location file://${SCHEMA_DIR} kubernetes/hpa.yaml
+          kubeval --ignore-missing-schemas kubernetes/ingress.yaml
+
+  build-test-publish:
+    name: Build, Test & Publish Docker Image
+    runs-on: ubuntu-latest
     env:
-      # Minimal env vars needed for Next.js build (app won't auth in CI)
       NEXT_PUBLIC_FIREBASE_API_KEY: "ci-placeholder"
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "ci-placeholder"
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: "ci-placeholder"
@@ -57,30 +77,6 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Upload test report
-        if: ${{ always() && !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
-
-  docker-build-test:
-    name: Docker Build Test
-    runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, e2e-tests]
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Login to Container Registry
         uses: docker/login-action@v3
@@ -124,39 +120,41 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
+      - name: Start Docker Container
+        run: |
+          docker run -d -p 3000:3000 ghcr.io/${{ env.REPO }}/systemcraft-web:latest
+          # Wait for container to be ready
+          echo "Waiting for container to be ready on port 3000..."
+          timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 2; done'
+          echo "Container is ready!"
+
+      - name: Install dependencies (for Playwright)
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Upload test report
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
       - name: Push Docker image
         if: github.event_name != 'pull_request'
         run: |
           docker push ghcr.io/${{ env.REPO }}/systemcraft-web:latest
           docker push ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
 
-  kubernetes-validate:
-    name: K8s Manifest Check
-    runs-on: ubuntu-latest
-    needs: [docker-build-test]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install kubeval with local schemas
-        run: |
-          wget -q https://github.com/instrumenta/kubeval/releases/download/v0.16.1/kubeval-linux-amd64.tar.gz
-          tar xf kubeval-linux-amd64.tar.gz
-          sudo mv kubeval /usr/local/bin/kubeval
-          wget -q https://github.com/instrumenta/kubernetes-json-schema/archive/refs/heads/master.zip
-          unzip -q master.zip
-          echo "SCHEMA_DIR=$(pwd)/kubernetes-json-schema-master" >> $GITHUB_ENV
-
-      - name: Validate K8s manifests
-        run: |
-          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/deployment.yaml
-          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/service.yaml
-          kubeval --ignore-missing-schemas --schema-location file://${SCHEMA_DIR} kubernetes/hpa.yaml
-          kubeval --ignore-missing-schemas kubernetes/ingress.yaml
-
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [kubernetes-validate]
+    needs: [lint-and-typecheck, kubernetes-validate, build-test-publish]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
