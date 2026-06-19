@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -42,6 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Install kubeval with local schemas
         run: |
@@ -71,6 +75,8 @@ jobs:
       NEXT_PUBLIC_FIREBASE_APP_ID: "ci-placeholder"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -79,6 +85,7 @@ jobs:
           cache: 'npm'
 
       - name: Login to Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
@@ -125,7 +132,7 @@ jobs:
           docker run -d --name systemcraft-e2e -p 3000:3000 ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
           # Wait for container to be ready
           echo "Waiting for container to be ready on port 3000..."
-          timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 2; done'
+          timeout 60 bash -c 'until curl -fsS http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
           echo "Container is ready!"
 
       - name: Install dependencies (for Playwright)

@@ -36,7 +36,7 @@ test.describe('Landing Page', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     // "Sign In" link only appears after auth loading resolves (hidden sm:flex)
-    const signIn = page.getByRole('link', { name: /Sign In/i });
+    const signIn = page.getByRole('link', { name: 'Sign In', exact: true }).first();
     await expect(signIn).toBeVisible({ timeout: 15_000 });
     await signIn.click();
 
