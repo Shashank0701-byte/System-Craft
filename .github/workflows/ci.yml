@@ -20,10 +20,10 @@ jobs:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
           cache: 'npm'
@@ -41,7 +41,7 @@ jobs:
     name: K8s Manifest Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Install kubeval with local schemas
         run: |
@@ -57,7 +57,7 @@ jobs:
           kubeval --schema-location file://${SCHEMA_DIR} kubernetes/deployment.yaml
           kubeval --schema-location file://${SCHEMA_DIR} kubernetes/service.yaml
           kubeval --ignore-missing-schemas --schema-location file://${SCHEMA_DIR} kubernetes/hpa.yaml
-          kubeval --ignore-missing-schemas kubernetes/ingress.yaml
+          kubeval --ignore-missing-schemas --schema-location file://${SCHEMA_DIR} kubernetes/ingress.yaml
 
   build-test-publish:
     name: Build, Test & Publish Docker Image
@@ -70,29 +70,29 @@ jobs:
       NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "ci-placeholder"
       NEXT_PUBLIC_FIREBASE_APP_ID: "ci-placeholder"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Login to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
       - name: Lowercase repository name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
       - name: Build Docker image (load locally for scanning)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
           context: .
           load: true
@@ -111,18 +111,18 @@ jobs:
             NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
-          image-ref: 'ghcr.io/${{ env.REPO }}/systemcraft-web:latest'
+          image-ref: 'ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
 
       - name: Start Docker Container
         run: |
-          docker run -d -p 3000:3000 ghcr.io/${{ env.REPO }}/systemcraft-web:latest
+          docker run -d --name systemcraft-e2e -p 3000:3000 ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
           # Wait for container to be ready
           echo "Waiting for container to be ready on port 3000..."
           timeout 60 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 2; done'
@@ -139,11 +139,15 @@ jobs:
 
       - name: Upload test report
         if: ${{ always() && !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
+
+      - name: Cleanup Docker Container
+        if: always()
+        run: docker rm -f systemcraft-e2e || true
 
       - name: Push Docker image
         if: github.event_name != 'pull_request'
@@ -157,7 +161,7 @@ jobs:
     needs: [lint-and-typecheck, kubernetes-validate, build-test-publish]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
