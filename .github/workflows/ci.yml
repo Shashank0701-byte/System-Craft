@@ -47,21 +47,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install kubeval with local schemas
+      - name: Install kubeval
         run: |
           wget -q https://github.com/instrumenta/kubeval/releases/download/v0.16.1/kubeval-linux-amd64.tar.gz
           tar xf kubeval-linux-amd64.tar.gz
           sudo mv kubeval /usr/local/bin/kubeval
-          wget -q https://github.com/instrumenta/kubernetes-json-schema/archive/refs/heads/master.zip
-          unzip -q master.zip
-          echo "SCHEMA_DIR=$(pwd)/kubernetes-json-schema-master" >> $GITHUB_ENV
 
       - name: Validate K8s manifests
+        env:
+          KUBEVAL_SCHEMA_LOCATION: https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master
         run: |
-          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/deployment.yaml
-          kubeval --schema-location file://${SCHEMA_DIR} kubernetes/service.yaml
-          kubeval --ignore-missing-schemas --schema-location file://${SCHEMA_DIR} kubernetes/hpa.yaml
-          kubeval --ignore-missing-schemas --schema-location file://${SCHEMA_DIR} kubernetes/ingress.yaml
+          kubeval --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/deployment.yaml
+          kubeval --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/service.yaml
+          kubeval --ignore-missing-schemas --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/hpa.yaml
+          kubeval --ignore-missing-schemas --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/ingress.yaml
 
   build-test-publish:
     name: Build, Test & Publish Docker Image
