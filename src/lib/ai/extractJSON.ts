@@ -16,21 +16,38 @@ export function extractJSON(raw: string): string {
         return fenceMatch[1].trim();
     }
 
-    // Strategy 2: find first { and last } (or [ and ])
+    // Strategy 2: extract balanced JSON using depth tracking
     const firstBrace = trimmed.indexOf('{');
     const firstBracket = trimmed.indexOf('[');
-    const lastBrace = trimmed.lastIndexOf('}');
-    const lastBracket = trimmed.lastIndexOf(']');
 
     // Pick whichever delimiter comes first
     const useObject = firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket);
-    if (useObject && lastBrace >= firstBrace) {
-        return trimmed.substring(firstBrace, lastBrace + 1);
-    }
-    if (firstBracket !== -1 && lastBracket >= firstBracket) {
-        return trimmed.substring(firstBracket, lastBracket + 1);
+    const startIndex = useObject ? firstBrace : firstBracket;
+
+    if (startIndex === -1) {
+        // No opening delimiter found
+        return trimmed;
     }
 
+    // Track nesting depth to find the balanced closing delimiter
+    let depth = 0;
+    const openChar = trimmed[startIndex];
+    const closeChar = openChar === '{' ? '}' : ']';
+
+    for (let i = startIndex; i < trimmed.length; i++) {
+        const char = trimmed[i];
+        if (char === openChar) {
+            depth++;
+        } else if (char === closeChar) {
+            depth--;
+            if (depth === 0) {
+                // Found the balanced closing delimiter
+                return trimmed.substring(startIndex, i + 1);
+            }
+        }
+    }
+
+    // No balanced closing delimiter found, fall back to Strategy 3
     // Strategy 3: return as-is and let the caller handle the parse error
     return trimmed;
 }
