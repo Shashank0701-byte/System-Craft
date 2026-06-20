@@ -54,11 +54,13 @@ jobs:
           sudo mv kubeval /usr/local/bin/kubeval
 
       - name: Validate K8s manifests
+        env:
+          KUBEVAL_SCHEMA_LOCATION: https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master
         run: |
-          kubeval kubernetes/deployment.yaml
-          kubeval kubernetes/service.yaml
-          kubeval --ignore-missing-schemas kubernetes/hpa.yaml
-          kubeval --ignore-missing-schemas kubernetes/ingress.yaml
+          kubeval --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/deployment.yaml
+          kubeval --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/service.yaml
+          kubeval --ignore-missing-schemas --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/hpa.yaml
+          kubeval --ignore-missing-schemas --schema-location "$KUBEVAL_SCHEMA_LOCATION" kubernetes/ingress.yaml
 
   build-test-publish:
     name: Build, Test & Publish Docker Image
