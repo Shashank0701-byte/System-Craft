@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { llmRequestsTotal, llmRequestDuration, llmTokensTotal } from '@/src/lib/metrics';
+import { extractJSON } from './extractJSON';
 
 let client: OpenAI | null = null;
 
@@ -79,19 +80,8 @@ export async function generateJSON<T>(prompt: string, retries = 2, timeoutMs = 6
                 throw new Error('Empty response from OpenRouter');
             }
 
-            // Clean up — strip markdown fences if present
-            let cleaned = text.trim();
-            const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-            if (jsonMatch) {
-                cleaned = jsonMatch[1].trim();
-            } else {
-                // Try to find first { and last }
-                const firstBrace = cleaned.indexOf('{');
-                const lastBrace = cleaned.lastIndexOf('}');
-                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
-                    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-                }
-            }
+            // Clean up — strip markdown fences / extract JSON object
+            const cleaned = extractJSON(text);
 
             return JSON.parse(cleaned) as T;
         } catch (error: unknown) {
