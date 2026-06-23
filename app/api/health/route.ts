@@ -1,8 +1,8 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withMetrics } from '@/src/lib/withMetrics';
 import { getRedisClient } from '@/src/lib/redis';
 
-export const GET = withMetrics('/api/health', async (req: NextRequest) => {
+export const GET = withMetrics('/api/health', async () => {
   const redisClient = getRedisClient();
   const redisOk = redisClient ? await redisClient.ping().then(() => true).catch(() => false) : false;
   
