@@ -19,6 +19,7 @@
     "@splinetool/runtime": "^1.12.88",
     "firebase": "^12.8.0",
     "firebase-admin": "^13.6.1",
+    "ioredis": "^5.11.1",
     "mongoose": "^9.1.6",
     "next": "16.1.6",
     "openai": "^6.21.0",

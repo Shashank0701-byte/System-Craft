@@ -37,5 +37,11 @@ spec:
     - ports:
         - protocol: TCP
           port: 27017
+    {{- if .Values.redis.enabled }}
+    # Allow Redis
+    - ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
     {{- end }}
 {{- end }}
