@@ -126,4 +126,4 @@ networkPolicy:
 # ── Redis ────────────────────────────────────────────────────
 redis:
   enabled: true
-  url: "redis://systemcraft-redis:6379"
+  # url: "redis://systemcraft-redis:6379" # Set to override the default templated URL

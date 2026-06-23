@@ -35,13 +35,17 @@ export async function checkRateLimit(
     const currentWindow = Math.floor(Date.now() / 1000 / windowSeconds);
     const key = `ratelimit:${action}:${identifier}:${currentWindow}`;
 
+    // Calculate reset time based on the end of the current window
+    const nextWindowStart = (currentWindow + 1) * windowSeconds;
+    const resetIn = Math.max(0, nextWindowStart - Math.floor(Date.now() / 1000));
+
     try {
         // Use a pipeline to execute INCR and EXPIRE atomically
         const pipeline = redis.pipeline();
         pipeline.incr(key);
         // Only set expire if it's a new key, or just reset the expire every time
         // Setting it every time is safer to ensure it cleans up
-        pipeline.expire(key, windowSeconds);
+        pipeline.expire(key, resetIn);
 
         const results = await pipeline.exec();
         if (!results) {
@@ -59,10 +63,6 @@ export async function checkRateLimit(
 
         const allowed = currentCount <= limit;
         const remaining = Math.max(0, limit - currentCount);
-        
-        // Calculate reset time based on the end of the current window
-        const nextWindowStart = (currentWindow + 1) * windowSeconds;
-        const resetIn = Math.max(0, nextWindowStart - Math.floor(Date.now() / 1000));
 
         return { allowed, remaining, resetIn };
     } catch (error) {
