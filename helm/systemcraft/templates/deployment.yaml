@@ -62,3 +62,7 @@ spec:
             secretKeyRef:
               name: {{ .Values.secrets.secretName }}
               key: firebase-service-account-key
+        {{- if .Values.redis.enabled }}
+        - name: REDIS_URL
+          value: {{ .Values.redis.url | quote }}
+        {{- end }}
