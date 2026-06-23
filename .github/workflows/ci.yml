@@ -129,9 +129,17 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL'
 
+      - name: Create Docker Network
+        run: docker network create e2e-network
+
+      - name: Start Redis for E2E
+        run: docker run -d --name redis-e2e --network e2e-network -p 6379:6379 redis:7-alpine
+
       - name: Start Docker Container
         run: |
-          docker run -d --name systemcraft-e2e -p 3000:3000 ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
+          docker run -d --name systemcraft-e2e --network e2e-network -p 3000:3000 \
+            -e REDIS_URL=redis://redis-e2e:6379 \
+            ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
           # Wait for container to be ready
           echo "Waiting for container to be ready on port 3000..."
           timeout 60 bash -c 'until curl -fsS http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
@@ -156,7 +164,10 @@ jobs:
 
       - name: Cleanup Docker Container
         if: always()
-        run: docker rm -f systemcraft-e2e || true
+        run: |
+          docker rm -f systemcraft-e2e || true
+          docker rm -f redis-e2e || true
+          docker network rm e2e-network || true
 
       - name: Push Docker image
         if: github.event_name != 'pull_request'

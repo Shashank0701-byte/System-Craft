@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { llmRequestsTotal, llmRequestDuration } from '@/src/lib/metrics';
 import { withMetrics } from '@/src/lib/withMetrics';
+import { checkRateLimit } from '@/src/lib/rateLimit';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const UPSTREAM_TIMEOUT_MS = 60_000; // 60s timeout for OpenRouter
@@ -9,6 +10,17 @@ const LLM_MODEL = 'google/gemini-2.0-flash-001';
 export const POST = withMetrics('/api/reference-architectures/analyze', async (req: NextRequest) => {
   if (!OPENROUTER_API_KEY) {
     return NextResponse.json({ error: 'AI API key not configured' }, { status: 500 });
+  }
+
+  // Rate limit by IP since this endpoint doesn't require Firebase auth
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
+  const { allowed, remaining, resetIn } = await checkRateLimit(ip, 'ai-analyze', 20, 3600);
+  if (!allowed) {
+    return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers: { 'X-RateLimit-Remaining': String(remaining), 'X-RateLimit-Reset': String(resetIn) } }
+    );
   }
 
   try {

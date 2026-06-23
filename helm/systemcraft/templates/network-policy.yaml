@@ -38,4 +38,14 @@ spec:
         - protocol: TCP
           port: 27017
     {{- end }}
+    {{- if .Values.redis.enabled }}
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    {{- end }}
 {{- end }}

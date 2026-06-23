@@ -7,6 +7,7 @@ import { evaluateStructure } from '@/src/lib/evaluation/structuralRules';
 import { generateJSON } from '@/src/lib/ai/geminiClient';
 import { ICanvasNode, IConnection } from '@/src/lib/db/models/Design';
 import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
+import { checkRateLimit } from '@/src/lib/rateLimit';
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -147,17 +148,25 @@ function shouldTriggerConstraintChange(
     return { shouldTrigger: true, introducedAtMinute: elapsedMinutes };
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export const POST = async (request: NextRequest, { params }: RouteParams) => {
     try {
-        const { id } = await params;
-        if (!isValidObjectId(id)) {
-            return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 });
-        }
-
         const authHeader = request.headers.get('Authorization');
         const authenticatedUser = await getAuthenticatedUser(authHeader);
         if (!authenticatedUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { allowed, remaining, resetIn } = await checkRateLimit(authenticatedUser.uid, 'ai-hint', 20, 3600);
+        if (!allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded. Try again later.' },
+                { status: 429, headers: { 'X-RateLimit-Remaining': String(remaining), 'X-RateLimit-Reset': String(resetIn) } }
+            );
+        }
+
+        const { id } = await params;
+        if (!isValidObjectId(id)) {
+            return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 });
         }
 
         let body;

@@ -68,3 +68,5 @@ spec:
             secretKeyRef:
               name: systemcraft-secrets
               key: firebase-service-account-key
+        - name: REDIS_URL
+          value: "redis://systemcraft-redis-service:6379"

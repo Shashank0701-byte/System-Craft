@@ -122,3 +122,8 @@ networkPolicy:
   egress:
     # By default allow HTTPS and DNS, plus MongoDB (27017)
     allowExternal: true
+
+# ── Redis ────────────────────────────────────────────────────
+redis:
+  enabled: true
+  # url: "redis://systemcraft-redis:6379" # Set to override the default templated URL

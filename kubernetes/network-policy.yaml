@@ -37,3 +37,11 @@ spec:
     - ports:
         - protocol: TCP
           port: 27017
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: systemcraft-redis
+      ports:
+        - protocol: TCP
+          port: 6379
