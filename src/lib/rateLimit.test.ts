@@ -37,7 +37,7 @@ describe('checkRateLimit', () => {
         };
         const mockRedis = {
             pipeline: vi.fn().mockReturnValue(mockPipeline),
-        } as any;
+        } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
 
         vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 
@@ -58,7 +58,7 @@ describe('checkRateLimit', () => {
         };
         const mockRedis = {
             pipeline: vi.fn().mockReturnValue(mockPipeline),
-        } as any;
+        } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
 
         vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 
@@ -77,7 +77,7 @@ describe('checkRateLimit', () => {
         };
         const mockRedis = {
             pipeline: vi.fn().mockReturnValue(mockPipeline),
-        } as any;
+        } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
 
         vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 
@@ -96,7 +96,7 @@ describe('checkRateLimit', () => {
         };
         const mockRedis = {
             pipeline: vi.fn().mockReturnValue(mockPipeline),
-        } as any;
+        } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
 
         vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 

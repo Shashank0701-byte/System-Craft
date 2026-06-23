@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getCachedArchitecture, getCachedAllArchitectures } from './referenceArchCache';
+import { getCachedArchitecture } from './referenceArchCache';
 import { getRedisClient } from './redis';
 import { REFERENCE_ARCHITECTURES } from './referenceArchitectures';
 
@@ -17,7 +17,7 @@ describe('referenceArchCache', () => {
             const mockRedis = {
                 get: vi.fn().mockResolvedValue(JSON.stringify({ id: 'test', name: 'Cached Arch' })),
                 setex: vi.fn(),
-            } as any;
+            } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
             vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 
             const result = await getCachedArchitecture('test');
@@ -31,7 +31,7 @@ describe('referenceArchCache', () => {
             const mockRedis = {
                 get: vi.fn().mockResolvedValue(null), // Cache miss
                 setex: vi.fn().mockResolvedValue('OK'),
-            } as any;
+            } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
             vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 
             // Use the first real architecture for the test
@@ -51,7 +51,7 @@ describe('referenceArchCache', () => {
             const mockRedis = {
                 get: vi.fn().mockRejectedValue(new Error('Connection lost')),
                 setex: vi.fn().mockResolvedValue('OK'),
-            } as any;
+            } as unknown as Exclude<ReturnType<typeof getRedisClient>, null>;
             vi.mocked(getRedisClient).mockReturnValue(mockRedis);
 
             const targetId = REFERENCE_ARCHITECTURES[0].id;
