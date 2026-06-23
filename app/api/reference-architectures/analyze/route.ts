@@ -13,7 +13,8 @@ export const POST = withMetrics('/api/reference-architectures/analyze', async (r
   }
 
   // Rate limit by IP since this endpoint doesn't require Firebase auth
-  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
   const { allowed, remaining, resetIn } = await checkRateLimit(ip, 'ai-analyze', 20, 3600);
   if (!allowed) {
     return NextResponse.json(

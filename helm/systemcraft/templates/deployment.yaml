@@ -64,5 +64,5 @@ spec:
               key: firebase-service-account-key
         {{- if .Values.redis.enabled }}
         - name: REDIS_URL
-          value: {{ .Values.redis.url | quote }}
+          value: {{ .Values.redis.url | default (printf "redis://%s-redis:6379" (include "systemcraft.fullname" .)) | quote }}
         {{- end }}
