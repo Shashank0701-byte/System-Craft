@@ -281,7 +281,7 @@ function TimelineSection() {
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   return (
-    <section id="story" className="relative mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
+    <section id="story" className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
       <div className="mb-24 text-center">
         <h2 className="text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
           The Architecture Lifestyle
@@ -507,13 +507,213 @@ const faqData = {
   ]
 };
 
+// ── Scenarios Section ───────────────────────────────────────
+const scenariosData = [
+  {
+    id: "caching",
+    name: "Distributed Caching",
+    icon: "memory",
+    desc: "Analyze and implement in-memory data grids to absorb massive read-heavy traffic spikes.",
+    complexity: 2,
+  },
+  {
+    id: "sharding",
+    name: "Database Sharding",
+    icon: "database",
+    desc: "Partition massive datasets across multiple nodes while maintaining consistency and balancing hot shards.",
+    complexity: 4,
+  },
+  {
+    id: "queues",
+    name: "Message Queues",
+    icon: "queue",
+    desc: "Decouple microservices and implement backpressure mechanisms to handle asynchronous workloads.",
+    complexity: 3,
+  },
+  {
+    id: "load-balancing",
+    name: "Global Load Balancing",
+    icon: "router",
+    desc: "Route traffic efficiently across geographic regions to minimize latency and handle zone failures.",
+    complexity: 3,
+  },
+  {
+    id: "rate-limiting",
+    name: "Rate Limiting",
+    icon: "speed",
+    desc: "Design distributed algorithms (Token Bucket, Leaky Bucket) to protect APIs from abuse and overload.",
+    complexity: 2,
+  },
+  {
+    id: "leader-election",
+    name: "Leader Election",
+    icon: "gavel",
+    desc: "Ensure high availability and fault tolerance in consensus-based clusters (e.g., using Paxos or Raft).",
+    complexity: 5,
+  }
+];
+
+function ScenariosSection() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % scenariosData.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const activeScenario = scenariosData[activeIndex];
+
+  return (
+    <section id="scenarios" className="relative z-10 mx-auto max-w-6xl px-6 py-28 sm:px-8 lg:px-10">
+      <div className="mb-16 text-center">
+        <h2 className="text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+          Core Concepts
+        </h2>
+      </div>
+
+      <div 
+        className="mx-auto flex flex-col overflow-hidden rounded-[1.5rem] border border-[#1a1f2e] bg-[#0A0D14] shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8)] md:h-[500px] md:flex-row"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Left Sidebar */}
+        <div className="flex w-full flex-col border-r border-[#1a1f2e] bg-[#07090d] md:w-80">
+          <div className="px-6 py-6 text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-500">
+            Available Scenarios
+          </div>
+          <div className="flex flex-1 flex-col py-2">
+            {scenariosData.map((scenario, idx) => {
+              const isActive = idx === activeIndex;
+              return (
+                <button
+                  key={scenario.id}
+                  onClick={() => setActiveIndex(idx)}
+                  className={`group relative flex items-center px-6 py-4 text-left transition-colors duration-300 ${
+                    isActive ? "bg-emerald-950/20" : "hover:bg-[#0c1018]"
+                  }`}
+                >
+                  <span className={`text-sm font-medium ${isActive ? "text-white" : "text-white/40 group-hover:text-white/60"}`}>
+                    {scenario.name}
+                  </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-indicator"
+                      className="absolute bottom-0 right-0 top-0 w-1.5 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="absolute inset-y-0 right-0 flex flex-col justify-center gap-[2px] px-[2px]">
+                        <div className="h-[2px] w-full bg-emerald-950/50" />
+                        <div className="h-[2px] w-full bg-emerald-950/50" />
+                        <div className="h-[2px] w-full bg-emerald-950/50" />
+                      </div>
+                    </motion.div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Content */}
+        <div className="relative flex flex-1 flex-col items-center justify-center p-8 md:p-12 overflow-hidden">
+          {/* Faint Scanlines */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.02] bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:100%_4px]" />
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeScenario.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+              className="relative z-10 w-full max-w-md"
+            >
+              {/* Icon & Audio Wave */}
+              <div className="mb-10 flex items-center gap-8">
+                <div className="relative flex size-24 items-center justify-center">
+                  <motion.svg
+                    viewBox="0 0 100 100"
+                    className="absolute inset-0 size-full text-emerald-500/30"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                  >
+                    <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 6" />
+                  </motion.svg>
+                  
+                  <div className="absolute inset-2 rounded-full border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]" />
+                  
+                  <span className="material-symbols-outlined z-10 text-[40px] text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
+                    {activeScenario.icon}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1 opacity-70">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="w-1.5 rounded-full bg-emerald-500"
+                      animate={{ height: [8, Math.random() * 20 + 10, 8] }}
+                      transition={{ duration: 0.5 + i * 0.1, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Text Content */}
+              <div>
+                <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-md">
+                  {activeScenario.name}
+                </h3>
+                <div className="mt-3 h-[3px] w-12 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+
+                <div className="mt-8 flex items-start gap-2">
+                  <span className="font-mono text-sm font-bold text-emerald-500">{">_desc:"}</span>
+                  <p className="font-mono text-sm leading-relaxed text-white/50">
+                    {activeScenario.desc}
+                  </p>
+                </div>
+
+                {/* Complexity Meter */}
+                <div className="mt-12">
+                  <div className="mb-3 text-[10px] font-bold tracking-[0.2em] uppercase text-white/30">
+                    Complexity Level
+                  </div>
+                  <div className="flex gap-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 w-8 rounded-full transition-colors duration-500 ${
+                          i < activeScenario.complexity 
+                            ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" 
+                            : "bg-white/5"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FaqSection() {
   const [activeCategory, setActiveCategory] = useState<FaqCategory>("general");
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const currentFaqs = faqData[activeCategory];
 
   return (
-    <section id="faq" className="relative mx-auto max-w-5xl px-6 py-28 sm:px-8 lg:px-10">
+    <section id="faq" className="relative z-10 mx-auto max-w-5xl px-6 py-28 sm:px-8 lg:px-10">
       <div className="mb-16 text-center">
         <h2 className="text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
           Frequently Asked Questions
@@ -688,6 +888,123 @@ function Footer() {
   );
 }
 
+// ── Ambient Background ──────────────────────────────────────
+function ClientParticles() {
+  const [mounted, setMounted] = useState(false);
+  
+  const particles = useMemo(() => {
+    return [...Array(15)].map(() => ({
+      width: Math.random() * 2 + 1 + 'px',
+      height: Math.random() * 2 + 1 + 'px',
+      left: Math.random() * 100 + '%',
+      top: Math.random() * 100 + '%',
+      duration: Math.random() * 20 + 20,
+      xOffset: Math.random() * 50 - 25
+    }));
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return (
+    <>
+      {particles.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full bg-white"
+          style={{ width: p.width, height: p.height, left: p.left, top: p.top }}
+          animate={{
+            y: [0, -100, 0],
+            x: [0, p.xOffset, 0],
+            opacity: [0.1, 0.4, 0.1]
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function AmbientBackground() {
+  const { scrollYProgress } = useScroll();
+  
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.2, 0.3], [0.8, 0.8, 0]);
+  const timelineOpacity = useTransform(scrollYProgress, [0.1, 0.3, 0.6, 0.7], [0, 0.8, 0.8, 0]);
+  const featuresOpacity = useTransform(scrollYProgress, [0.5, 0.7, 0.9, 0.95], [0, 0.8, 0.8, 0]);
+  const ctaOpacity = useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1]);
+
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#090B12]">
+      {/* Layer 03: Noise */}
+      <div className="absolute inset-0 opacity-[0.025] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      
+      {/* Layer 04: Engineering Grid */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `
+          linear-gradient(to right, #ffffff 1px, transparent 1px),
+          linear-gradient(to bottom, #ffffff 1px, transparent 1px)
+        `,
+        backgroundSize: '100px 100px'
+      }} />
+
+      {/* Layer 06: Cursor Lighting */}
+      <div 
+        className="absolute inset-0 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(circle 600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.03), transparent 80%)`
+        }}
+      />
+
+      {/* Layer 07 / Layer 13: Scroll Atmosphere */}
+      {/* Hero (Purple/Indigo) */}
+      <motion.div 
+        style={{ opacity: heroOpacity }}
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.08),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.08),transparent_40%)]" 
+      />
+
+      {/* Timeline (Emerald/Cyan) */}
+      <motion.div 
+        style={{ opacity: timelineOpacity }}
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.06),transparent_60%),radial-gradient(circle_at_20%_40%,rgba(34,211,238,0.06),transparent_50%)]" 
+      />
+
+      {/* Features/Demos (Cyan/Blue) */}
+      <motion.div 
+        style={{ opacity: featuresOpacity }}
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.07),transparent_60%),radial-gradient(circle_at_80%_60%,rgba(59,130,246,0.07),transparent_50%)]" 
+      />
+
+      {/* CTA (Purple) */}
+      <motion.div 
+        style={{ opacity: ctaOpacity }}
+        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(168,85,247,0.08),transparent_60%)]" 
+      />
+
+      {/* Layer 05: Floating Particles (Dust) */}
+      <div className="absolute inset-0 opacity-[0.4]">
+         <ClientParticles />
+      </div>
+    </div>
+  );
+}
+
 // ── Main Landing Page ───────────────────────────────────────
 export default function SystemCraftLanding() {
   const [phase, setPhase] = useState<HeroPhase>("assembly");
@@ -713,12 +1030,11 @@ export default function SystemCraftLanding() {
   }, []);
 
   return (
-    <main className="noise-overlay relative overflow-hidden bg-[#050508] text-white">
-      {/* Global ambient light */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.14),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(34,211,238,0.08),transparent_22%),radial-gradient(circle_at_50%_85%,rgba(168,85,247,0.07),transparent_20%)]" />
+    <main className="relative overflow-hidden bg-[#090B12] text-white">
+      <AmbientBackground />
 
       {/* ── HERO ───────────────────────────────────────────── */}
-      <section className="relative mx-auto max-w-7xl px-6 pb-12 pt-6 sm:px-8 lg:px-10">
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-6 sm:px-8 lg:px-10">
         {/* Nav */}
         <nav className="flex items-center justify-between rounded-full border border-white/[0.06] bg-white/[0.03] px-5 py-3 backdrop-blur-md">
           <Link href="/" className="flex items-center gap-3">
@@ -820,8 +1136,11 @@ export default function SystemCraftLanding() {
       {/* ── TIMELINE ───────────────────────────────────────── */}
       <TimelineSection />
 
+      {/* ── SCENARIOS ──────────────────────────────────────── */}
+      <ScenariosSection />
+
       {/* ── DEMOS ──────────────────────────────────────────── */}
-      <section id="demos" ref={demoRef} className="relative mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
+      <section id="demos" ref={demoRef} className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <motion.div
             className="max-w-xl"
@@ -899,7 +1218,7 @@ export default function SystemCraftLanding() {
       </section>
 
       {/* ── CTA ────────────────────────────────────────────── */}
-      <section id="ready" ref={ctaRef} className="relative mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
+      <section id="ready" ref={ctaRef} className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={ctaInView ? { opacity: 1, y: 0 } : {}}
