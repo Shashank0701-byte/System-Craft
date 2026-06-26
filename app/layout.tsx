@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SystemCraft - System Design Simulator",
-  description: "The first simulator that grades your architecture in real-time.",
+  title: "SystemCraft - Master System Design Like a Real Interview",
+  description: "An AI-powered distributed system simulator for FAANG-level system design interviews. Build architectures, survive chaos events, and get AI feedback before the actual interview.",
 };
 
 export default function RootLayout({

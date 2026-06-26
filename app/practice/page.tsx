@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { SidebarProvider } from '@/components/dashboard/SidebarContext';
 import { getSolvedIds } from '@/src/lib/practice/storage';
+import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 interface TemplateSummary {
   id: string;
@@ -16,6 +17,7 @@ interface TemplateSummary {
 }
 
 export default function PracticeDirectory() {
+  const { isAuthenticated, isLoading: authLoading } = useRequireAuth();
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
@@ -46,6 +48,19 @@ export default function PracticeDirectory() {
 
     return () => controller.abort();
   }, []);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <SidebarProvider>
