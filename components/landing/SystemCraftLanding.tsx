@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useInView, useScroll, useTransform, useMotionValueEvent, type Variants } from "framer-motion";
+import { InfrastructureEnvironment } from "./engine/InfrastructureEnvironment";
 
 // ── Types ───────────────────────────────────────────────────
 type HeroPhase = "assembly" | "flow" | "cache" | "failure" | "autoscale" | "stable";
@@ -185,35 +186,35 @@ function TimelineCard({ step, index, isLeft }: { step: typeof timelineSteps[0]; 
           ref={cardRef}
           initial={{ opacity: 0, x: isLeft ? -40 : 40 }}
           animate={wasInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className={`relative w-full rounded-2xl border bg-[#0A0D14]/80 p-6 shadow-[0_0_30px_rgba(0,0,0,0.5)] backdrop-blur-md transition-colors duration-500 ${isActive ? "border-emerald-500/50" : "border-white/[0.08]"}`}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className={`relative w-full rounded-2xl border bg-[#050608]/90 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_25px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all duration-500 hover:border-white/[0.12] hover:translate-y-[-2px] ${isActive ? "border-cyan-500/40 shadow-[0_15px_30px_-5px_rgba(34,211,238,0.05)]" : "border-white/[0.05]"}`}
         >
           {/* Corner accents */}
           <div className="absolute left-2 top-2 h-1 w-1 rounded-full bg-white/20" />
           <div className="absolute right-2 top-2 h-1 w-1 rounded-full bg-white/20" />
           <div className="absolute bottom-2 left-2 h-1 w-1 rounded-full bg-white/20" />
           <div className="absolute bottom-2 right-2 h-1 w-1 rounded-full bg-white/20" />
-          <div className={`absolute left-1/2 top-2 h-1 w-3 -translate-x-1/2 rounded-full transition-colors duration-500 ${isActive ? "bg-emerald-500" : "bg-emerald-500/20"}`} />
+          <div className={`absolute left-1/2 top-2 h-1 w-3 -translate-x-1/2 rounded-full transition-colors duration-500 ${isActive ? "bg-cyan-400" : "bg-cyan-400/20"}`} />
 
           {/* Header */}
           <div className="flex items-center justify-between border-b border-dashed border-white/10 pb-4">
             <div className="flex items-center gap-2">
-              <div className={`h-1.5 w-1.5 rounded-full transition-colors duration-500 ${isActive ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-white/20"}`} />
-              <div className={`text-[11px] font-mono tracking-wider transition-colors duration-500 ${isActive ? "text-emerald-400" : "text-white/40"}`}>
+              <div className={`h-1.5 w-1.5 rounded-full transition-colors duration-500 ${isActive ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" : "bg-white/20"}`} />
+              <div className={`text-[10px] font-mono tracking-wider transition-colors duration-500 ${isActive ? "text-cyan-400" : "text-white/40"}`}>
                 [STATE]: {step.phase}
               </div>
             </div>
-            <div className="text-[10px] tracking-[0.2em] uppercase text-white/30">
+            <div className="text-[9px] font-mono tracking-[0.2em] uppercase text-white/30">
               NODE_0{index + 1}
             </div>
           </div>
 
           {/* Content */}
           <div className="pt-5">
-            <h3 className={`flex items-center gap-2 text-sm font-bold tracking-widest uppercase transition-colors duration-500 ${isActive ? "text-emerald-400" : "text-white/70"}`}>
-              <span className={isActive ? "text-emerald-500" : "text-white/30"}>{">"}</span> {step.title}
+            <h3 className={`flex items-center gap-2 text-xs font-bold tracking-widest uppercase transition-colors duration-500 ${isActive ? "text-cyan-400" : "text-white/70"}`}>
+              <span className={isActive ? "text-cyan-500" : "text-white/30"}>{">"}</span> {step.title}
             </h3>
-            <p className="mt-3 text-sm leading-relaxed text-white/50">
+            <p className="mt-3 text-sm leading-relaxed text-white/40">
               {step.copy}
             </p>
           </div>
@@ -227,32 +228,32 @@ function TimelineCard({ step, index, isLeft }: { step: typeof timelineSteps[0]; 
             ref={cardRef}
             initial={{ opacity: 0, x: 40 }}
             animate={wasInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className={`relative w-full rounded-2xl border bg-[#0A0D14]/80 p-6 shadow-[0_0_30px_rgba(0,0,0,0.5)] backdrop-blur-md transition-colors duration-500 ${isActive ? "border-emerald-500/50" : "border-white/[0.08]"}`}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className={`relative w-full rounded-2xl border bg-[#050608]/90 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_25px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all duration-500 hover:border-white/[0.12] hover:translate-y-[-2px] ${isActive ? "border-cyan-500/40 shadow-[0_15px_30px_-5px_rgba(34,211,238,0.05)]" : "border-white/[0.05]"}`}
           >
             <div className="absolute left-2 top-2 h-1 w-1 rounded-full bg-white/20" />
             <div className="absolute right-2 top-2 h-1 w-1 rounded-full bg-white/20" />
             <div className="absolute bottom-2 left-2 h-1 w-1 rounded-full bg-white/20" />
             <div className="absolute bottom-2 right-2 h-1 w-1 rounded-full bg-white/20" />
-            <div className={`absolute left-1/2 top-2 h-1 w-3 -translate-x-1/2 rounded-full transition-colors duration-500 ${isActive ? "bg-emerald-500" : "bg-emerald-500/20"}`} />
+            <div className={`absolute left-1/2 top-2 h-1 w-3 -translate-x-1/2 rounded-full transition-colors duration-500 ${isActive ? "bg-cyan-400" : "bg-cyan-400/20"}`} />
 
             <div className="flex items-center justify-between border-b border-dashed border-white/10 pb-4">
               <div className="flex items-center gap-2">
-                <div className={`h-1.5 w-1.5 rounded-full transition-colors duration-500 ${isActive ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-white/20"}`} />
-                <div className={`text-[11px] font-mono tracking-wider transition-colors duration-500 ${isActive ? "text-emerald-400" : "text-white/40"}`}>
+                <div className={`h-1.5 w-1.5 rounded-full transition-colors duration-500 ${isActive ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" : "bg-white/20"}`} />
+                <div className={`text-[10px] font-mono tracking-wider transition-colors duration-500 ${isActive ? "text-cyan-400" : "text-white/40"}`}>
                   [STATE]: {step.phase}
                 </div>
               </div>
-              <div className="text-[10px] tracking-[0.2em] uppercase text-white/30">
+              <div className="text-[9px] font-mono tracking-[0.2em] uppercase text-white/30">
                 NODE_0{index + 1}
               </div>
             </div>
 
             <div className="pt-5">
-              <h3 className={`flex items-center gap-2 text-sm font-bold tracking-widest uppercase transition-colors duration-500 ${isActive ? "text-emerald-400" : "text-white/70"}`}>
-                <span className={isActive ? "text-emerald-500" : "text-white/30"}>{">"}</span> {step.title}
+              <h3 className={`flex items-center gap-2 text-xs font-bold tracking-widest uppercase transition-colors duration-500 ${isActive ? "text-cyan-400" : "text-white/70"}`}>
+                <span className={isActive ? "text-cyan-500" : "text-white/30"}>{">"}</span> {step.title}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-white/50">
+              <p className="mt-3 text-sm leading-relaxed text-white/40">
                 {step.copy}
               </p>
             </div>
@@ -263,7 +264,7 @@ function TimelineCard({ step, index, isLeft }: { step: typeof timelineSteps[0]; 
       {/* Center dot on the timeline for this specific card */}
       <div 
         className={`absolute top-1/2 left-[24px] z-10 hidden size-3 -translate-y-1/2 -translate-x-1/2 rounded-full border-2 bg-[#0A0D14] transition-all duration-300 md:block md:left-1/2 ${
-          isActive ? "border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.8)] scale-125" : "border-white/20 scale-100"
+          isActive ? "border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.8)] scale-125" : "border-white/20 scale-100"
         }`} 
       />
     </div>
@@ -281,10 +282,17 @@ function TimelineSection() {
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   return (
-    <section id="story" className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
+    <motion.section
+      id="story"
+      initial={{ opacity: 0, y: 30, scale: 0.99 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-120px" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="relative z-10 mx-auto max-w-7xl px-6 py-32 sm:px-8 lg:px-10"
+    >
       <div className="mb-24 text-center">
-        <h2 className="text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
-          The Architecture Lifestyle
+        <h2 className="font-display text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+          The Architecture Journey
         </h2>
       </div>
 
@@ -296,13 +304,13 @@ function TimelineSection() {
         
         {/* Glowing scroll tracking line (draws down continuously) */}
         <motion.div
-          className="absolute left-[23px] top-0 z-10 hidden w-[2px] origin-top bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] md:block md:left-1/2 md:-translate-x-1/2"
+          className="absolute left-[23px] top-0 z-10 hidden w-[2px] origin-top bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.6)] md:block md:left-1/2 md:-translate-x-1/2"
           style={{ height: lineHeight }}
         />
         
         {/* Leading bullet at the tip of the drawing line */}
         <motion.div
-          className="absolute left-[24px] top-0 z-20 hidden size-2.5 rounded-full bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,1)] md:block md:left-1/2 md:-translate-x-1/2"
+          className="absolute left-[24px] top-0 z-20 hidden size-2.5 rounded-full bg-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.8)] md:block md:left-1/2 md:-translate-x-1/2"
           style={{ top: lineHeight, marginTop: "-5px" }}
         />
 
@@ -312,12 +320,25 @@ function TimelineSection() {
           ))}
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 // ── Node Graph (Hero) ───────────────────────────────────────
+const segmentsWithIds = [
+  { from: "users", to: "cdn" },
+  { from: "cdn", to: "lb" },
+  { from: "lb", to: "app" },
+  { from: "app", to: "cache" },
+  { from: "app", to: "db" },
+  { from: "db", to: "replica" },
+  { from: "app", to: "queue" },
+];
+
 function NodeGraph({ phase }: { phase: HeroPhase }) {
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [telemetry, setTelemetry] = useState<Record<string, { val1: string; val2: string }>>({});
+
   const activeLines = useMemo(() => {
     if (phase === "assembly") return 1;
     if (phase === "flow") return 4;
@@ -326,19 +347,106 @@ function NodeGraph({ phase }: { phase: HeroPhase }) {
     return 7;
   }, [phase]);
 
+  // Update telemetry values periodically for a live monitoring dashboard feel
+  useEffect(() => {
+    const update = () => {
+      const newTelemetry: Record<string, { val1: string; val2: string }> = {};
+      nodes.forEach((n) => {
+        if (n.id === "lb") {
+          newTelemetry[n.id] = {
+            val1: `${(92.4 + Math.random() * 5).toFixed(1)}%`,
+            val2: `${Math.floor(2200 + Math.random() * 400)} RPS`
+          };
+        } else if (n.id === "cache") {
+          newTelemetry[n.id] = {
+            val1: `HIT:${(98.1 + Math.random() * 1.5).toFixed(1)}%`,
+            val2: `MEM:${(42.5 + Math.random() * 2).toFixed(1)}%`
+          };
+        } else if (n.id === "db") {
+          newTelemetry[n.id] = {
+            val1: phase === "failure" ? "ERR_503" : `LOAD:${Math.floor(20 + Math.random() * 15)}%`,
+            val2: `CONN:${phase === "failure" ? "0" : Math.floor(45 + Math.random() * 10)}`
+          };
+        } else if (n.id === "app") {
+          newTelemetry[n.id] = {
+            val1: `CPU:${Math.floor(15 + Math.random() * 10)}%`,
+            val2: `P99:${Math.floor(18 + Math.random() * 5)}MS`
+          };
+        } else if (n.id === "queue") {
+          newTelemetry[n.id] = {
+            val1: `LAG:${phase === "failure" ? Math.floor(120 + Math.random() * 30) : 0}`,
+            val2: `MSG:${Math.floor(45 + Math.random() * 10)}/S`
+          };
+        } else if (n.id === "replica") {
+          newTelemetry[n.id] = {
+            val1: phase === "failure" ? "LAGGING" : `LAG:0.2MS`,
+            val2: "SYNC:OK"
+          };
+        } else if (n.id === "cdn") {
+          newTelemetry[n.id] = {
+            val1: "HIT:94.2%",
+            val2: "18MS"
+          };
+        } else {
+          newTelemetry[n.id] = {
+            val1: "RATE:120/S",
+            val2: "ACTIVE"
+          };
+        }
+      });
+      setTelemetry(newTelemetry);
+    };
+    update();
+    const interval = setInterval(update, 1200);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // Determine if a line is active / highlighted based on hovered node
+  const getLineStroke = (index: number, visible: boolean) => {
+    if (!visible) return "rgba(148, 163, 184, 0.08)";
+    if (!hoveredNode) return "url(#networkGlow)";
+    const conn = segmentsWithIds[index];
+    const isRelated = conn.from === hoveredNode || conn.to === hoveredNode;
+    return isRelated ? "url(#activeConnectionGlow)" : "rgba(99, 102, 241, 0.12)";
+  };
+
+  const getLineOpacity = (index: number, visible: boolean) => {
+    if (!visible) return 0.25;
+    if (!hoveredNode) return 1.0;
+    const conn = segmentsWithIds[index];
+    const isRelated = conn.from === hoveredNode || conn.to === hoveredNode;
+    return isRelated ? 1.0 : 0.25;
+  };
+
+  // Determine node visual state on hover
+  const isNodeActive = (nodeId: string, active: boolean) => {
+    if (!active) return false;
+    if (!hoveredNode) return true;
+    if (nodeId === hoveredNode) return true;
+    return segmentsWithIds.some(
+      (s) =>
+        (s.from === hoveredNode && s.to === nodeId) ||
+        (s.to === hoveredNode && s.from === nodeId)
+    );
+  };
+
   return (
-    <div className="noise-overlay relative h-[29rem] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#06060a]/90 shadow-[0_40px_120px_-40px_rgba(74,58,255,0.35)]">
+    <div className="noise-overlay relative h-[29rem] overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-[#030407]/95 shadow-[0_45px_100px_-30px_rgba(0,0,0,0.85)]">
       {/* Background gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.15),transparent_35%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.1),transparent_32%),linear-gradient(to_bottom,rgba(255,255,255,0.02),transparent_30%,rgba(0,0,0,0.26))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_40%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.06),transparent_35%),linear-gradient(to_bottom,rgba(255,255,255,0.01),transparent_30%,rgba(0,0,0,0.4))]" />
       {/* Grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:56px_56px] opacity-20 [mask-image:radial-gradient(circle_at_center,black,transparent_85%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:56px_56px] opacity-25 [mask-image:radial-gradient(circle_at_center,black,transparent_80%)]" />
 
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 520" aria-hidden="true">
         <defs>
           <linearGradient id="networkGlow" x1="0%" x2="100%" y1="0%" y2="0%">
             <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="55%" stopColor="#6366f1" />
+            <stop offset="50%" stopColor="#6366f1" />
             <stop offset="100%" stopColor="#a855f7" />
+          </linearGradient>
+          <linearGradient id="activeConnectionGlow" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stopColor="#22d3ee" />
+            <stop offset="100%" stopColor="#38bdf8" />
           </linearGradient>
           <filter id="softGlow">
             <feGaussianBlur stdDeviation="3.5" result="blur" />
@@ -361,29 +469,33 @@ function NodeGraph({ phase }: { phase: HeroPhase }) {
               y1={`${y1}%`}
               x2={`${x2}%`}
               y2={`${y2}%`}
-              stroke={visible ? "url(#networkGlow)" : "rgba(148,163,184,0.15)"}
-              strokeWidth="1.5"
+              stroke={getLineStroke(index, visible)}
+              strokeWidth={hoveredNode ? "1.8" : "1.5"}
               strokeLinecap="round"
-              strokeDasharray={visible ? "0" : "6 8"}
-              className={`transition-all duration-700 ${visible ? "opacity-100" : "opacity-25"}`}
+              strokeDasharray={visible ? "0" : "4 8"}
+              opacity={getLineOpacity(index, visible)}
+              className="transition-all duration-500 ease-out"
             />
           );
         })}
 
         {/* Animated request packets */}
-        {phase !== "assembly" && segments.slice(0, activeLines).map((segment, index) => {
-          const [x1, y1] = segment.from;
-          const [x2, y2] = segment.to;
-          return (
-            <circle key={`packet-${index}`} r="4" fill="#22d3ee" opacity="0.8" filter="url(#softGlow)">
-              <animateMotion
-                dur={`${1.5 + index * 0.3}s`}
-                repeatCount="indefinite"
-                path={`M${x1 * 10},${y1 * 5.2} L${x2 * 10},${y2 * 5.2}`}
-              />
-            </circle>
-          );
-        })}
+        {phase !== "assembly" &&
+          segments.slice(0, activeLines).map((segment, index) => {
+            const [x1, y1] = segment.from;
+            const [x2, y2] = segment.to;
+            // Photons speed variance
+            const duration = 1.2 + (index % 3) * 0.4;
+            return (
+              <circle key={`packet-${index}`} r="3" fill="#22d3ee" opacity="0.9" filter="url(#softGlow)">
+                <animateMotion
+                  dur={`${duration}s`}
+                  repeatCount="indefinite"
+                  path={`M${x1 * 10},${y1 * 5.2} L${x2 * 10},${y2 * 5.2}`}
+                />
+              </circle>
+            );
+          })}
 
         {/* Node circles */}
         {nodes.map((node, index) => {
@@ -393,53 +505,120 @@ function NodeGraph({ phase }: { phase: HeroPhase }) {
           const autoscale = node.id === "replica" && phase === "autoscale";
           const isHighlighted = glow || autoscale;
 
+          const baseRadius = node.id === "lb" ? 42 : node.id === "app" ? 40 : 34;
+          const isHovered = node.id === hoveredNode;
+          const isCurrentActive = isNodeActive(node.id, active);
+
           return (
-            <g key={node.id} filter="url(#softGlow)">
-              <circle
+            <g
+              key={node.id}
+              filter="url(#softGlow)"
+              className="cursor-pointer transition-all duration-300"
+              onMouseEnter={() => active && setHoveredNode(node.id)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
+              {/* Pulse rings on packet impact */}
+              {active && (
+                <motion.circle
+                  cx={`${node.x}%`}
+                  cy={`${node.y}%`}
+                  r={baseRadius + 8}
+                  fill="none"
+                  stroke={failure ? "#ef4444" : "#22d3ee"}
+                  strokeWidth="0.5"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{
+                    opacity: isHighlighted || failure ? [0.1, 0.4, 0.1] : [0.03, 0.15, 0.03],
+                    scale: isHighlighted || failure ? [0.95, 1.05, 0.95] : [0.98, 1.02, 0.98]
+                  }}
+                  transition={{
+                    duration: isHighlighted || failure ? 1.5 : 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              )}
+
+              {/* Outer casing */}
+              <motion.circle
                 cx={`${node.x}%`}
                 cy={`${node.y}%`}
-                r={node.id === "lb" ? 42 : node.id === "app" ? 40 : 34}
-                fill={failure ? "rgba(127,29,29,0.22)" : active ? "rgba(15,23,42,0.88)" : "rgba(15,23,42,0.55)"}
-                stroke={failure ? "#f43f5e" : active ? "rgba(96,165,250,0.35)" : "rgba(148,163,184,0.15)"}
+                animate={{
+                  r: isHovered ? baseRadius + 3 : baseRadius,
+                  stroke: failure
+                    ? "#f43f5e"
+                    : isHovered
+                    ? "#22d3ee"
+                    : isCurrentActive
+                    ? "rgba(96,165,250,0.3)"
+                    : "rgba(148,163,184,0.08)",
+                  fill: failure
+                    ? "rgba(127,29,29,0.18)"
+                    : isHovered
+                    ? "rgba(15,23,42,0.92)"
+                    : isCurrentActive
+                    ? "rgba(15,23,42,0.85)"
+                    : "rgba(15,23,42,0.4)"
+                }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 strokeWidth="1"
-                className="transition-all duration-500"
               />
+
+              {/* Inner core */}
               <circle
                 cx={`${node.x}%`}
                 cy={`${node.y}%`}
                 r={node.id === "lb" ? 18 : 14}
                 fill={isHighlighted ? "#22d3ee" : failure ? "#ef4444" : "#c4b5fd"}
-                opacity={isHighlighted || failure ? 0.9 : 0.18}
-                className={isHighlighted ? "animate-node-pulse" : ""}
+                opacity={isHighlighted || failure ? 0.95 : isHovered ? 0.4 : 0.15}
+                className={`transition-all duration-300 ${isHighlighted || failure ? "animate-node-pulse" : ""}`}
               />
             </g>
           );
         })}
       </svg>
 
-      {/* Node labels */}
+      {/* Node labels & Microscopic Telemetry */}
       {nodes.map((node) => {
+        const active = phase !== "assembly" || node.id === "users" || node.id === "cdn" || node.id === "lb" || node.id === "app";
         const highlighted =
           (phase === "cache" && node.id === "cache") ||
           (phase === "failure" && node.id === "db") ||
           (phase === "autoscale" && node.id === "replica");
+        const isHovered = node.id === hoveredNode;
+
         return (
           <div
             key={node.id}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-3 py-1 text-[10px] tracking-[0.18em] uppercase transition-all duration-500 ${
+            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-2xl border px-3 py-1.5 transition-all duration-300 pointer-events-none ${
               highlighted
-                ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.15)]"
-                : "border-white/[0.06] bg-black/40 text-white/50"
+                ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.12)]"
+                : isHovered
+                ? "border-cyan-300/35 bg-[#0A0D14] text-white"
+                : "border-white/[0.05] bg-[#030407]/75 text-white/50"
             }`}
-            style={{ left: `${node.x}%`, top: `${node.y}%` }}
+            style={{
+              left: `${node.x}%`,
+              top: `${node.y}%`,
+              opacity: active ? 1 : 0.25
+            }}
           >
-            {node.label}
+            <div className="flex flex-col items-center select-none">
+              <span className="text-[9px] font-bold tracking-[0.16em] uppercase leading-none">
+                {node.label}
+              </span>
+              {active && telemetry[node.id] && (
+                <span className="mt-1 font-mono text-[7px] text-cyan-400/60 tracking-tight uppercase leading-none">
+                  {telemetry[node.id].val1} | {telemetry[node.id].val2}
+                </span>
+              )}
+            </div>
           </div>
         );
       })}
 
       {/* Phase indicator */}
-      <div className="absolute left-5 top-5 flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-black/50 px-3.5 py-2 backdrop-blur-md">
+      <div className="absolute left-5 top-5 flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-black/60 px-3.5 py-2 backdrop-blur-md">
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-50" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-300" />
@@ -451,7 +630,7 @@ function NodeGraph({ phase }: { phase: HeroPhase }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25 }}
-            className="text-[10px] font-medium tracking-[0.22em] uppercase text-white/60"
+            className="text-[10px] font-mono font-medium tracking-[0.22em] uppercase text-white/70"
           >
             {phaseCopy[phase]}
           </motion.span>
@@ -465,8 +644,8 @@ function NodeGraph({ phase }: { phase: HeroPhase }) {
           ["Throughput", phase === "autoscale" ? "+126%" : "+48%"],
           ["Health", phase === "failure" ? "degraded" : "stable"],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-white/[0.06] bg-black/40 px-4 py-3 backdrop-blur-md">
-            <div className="text-[10px] uppercase tracking-[0.22em] text-white/30">{label}</div>
+          <div key={label} className="rounded-xl border border-white/[0.06] bg-black/50 px-4 py-3 backdrop-blur-md">
+            <div className="text-[9px] font-mono uppercase tracking-[0.22em] text-white/30">{label}</div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={value}
@@ -474,8 +653,8 @@ function NodeGraph({ phase }: { phase: HeroPhase }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3 }}
-                className={`mt-1.5 text-lg font-semibold tabular-nums ${
-                  label === "Health" && value === "degraded" ? "text-rose-400" : "text-white"
+                className={`mt-1 text-base font-semibold font-mono tracking-tight tabular-nums ${
+                  label === "Health" && value === "degraded" ? "text-rose-400 animate-pulse" : "text-white"
                 }`}
               >
                 {value}
@@ -568,21 +747,28 @@ function ScenariosSection() {
   const activeScenario = scenariosData[activeIndex];
 
   return (
-    <section id="scenarios" className="relative z-10 mx-auto max-w-6xl px-6 py-28 sm:px-8 lg:px-10">
+    <motion.section
+      id="scenarios"
+      initial={{ opacity: 0, y: 30, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-120px" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="relative z-10 mx-auto max-w-6xl px-6 py-28 sm:px-8 lg:px-10"
+    >
       <div className="mb-16 text-center">
-        <h2 className="text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+        <h2 className="font-display text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
           Core Concepts
         </h2>
       </div>
 
       <div 
-        className="mx-auto flex flex-col overflow-hidden rounded-[1.5rem] border border-[#1a1f2e] bg-[#0A0D14] shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8)] md:h-[500px] md:flex-row"
+        className="mx-auto flex flex-col overflow-hidden rounded-[2.5rem] border border-white/[0.05] bg-[#050608]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_30px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-500 hover:border-white/[0.1] md:h-[500px] md:flex-row"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         {/* Left Sidebar */}
-        <div className="flex w-full flex-col border-r border-[#1a1f2e] bg-[#07090d] md:w-80">
-          <div className="px-6 py-6 text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-500">
+        <div className="flex w-full flex-col border-r border-white/[0.05] bg-[#030407]/40 md:w-80">
+          <div className="px-6 py-6 text-[9px] font-bold tracking-[0.25em] font-mono uppercase text-cyan-400">
             Available Scenarios
           </div>
           <div className="flex flex-1 flex-col py-2">
@@ -592,27 +778,21 @@ function ScenariosSection() {
                 <button
                   key={scenario.id}
                   onClick={() => setActiveIndex(idx)}
-                  className={`group relative flex items-center px-6 py-4 text-left transition-colors duration-300 ${
-                    isActive ? "bg-emerald-950/20" : "hover:bg-[#0c1018]"
+                  className={`group relative flex items-center px-6 py-4 text-left transition-all duration-[400ms] cubic-bezier(0.16,1,0.3,1) ${
+                    isActive ? "bg-white/[0.03]" : "hover:bg-white/[0.01]"
                   }`}
                 >
-                  <span className={`text-sm font-medium ${isActive ? "text-white" : "text-white/40 group-hover:text-white/60"}`}>
+                  <span className={`text-sm font-medium transition-colors duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isActive ? "text-cyan-400 font-semibold" : "text-white/40 group-hover:text-white/65"}`}>
                     {scenario.name}
                   </span>
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute bottom-0 right-0 top-0 w-1.5 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]"
+                      className="absolute bottom-0 right-0 top-0 w-[3px] bg-gradient-to-b from-cyan-400 to-indigo-500 shadow-[0_0_15px_rgba(34,211,238,0.6)]"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
-                    >
-                      <div className="absolute inset-y-0 right-0 flex flex-col justify-center gap-[2px] px-[2px]">
-                        <div className="h-[2px] w-full bg-emerald-950/50" />
-                        <div className="h-[2px] w-full bg-emerald-950/50" />
-                        <div className="h-[2px] w-full bg-emerald-950/50" />
-                      </div>
-                    </motion.div>
+                    />
                   )}
                 </button>
               );
@@ -621,7 +801,7 @@ function ScenariosSection() {
         </div>
 
         {/* Right Content */}
-        <div className="relative flex flex-1 flex-col items-center justify-center p-8 md:p-12 overflow-hidden">
+        <div className="relative flex flex-1 flex-col items-center justify-center p-8 md:p-12 overflow-hidden bg-gradient-to-b from-[#080b11]/30 to-[#030406]/10">
           {/* Faint Scanlines */}
           <div className="pointer-events-none absolute inset-0 opacity-[0.02] bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:100%_4px]" />
 
@@ -631,7 +811,7 @@ function ScenariosSection() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="relative z-10 w-full max-w-md"
             >
               {/* Icon & Audio Wave */}
@@ -639,7 +819,7 @@ function ScenariosSection() {
                 <div className="relative flex size-24 items-center justify-center">
                   <motion.svg
                     viewBox="0 0 100 100"
-                    className="absolute inset-0 size-full text-emerald-500/30"
+                    className="absolute inset-0 size-full text-cyan-500/15"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                   >
@@ -647,18 +827,18 @@ function ScenariosSection() {
                     <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 6" />
                   </motion.svg>
                   
-                  <div className="absolute inset-2 rounded-full border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]" />
+                  <div className="absolute inset-2 rounded-full border border-cyan-500/10 bg-cyan-950/[0.02] shadow-[0_0_30px_rgba(34,211,238,0.06)]" />
                   
-                  <span className="material-symbols-outlined z-10 text-[40px] text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
+                  <span className="material-symbols-outlined z-10 text-[40px] text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]">
                     {activeScenario.icon}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1 opacity-70">
+                <div className="flex items-center gap-1 opacity-60">
                   {[...Array(5)].map((_, i) => (
                     <motion.div
                       key={i}
-                      className="w-1.5 rounded-full bg-emerald-500"
+                      className="w-1.5 rounded-full bg-gradient-to-t from-indigo-500 to-cyan-400"
                       animate={{ height: [8, Math.random() * 20 + 10, 8] }}
                       transition={{ duration: 0.5 + i * 0.1, repeat: Infinity, ease: "easeInOut" }}
                     />
@@ -668,13 +848,13 @@ function ScenariosSection() {
 
               {/* Text Content */}
               <div>
-                <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-md">
+                <h3 className="font-display text-3xl font-bold tracking-[-0.03em] text-white drop-shadow-md">
                   {activeScenario.name}
                 </h3>
-                <div className="mt-3 h-[3px] w-12 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+                <div className="mt-3 h-[2px] w-12 rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
 
                 <div className="mt-8 flex items-start gap-2">
-                  <span className="font-mono text-sm font-bold text-emerald-500">{">_desc:"}</span>
+                  <span className="font-mono text-sm font-bold text-cyan-400">{">_desc:"}</span>
                   <p className="font-mono text-sm leading-relaxed text-white/50">
                     {activeScenario.desc}
                   </p>
@@ -682,7 +862,7 @@ function ScenariosSection() {
 
                 {/* Complexity Meter */}
                 <div className="mt-12">
-                  <div className="mb-3 text-[10px] font-bold tracking-[0.2em] uppercase text-white/30">
+                  <div className="mb-3 text-[9px] font-bold tracking-[0.25em] font-mono uppercase text-white/20">
                     Complexity Level
                   </div>
                   <div className="flex gap-2">
@@ -691,7 +871,7 @@ function ScenariosSection() {
                         key={i}
                         className={`h-1.5 w-8 rounded-full transition-colors duration-500 ${
                           i < activeScenario.complexity 
-                            ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" 
+                            ? "bg-gradient-to-r from-cyan-400 to-indigo-400 shadow-[0_0_10px_rgba(34,211,238,0.4)]" 
                             : "bg-white/5"
                         }`}
                       />
@@ -703,7 +883,7 @@ function ScenariosSection() {
           </AnimatePresence>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -713,45 +893,52 @@ function FaqSection() {
   const currentFaqs = faqData[activeCategory];
 
   return (
-    <section id="faq" className="relative z-10 mx-auto max-w-5xl px-6 py-28 sm:px-8 lg:px-10">
+    <motion.section
+      id="faq"
+      initial={{ opacity: 0, y: 30, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-120px" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="relative z-10 mx-auto max-w-5xl px-6 py-28 sm:px-8 lg:px-10"
+    >
       <div className="mb-16 text-center">
-        <h2 className="text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+        <h2 className="font-display text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
           Frequently Asked Questions
         </h2>
       </div>
 
       {/* The Console Shell */}
-      <div className="mx-auto max-w-4xl rounded-[3rem] rounded-br-[5rem] border border-[#2a2d3d] bg-[#1a1c23] p-4 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] md:p-8 relative">
+      <div className="mx-auto max-w-4xl rounded-[3rem] rounded-br-[5rem] border border-white/[0.06] bg-[#050608]/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_40px_100px_-20px_rgba(0,0,0,0.85)] md:p-8 relative">
         
         {/* Speaker Grill Accent */}
-        <div className="absolute bottom-10 right-10 flex gap-1.5 rotate-[-25deg] opacity-40">
-           <div className="h-10 w-2 rounded-full bg-[#0a0c10] shadow-inner" />
-           <div className="h-10 w-2 rounded-full bg-[#0a0c10] shadow-inner" />
-           <div className="h-10 w-2 rounded-full bg-[#0a0c10] shadow-inner" />
-           <div className="h-10 w-2 rounded-full bg-[#0a0c10] shadow-inner" />
+        <div className="absolute bottom-10 right-10 flex gap-1.5 rotate-[-25deg] opacity-30">
+           <div className="h-10 w-2 rounded-full bg-black/80 shadow-inner" />
+           <div className="h-10 w-2 rounded-full bg-black/80 shadow-inner" />
+           <div className="h-10 w-2 rounded-full bg-black/80 shadow-inner" />
+           <div className="h-10 w-2 rounded-full bg-black/80 shadow-inner" />
         </div>
 
         {/* Top LEDs */}
         <div className="mb-4 flex items-center justify-between px-4">
            <div className="flex items-center gap-2">
-             <div className="size-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)] animate-pulse" />
-             <div className="text-[10px] font-bold tracking-widest text-[#4a5168]">PWR</div>
+             <div className="size-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-pulse" />
+             <div className="text-[9px] font-bold tracking-[0.25em] font-mono text-white/30">PWR</div>
            </div>
-           <div className="text-[10px] font-bold tracking-widest text-[#4a5168]">SYSTEMCRAFT OS v1.0</div>
+           <div className="text-[9px] font-bold tracking-[0.25em] font-mono text-white/30">SYSTEMCRAFT OS v1.0</div>
         </div>
 
         {/* The Screen */}
-        <div className="relative h-[380px] overflow-hidden rounded-xl border-8 border-[#0a0c10] bg-[#020605] p-1 shadow-inner font-mono md:h-[450px] md:p-2">
+        <div className="relative h-[380px] overflow-hidden rounded-xl border-8 border-black/90 bg-[#020305] p-1 shadow-[inset_0_4px_12px_rgba(0,0,0,0.9)] font-mono md:h-[450px] md:p-2">
             {/* Scanlines (pointer-events-none ensures it doesn't block scrolling) */}
-            <div className="pointer-events-none absolute inset-0 z-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] opacity-20" />
+            <div className="pointer-events-none absolute inset-0 z-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] opacity-15" />
             
             {/* Scrollable Container */}
-            <div className="h-full w-full overflow-y-auto p-4 md:p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#020605] [&::-webkit-scrollbar-thumb]:bg-emerald-900/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-500/50">
+            <div className="h-full w-full overflow-y-auto p-4 md:p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#020305] [&::-webkit-scrollbar-thumb]:bg-cyan-950/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-cyan-500/50">
               
               {/* Header */}
-              <div className="mb-6 flex items-center gap-3 border-b border-emerald-900/50 pb-4 text-emerald-400">
+              <div className="mb-6 flex items-center gap-3 border-b border-cyan-950/50 pb-4 text-cyan-400/80">
                 <span className="animate-pulse">_</span>
-                <span className="tracking-widest">DIR: /{activeCategory.toUpperCase()}</span>
+                <span className="tracking-widest text-xs">DIR: /{activeCategory.toUpperCase()}</span>
               </div>
 
               {/* Accordion */}
@@ -760,22 +947,22 @@ function FaqSection() {
                   key={activeCategory}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.3 }}
                   className="flex flex-col gap-3"
                 >
                   {currentFaqs.map((faq, i) => {
                     const isOpen = openIndex === i;
                     return (
-                      <div key={i} className="overflow-hidden rounded-lg border border-emerald-900/30 bg-emerald-950/10 shrink-0">
+                      <div key={i} className="overflow-hidden rounded-lg border border-cyan-950/30 bg-cyan-950/5 shrink-0 transition-colors duration-300">
                         <button
                           onClick={() => setOpenIndex(isOpen ? null : i)}
-                          className="flex w-full items-center justify-between p-4 text-left text-sm text-emerald-400 transition-colors hover:bg-emerald-900/20"
+                          className="flex w-full items-center justify-between p-4 text-left text-sm text-cyan-400/80 transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-cyan-950/10 hover:text-cyan-300"
                         >
                           <span className="flex gap-3">
-                            <span className="text-emerald-600 pointer-events-none">{">"}</span>
+                            <span className="text-cyan-600/85 pointer-events-none">{">"}</span>
                             <span className="pointer-events-none">{faq.q}</span>
                           </span>
-                          <span className={`text-[10px] pointer-events-none transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
+                          <span className={`text-[9px] pointer-events-none transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
                             ▼
                           </span>
                         </button>
@@ -785,7 +972,7 @@ function FaqSection() {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="px-4 pb-4 pl-10 text-sm leading-relaxed text-emerald-200/70"
+                              className="px-4 pb-4 pl-10 text-sm leading-relaxed text-white/50"
                             >
                               {faq.a}
                             </motion.div>
@@ -803,10 +990,10 @@ function FaqSection() {
         <div className="mt-12 mb-6 flex items-center justify-between px-6 md:px-12 relative z-10">
           {/* D-Pad (Decorative) */}
           <div className="relative size-24">
-            <div className="absolute left-1/2 top-0 h-full w-8 -translate-x-1/2 rounded-sm bg-[#11131a] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.5),inset_2px_2px_4px_rgba(255,255,255,0.05)] border border-[#2a2d3d]/50" />
-            <div className="absolute top-1/2 left-0 w-full h-8 -translate-y-1/2 rounded-sm bg-[#11131a] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.5),inset_2px_2px_4px_rgba(255,255,255,0.05)] border border-[#2a2d3d]/50" />
+            <div className="absolute left-1/2 top-0 h-full w-8 -translate-x-1/2 rounded-sm bg-[#090a0f] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.5),inset_2px_2px_4px_rgba(255,255,255,0.02)] border border-white/[0.04]" />
+            <div className="absolute top-1/2 left-0 w-full h-8 -translate-y-1/2 rounded-sm bg-[#090a0f] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.5),inset_2px_2px_4px_rgba(255,255,255,0.02)] border border-white/[0.04]" />
             {/* Center indent */}
-            <div className="absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#11131a] shadow-inner" />
+            <div className="absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#050608] shadow-inner" />
           </div>
 
           {/* Action Buttons */}
@@ -816,14 +1003,14 @@ function FaqSection() {
                 onClick={() => { setActiveCategory("general"); setOpenIndex(0); }}
                 className="absolute left-0 top-1/2 -translate-y-1/2 group size-12"
               >
-                <div className={`flex h-full w-full items-center justify-center rounded-full border-b-4 transition-all group-active:translate-y-1 group-active:border-b-0 ${
+                <div className={`flex h-full w-full items-center justify-center rounded-full border-b-4 transition-all duration-[400ms] cubic-bezier(0.16,1,0.3,1) group-active:translate-y-1 group-active:border-b-0 ${
                   activeCategory === "general"
-                    ? "border-emerald-800 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                    : "border-[#0a0c10] bg-[#11131a] group-hover:bg-[#202330]"
+                    ? "border-cyan-800 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                    : "border-black/50 bg-[#090b0f] group-hover:bg-[#121620]"
                 }`}>
-                  <span className={`text-lg font-bold ${activeCategory === "general" ? "text-[#0a0c10]" : "text-emerald-500"}`}>G</span>
+                  <span className={`text-lg font-bold font-mono transition-colors duration-[400ms] ${activeCategory === "general" ? "text-black" : "text-cyan-400"}`}>G</span>
                 </div>
-                <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-bold tracking-widest text-[#6a7188]">GEN</span>
+                <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-bold font-mono tracking-widest text-white/20">GEN</span>
               </button>
 
              {/* Interview */}
@@ -831,14 +1018,14 @@ function FaqSection() {
                 onClick={() => { setActiveCategory("interview"); setOpenIndex(0); }}
                 className="absolute left-1/2 top-0 -translate-x-1/2 group size-12"
               >
-                <div className={`flex h-full w-full items-center justify-center rounded-full border-b-4 transition-all group-active:translate-y-1 group-active:border-b-0 ${
+                <div className={`flex h-full w-full items-center justify-center rounded-full border-b-4 transition-all duration-[400ms] cubic-bezier(0.16,1,0.3,1) group-active:translate-y-1 group-active:border-b-0 ${
                   activeCategory === "interview"
-                    ? "border-emerald-800 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                    : "border-[#0a0c10] bg-[#11131a] group-hover:bg-[#202330]"
+                    ? "border-cyan-800 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                    : "border-black/50 bg-[#090b0f] group-hover:bg-[#121620]"
                 }`}>
-                  <span className={`text-lg font-bold ${activeCategory === "interview" ? "text-[#0a0c10]" : "text-emerald-500"}`}>I</span>
+                  <span className={`text-lg font-bold font-mono transition-colors duration-[400ms] ${activeCategory === "interview" ? "text-black" : "text-cyan-400"}`}>I</span>
                 </div>
-                <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-bold tracking-widest text-[#6a7188]">INT</span>
+                <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-bold font-mono tracking-widest text-white/20">INT</span>
               </button>
 
              {/* Technical */}
@@ -846,19 +1033,19 @@ function FaqSection() {
                 onClick={() => { setActiveCategory("technical"); setOpenIndex(0); }}
                 className="absolute right-0 top-1/2 -translate-y-1/2 group size-12"
               >
-                <div className={`flex h-full w-full items-center justify-center rounded-full border-b-4 transition-all group-active:translate-y-1 group-active:border-b-0 ${
+                <div className={`flex h-full w-full items-center justify-center rounded-full border-b-4 transition-all duration-[400ms] cubic-bezier(0.16,1,0.3,1) group-active:translate-y-1 group-active:border-b-0 ${
                   activeCategory === "technical"
-                    ? "border-emerald-800 bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                    : "border-[#0a0c10] bg-[#11131a] group-hover:bg-[#202330]"
+                    ? "border-cyan-800 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                    : "border-black/50 bg-[#090b0f] group-hover:bg-[#121620]"
                 }`}>
-                  <span className={`text-lg font-bold ${activeCategory === "technical" ? "text-[#0a0c10]" : "text-emerald-500"}`}>T</span>
+                  <span className={`text-lg font-bold font-mono transition-colors duration-[400ms] ${activeCategory === "technical" ? "text-black" : "text-cyan-400"}`}>T</span>
                 </div>
-                <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-bold tracking-widest text-[#6a7188]">TECH</span>
+                <span className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-bold font-mono tracking-widest text-white/20">TECH</span>
               </button>
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -888,128 +1075,15 @@ function Footer() {
   );
 }
 
-// ── Ambient Background ──────────────────────────────────────
-function ClientParticles() {
-  const [mounted, setMounted] = useState(false);
-  
-  const particles = useMemo(() => {
-    return [...Array(15)].map(() => ({
-      width: Math.random() * 2 + 1 + 'px',
-      height: Math.random() * 2 + 1 + 'px',
-      left: Math.random() * 100 + '%',
-      top: Math.random() * 100 + '%',
-      duration: Math.random() * 20 + 20,
-      xOffset: Math.random() * 50 - 25
-    }));
-  }, []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
-  return (
-    <>
-      {particles.map((p, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full bg-white"
-          style={{ width: p.width, height: p.height, left: p.left, top: p.top }}
-          animate={{
-            y: [0, -100, 0],
-            x: [0, p.xOffset, 0],
-            opacity: [0.1, 0.4, 0.1]
-          }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      ))}
-    </>
-  );
-}
-
-function AmbientBackground() {
-  const { scrollYProgress } = useScroll();
-  
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.2, 0.3], [0.8, 0.8, 0]);
-  const timelineOpacity = useTransform(scrollYProgress, [0.1, 0.3, 0.6, 0.7], [0, 0.8, 0.8, 0]);
-  const featuresOpacity = useTransform(scrollYProgress, [0.5, 0.7, 0.9, 0.95], [0, 0.8, 0.8, 0]);
-  const ctaOpacity = useTransform(scrollYProgress, [0.8, 0.9, 1], [0, 0.8, 1]);
-
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#090B12]">
-      {/* Layer 03: Noise */}
-      <div className="absolute inset-0 opacity-[0.025] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-      
-      {/* Layer 04: Engineering Grid */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `
-          linear-gradient(to right, #ffffff 1px, transparent 1px),
-          linear-gradient(to bottom, #ffffff 1px, transparent 1px)
-        `,
-        backgroundSize: '100px 100px'
-      }} />
-
-      {/* Layer 06: Cursor Lighting */}
-      <div 
-        className="absolute inset-0 transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(circle 600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.03), transparent 80%)`
-        }}
-      />
-
-      {/* Layer 07 / Layer 13: Scroll Atmosphere */}
-      {/* Hero (Purple/Indigo) */}
-      <motion.div 
-        style={{ opacity: heroOpacity }}
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.08),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.08),transparent_40%)]" 
-      />
-
-      {/* Timeline (Emerald/Cyan) */}
-      <motion.div 
-        style={{ opacity: timelineOpacity }}
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.06),transparent_60%),radial-gradient(circle_at_20%_40%,rgba(34,211,238,0.06),transparent_50%)]" 
-      />
-
-      {/* Features/Demos (Cyan/Blue) */}
-      <motion.div 
-        style={{ opacity: featuresOpacity }}
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.07),transparent_60%),radial-gradient(circle_at_80%_60%,rgba(59,130,246,0.07),transparent_50%)]" 
-      />
-
-      {/* CTA (Purple) */}
-      <motion.div 
-        style={{ opacity: ctaOpacity }}
-        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(168,85,247,0.08),transparent_60%)]" 
-      />
-
-      {/* Layer 05: Floating Particles (Dust) */}
-      <div className="absolute inset-0 opacity-[0.4]">
-         <ClientParticles />
-      </div>
-    </div>
-  );
-}
 
 // ── Main Landing Page ───────────────────────────────────────
 export default function SystemCraftLanding() {
   const [phase, setPhase] = useState<HeroPhase>("assembly");
   const [hoveredDemo, setHoveredDemo] = useState(demos[0]);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState<number | null>(null);
+  const [activeSection, setActiveSection] = useState<string>("hero");
 
   const demoRef = useRef<HTMLDivElement>(null);
   const demosInView = useInView(demoRef, { once: true, margin: "-100px" });
@@ -1029,39 +1103,120 @@ export default function SystemCraftLanding() {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, []);
 
+  useEffect(() => {
+    const sections = ["hero", "story", "scenarios", "demos", "ready", "faq"];
+    const observerOptions = {
+      root: null,
+      rootMargin: "-45% 0px -45% 0px",
+      threshold: 0.05,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <main className="relative overflow-hidden bg-[#090B12] text-white">
-      <AmbientBackground />
+    <main className="relative overflow-hidden bg-[#020306] text-white">
+      <InfrastructureEnvironment />
+
+      {/* ── BESPOKE FLOATING NAVIGATION ─────────────────────────── */}
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex w-[90%] max-w-5xl items-center justify-between rounded-full border border-white/[0.04] bg-[#05060a]/50 px-5 py-2.5 backdrop-blur-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)]">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/5 text-cyan-300">
+            <span className="material-symbols-outlined text-[15px] select-none">hub</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-bold tracking-wider leading-none text-white/90">SystemCraft</span>
+            <span className="text-[7px] uppercase tracking-[0.25em] text-white/20 mt-0.5 select-none">interviews</span>
+          </div>
+        </Link>
+
+        {/* Center links with glass pill hover */}
+        <div className="hidden items-center gap-2 md:flex">
+          {[
+            { href: "#story", label: "Story" },
+            { href: "#demos", label: "Demos" },
+            { href: "#ready", label: "Ready" }
+          ].map((link, idx) => (
+            <a
+              key={link.label}
+              href={link.href}
+              onMouseEnter={() => setHoveredNav(idx)}
+              onMouseLeave={() => setHoveredNav(null)}
+              className="relative rounded-full px-4 py-1.5 text-xs font-medium tracking-wide text-white/45 transition-colors duration-300 hover:text-white"
+            >
+              <span className="relative z-10">{link.label}</span>
+              {hoveredNav === idx && (
+                <motion.div
+                  layoutId="nav-hover-pill"
+                  className="absolute inset-0 rounded-full border border-white/[0.04] bg-white/[0.03]"
+                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                />
+              )}
+            </a>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-xs font-semibold tracking-wider text-white/45 transition-colors duration-300 hover:text-white">
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
+            className="group relative flex items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-wide text-white transition-all duration-300 hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+          >
+            Get started
+          </Link>
+        </div>
+      </nav>
+
+      {/* ── LEFT MARGIN HUD AXIS ─────────────────────────────────── */}
+      <div className="fixed left-8 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col gap-6 font-mono text-[7px] uppercase tracking-[0.25em] pointer-events-none select-none">
+        {[
+          { id: "hero", label: "SYS_LOC.01 // HERO" },
+          { id: "story", label: "SYS_LOC.02 // STORY" },
+          { id: "scenarios", label: "SYS_LOC.03 // CONCEPTS" },
+          { id: "demos", label: "SYS_LOC.04 // DEMOS" },
+          { id: "ready", label: "SYS_LOC.05 // READY" },
+          { id: "faq", label: "SYS_LOC.06 // FAQ" },
+        ].map((item) => {
+          const isActive = activeSection === item.id;
+          return (
+            <div
+              key={item.id}
+              className={`flex items-center gap-3 transition-all duration-500 ${
+                isActive ? "text-cyan-400 font-bold" : "text-white/20"
+              }`}
+            >
+              <span
+                className={`h-[1.5px] transition-all duration-500 ${
+                  isActive
+                    ? "w-6 bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                    : "w-4 bg-white/10"
+                }`}
+              />
+              <span>{item.label}</span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* ── HERO ───────────────────────────────────────────── */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-6 sm:px-8 lg:px-10">
-        {/* Nav */}
-        <nav className="flex items-center justify-between rounded-full border border-white/[0.06] bg-white/[0.03] px-5 py-3 backdrop-blur-md">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/8 text-cyan-200">
-              <span className="material-symbols-outlined text-[20px]">hub</span>
-            </div>
-            <div>
-              <div className="text-sm font-semibold tracking-wide">SystemCraft</div>
-              <div className="text-[10px] uppercase tracking-[0.22em] text-white/30">System design interviews</div>
-            </div>
-          </Link>
-
-          <div className="hidden items-center gap-8 text-sm text-white/45 md:flex">
-            <a href="#story" className="transition-colors duration-300 hover:text-white">Story</a>
-            <a href="#demos" className="transition-colors duration-300 hover:text-white">Demos</a>
-            <a href="#ready" className="transition-colors duration-300 hover:text-white">Ready</a>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-white/45 transition-colors duration-300 hover:text-white">
-              Sign in
-            </Link>
-            <Link href="/signup" className="rounded-full border border-white/[0.08] bg-white/[0.06] px-4 py-2 text-sm font-medium transition-all duration-300 hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)]">
-              Get started
-            </Link>
-          </div>
-        </nav>
+      <section id="hero" className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-6 sm:px-8 lg:px-10">
+        <div className="h-16" />
 
         {/* Hero Content */}
         <div className="grid gap-10 pb-20 pt-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:pt-24">
@@ -1073,7 +1228,7 @@ export default function SystemCraftLanding() {
           >
             <motion.div
               variants={heroTextVariants}
-              className="inline-flex items-center gap-2.5 rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-cyan-200/80"
+              className="inline-flex items-center gap-2.5 rounded-full border border-cyan-300/15 bg-cyan-300/[0.04] px-4 py-2 text-[10px] uppercase font-mono tracking-[0.28em] text-cyan-200/80"
             >
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60" />
@@ -1084,26 +1239,28 @@ export default function SystemCraftLanding() {
 
             <motion.h1
               variants={heroTextVariants}
-              className="mt-7 text-5xl font-semibold leading-[0.95] tracking-[-0.05em] sm:text-6xl lg:text-[5.5rem]"
+              className="mt-7 font-display text-5xl font-semibold leading-[0.95] tracking-[-0.05em] sm:text-6xl lg:text-[5.5rem]"
+              transition={{ ease: [0.16, 1, 0.3, 1] }}
             >
               Build systems.
-              <span className="block bg-gradient-to-r from-white via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-white via-indigo-200 to-cyan-100 bg-clip-text text-transparent">
                 Survive failures.
               </span>
             </motion.h1>
 
             <motion.p
               variants={heroTextVariants}
-              className="mt-7 max-w-xl text-base leading-7 text-white/50 sm:text-lg"
+              className="mt-7 max-w-xl text-sm leading-relaxed text-white/40 sm:text-base"
+              transition={{ ease: [0.16, 1, 0.3, 1] }}
             >
               SystemCraft is an AI-powered system design interview simulator that makes architecture feel alive before the first question is even asked.
             </motion.p>
 
             <motion.div variants={heroTextVariants} className="mt-9 flex flex-wrap gap-3">
-              <Link href="/signup" className="group relative rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition-all duration-300 hover:bg-cyan-100 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+              <Link href="/signup" className="group relative overflow-hidden rounded-full bg-white px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-black transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-cyan-50 hover:shadow-[0_15px_30px_-5px_rgba(34,211,238,0.25)]">
                 Start designing
               </Link>
-              <Link href="/practice" className="rounded-full border border-white/[0.08] bg-white/[0.04] px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:border-white/[0.15] hover:bg-white/[0.08]">
+              <Link href="/practice" className="rounded-full border border-white/[0.08] bg-white/[0.03] px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-white transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/[0.18] hover:bg-white/[0.08]">
                 Try a practice round
               </Link>
             </motion.div>
@@ -1140,16 +1297,24 @@ export default function SystemCraftLanding() {
       <ScenariosSection />
 
       {/* ── DEMOS ──────────────────────────────────────────── */}
-      <section id="demos" ref={demoRef} className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
+      <motion.section
+        id="demos"
+        ref={demoRef}
+        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-120px" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10"
+      >
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <motion.div
             className="max-w-xl"
             initial={{ opacity: 0, y: 40 }}
             animate={demosInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-200/50">Interactive demonstrations</div>
-            <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+            <h2 className="mt-5 font-display text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
               Every component tells a story under load.
             </h2>
             <p className="mt-6 text-base leading-7 text-white/45">
@@ -1157,7 +1322,7 @@ export default function SystemCraftLanding() {
             </p>
 
             {/* Live state panel */}
-            <div className="mt-10 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6">
+            <div className="mt-10 rounded-2xl border border-white/[0.05] bg-[#050608]/90 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_20px_40px_rgba(0,0,0,0.5)]">
               <div className="text-[10px] uppercase tracking-[0.28em] text-white/25">Live state</div>
               <AnimatePresence mode="wait">
                 <motion.div
@@ -1167,10 +1332,10 @@ export default function SystemCraftLanding() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{hoveredDemo.title}</div>
+                  <div className="mt-3 font-display text-2xl font-semibold tracking-[-0.03em]">{hoveredDemo.title}</div>
                   <p className="mt-2 text-sm leading-relaxed text-white/45">{hoveredDemo.detail}</p>
                   <div
-                    className="mt-5 inline-flex rounded-full border px-3 py-1 text-sm"
+                    className="mt-5 inline-flex rounded-full border px-3 py-1 text-sm font-mono"
                     style={{
                       borderColor: `${hoveredDemo.color}33`,
                       backgroundColor: `${hoveredDemo.color}15`,
@@ -1200,10 +1365,10 @@ export default function SystemCraftLanding() {
                   type="button"
                   onMouseEnter={() => setHoveredDemo(demo)}
                   onFocus={() => setHoveredDemo(demo)}
-                  className={`group rounded-2xl border p-5 text-left transition-all duration-300 ${
+                  className={`group rounded-2xl border p-5 text-left transition-all duration-[400ms] cubic-bezier(0.16,1,0.3,1) ${
                     isActive
-                      ? "border-white/[0.12] bg-white/[0.07] shadow-[0_0_40px_-12px_rgba(99,102,241,0.15)]"
-                      : "border-white/[0.05] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.04]"
+                      ? "border-cyan-500/40 bg-[#050608]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_20px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(34,211,238,0.05)] translate-y-[-2px]"
+                      : "border-white/[0.05] bg-[#050608]/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] hover:border-white/[0.12] hover:bg-[#050608]/80 hover:translate-y-[-2px] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]"
                   }`}
                 >
                   <DemoViz demo={demo} isActive={isActive} />
@@ -1215,17 +1380,22 @@ export default function SystemCraftLanding() {
             })}
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── CTA ────────────────────────────────────────────── */}
-      <section id="ready" ref={ctaRef} className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={ctaInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="animate-mesh relative overflow-hidden rounded-[2.5rem] border border-white/[0.08] p-10 sm:p-14 lg:p-20"
+      <motion.section
+        id="ready"
+        ref={ctaRef}
+        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-120px" }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10"
+      >
+        <div
+          className="relative overflow-hidden rounded-[3rem] border border-white/[0.05] bg-[#050608]/95 p-10 sm:p-14 lg:p-20 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_40px_100px_-20px_rgba(0,0,0,0.85)]"
           style={{
-            backgroundImage: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(34,211,238,0.06), rgba(168,85,247,0.08), rgba(99,102,241,0.1))",
+            background: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 60%)",
           }}
         >
           {/* Subtle grid inside CTA */}
@@ -1233,7 +1403,7 @@ export default function SystemCraftLanding() {
 
           <div className="relative max-w-3xl">
             <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/50">Become interview ready</div>
-            <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl lg:text-6xl">
+            <h2 className="mt-5 font-display text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
               Design architectures that actually survive the interview.
             </h2>
             <p className="mt-6 max-w-2xl text-base leading-7 text-white/50">
@@ -1241,15 +1411,15 @@ export default function SystemCraftLanding() {
             </p>
           </div>
           <div className="relative mt-10 flex flex-wrap gap-3">
-            <Link href="/signup" className="group rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-black transition-all duration-300 hover:bg-cyan-100 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+            <Link href="/signup" className="group relative overflow-hidden rounded-full bg-white px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-black transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-cyan-50 hover:shadow-[0_15px_30px_-5px_rgba(34,211,238,0.25)]">
               Build my first system
             </Link>
-            <Link href="/dashboard" className="rounded-full border border-white/[0.1] bg-white/[0.05] px-7 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.1]">
+            <Link href="/dashboard" className="group flex items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-white transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/[0.18] hover:bg-white/[0.08] hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
               Open dashboard
             </Link>
           </div>
-        </motion.div>
-      </section>
+        </div>
+      </motion.section>
 
       {/* ── FAQ ────────────────────────────────────────────── */}
       <FaqSection />

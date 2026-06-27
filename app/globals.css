@@ -10,8 +10,9 @@
   --color-surface-dark: #131022;
   --color-border-dark: #2b2839;
 
-  --font-display: var(--font-inter), sans-serif;
+  --font-display: var(--font-plus-jakarta), var(--font-inter), sans-serif;
   --font-body: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
 
   --background-image-grid-pattern: linear-gradient(to right, #1f1d2b 1px, transparent 1px), linear-gradient(to bottom, #1f1d2b 1px, transparent 1px);
 
