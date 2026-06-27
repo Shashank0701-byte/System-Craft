@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 import { authFetch } from '@/src/lib/firebase/authClient';
@@ -16,14 +16,23 @@ interface Design {
   status: 'draft' | 'reviewed' | 'completed';
   thumbnail?: string;
   nodeCount: number;
+  connectionCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+interface AnalyticsData {
+  totalInterviews: number;
+  averageScore: number;
+  bestScore: number;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, isAuthenticated } = useRequireAuth();
   const [designs, setDesigns] = useState<Design[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [systemOk, setSystemOk] = useState(true);
   const [isLoadingDesigns, setIsLoadingDesigns] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -54,12 +63,45 @@ export default function DashboardPage() {
     }
   }, [user?.uid]);
 
+  // Fetch real database-backed interview analytics
+  const fetchAnalytics = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const response = await authFetch('/api/user/analytics');
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics({
+          totalInterviews: data.totalInterviews ?? 0,
+          averageScore: data.averageScore ?? 0,
+          bestScore: data.bestScore ?? 0,
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+    }
+  }, [user?.uid]);
+
+  // Fetch server health status
+  const fetchHealth = useCallback(async () => {
+    try {
+      const response = await fetch('/api/health');
+      if (response.ok) {
+        const data = await response.json();
+        setSystemOk(data.status === 'ok');
+      }
+    } catch (err) {
+      console.error('Error fetching health status:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated && user && !hasFetched.current) {
       hasFetched.current = true;
       fetchDesigns();
+      fetchAnalytics();
+      fetchHealth();
     }
-  }, [isAuthenticated, user, fetchDesigns]);
+  }, [isAuthenticated, user, fetchDesigns, fetchAnalytics, fetchHealth]);
 
   // Create new design with authenticated request
   const handleCreateDesign = async () => {
@@ -113,7 +155,7 @@ export default function DashboardPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete design';
       setError(message);
-      throw err; // Re-throw so DesignCard knows deletion failed
+      throw err;
     }
   };
 
@@ -121,7 +163,6 @@ export default function DashboardPage() {
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
 
-    // Handle invalid dates
     if (isNaN(date.getTime())) {
       return 'Unknown';
     }
@@ -129,7 +170,6 @@ export default function DashboardPage() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
 
-    // Handle future dates
     if (diffMs < 0) {
       return 'Just now';
     }
@@ -144,13 +184,66 @@ export default function DashboardPage() {
     return `${diffDays}d ago`;
   };
 
+  // Calculate compact telemetry KPIs with SVG sparklines
+  const kpis = useMemo(() => {
+    const totalArchitectures = designs.length;
+    const completedArchitectures = designs.filter(d => d.status === 'completed').length;
+    
+    const totalSimulations = analytics?.totalInterviews ?? 0;
+    const avgScore = analytics?.averageScore ?? 0;
+
+    let recentEdit = 'NO ACTIVE SESSION';
+    if (totalArchitectures > 0) {
+      const sorted = [...designs].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      recentEdit = formatRelativeTime(sorted[0].updatedAt).toUpperCase();
+    }
+
+    return [
+      { 
+        label: 'Architectures', 
+        value: `${totalArchitectures} Topologies`, 
+        detail: `${completedArchitectures} Completed`,
+        sparkline: "M0,10 L10,12 L20,8 L30,14 L40,6 L50,11 L60,9 L70,15 L80,5 L90,12 L100,8",
+        color: "text-cyan-400"
+      },
+      { 
+        label: 'Simulations', 
+        value: `${totalSimulations} Run`, 
+        detail: 'Chaos Engine Active',
+        sparkline: "M0,15 L15,10 L30,12 L45,5 L60,14 L75,8 L90,11 L100,6",
+        color: "text-indigo-400"
+      },
+      { 
+        label: 'Avg Score Rate', 
+        value: totalSimulations > 0 ? `${avgScore}% Score` : '0% Score', 
+        detail: 'Based on validations',
+        sparkline: "M0,14 L10,12 L20,13 L30,9 L40,11 L50,7 L60,8 L70,5 L80,6 L90,3 L100,4",
+        color: "text-emerald-400"
+      },
+      { 
+        label: 'Recent Activity', 
+        value: recentEdit, 
+        detail: 'Console telemetry log',
+        sparkline: "M0,10 L20,10 L30,15 L40,2 L50,18 L60,10 L80,10 L90,12 L100,8",
+        color: "text-cyan-400"
+      },
+      { 
+        label: 'Workspace Health', 
+        value: systemOk ? '100% Active' : 'DEGRADED', 
+        detail: systemOk ? 'Region Mumbai Online' : 'Redis Check failed',
+        sparkline: "M0,10 L10,10 L20,10 L30,10 L40,10 L50,10 L60,10 L70,10 L80,10 L90,10 L100,10",
+        color: systemOk ? "text-emerald-400" : "text-rose-400"
+      },
+    ];
+  }, [designs, analytics, systemOk]);
+
   // Show loading while checking auth
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-dark">
+      <div className="min-h-screen flex items-center justify-center bg-[#060810]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400">Loading...</p>
+          <div className="w-10 h-10 border border-white/[0.06] border-t-cyan-400 rounded-full animate-spin" />
+          <p className="text-white/40 text-xs font-mono tracking-widest uppercase">Initializing access…</p>
         </div>
       </div>
     );
@@ -164,47 +257,84 @@ export default function DashboardPage() {
   return (
     <>
       <Header />
-      <div className="flex-1 overflow-y-auto p-6 md:p-8">
-        <div className="max-w-[1400px] mx-auto">
-          <Hero userName={user?.displayName?.split(' ')[0] || 'Designer'} />
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#060810]">
+        <div className="max-w-[1400px] mx-auto select-none">
+          {/* Noise background */}
+          <div className="noise-overlay absolute inset-0 pointer-events-none opacity-40" />
+
+          {/* Operational overview header */}
+          <Hero 
+            userName={user?.displayName?.split(' ')[0] || 'Designer'} 
+            onCreateDesign={handleCreateDesign}
+            isCreating={isCreating}
+          />
+
+          {/* Telemetry KPIs */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            {kpis.map((kpi, idx) => (
+              <div 
+                key={idx} 
+                className="relative overflow-hidden rounded-xl border border-white/[0.04] bg-[#0c0d16]/20 p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]"
+              >
+                {/* Micro outline glow */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
+                
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="block text-[8px] font-mono tracking-[0.25em] uppercase text-white/20 mb-1.5">{kpi.label}</span>
+                    <span className="block text-sm font-bold text-white/80 tracking-tight font-display">{kpi.value}</span>
+                  </div>
+                  
+                  {/* Subtle Sparkline Chart */}
+                  <svg className={`w-14 h-5 opacity-45 shrink-0 ${kpi.color}`} viewBox="0 0 100 20">
+                    <path d={kpi.sparkline} fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </div>
+                
+                <span className="block text-[9px] font-mono tracking-wide text-white/40 mt-2">{kpi.detail}</span>
+              </div>
+            ))}
+          </div>
 
           {/* Recent Designs Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Designs</h3>
-              <p className="text-sm text-slate-500 dark:text-text-muted-dark">
+              <h3 className="text-sm font-bold font-mono tracking-wider text-white/95 uppercase">TOPOLOGY INDEX</h3>
+              <p className="text-[10px] font-mono tracking-wide text-white/30">
                 {designs.length === 0
-                  ? 'Create your first system architecture diagram'
-                  : 'Manage and organize your architecture diagrams'
+                  ? 'No architectures provisioned inside sandbox'
+                  : 'Manage and coordinate simulated topology engines'
                 }
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-dashboard-card rounded-lg p-1">
-                <button className="p-1.5 rounded bg-white dark:bg-surface-highlight-dark text-primary shadow-sm cursor-pointer">
-                  <span className="material-symbols-outlined text-[20px]">grid_view</span>
+            
+            {/* Layout controls */}
+            <div className="flex items-center gap-2.5 font-mono text-[9px] uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 bg-white/[0.02] border border-white/[0.04] rounded-lg p-1">
+                <button className="p-1 rounded bg-white/[0.04] border border-white/[0.04] text-cyan-400 cursor-pointer">
+                  <span className="material-symbols-outlined text-[16px] block">grid_view</span>
                 </button>
-                <button className="p-1.5 rounded text-slate-500 dark:text-text-muted-dark hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
-                  <span className="material-symbols-outlined text-[20px]">view_list</span>
+                <button className="p-1 rounded text-white/30 hover:text-white/60 transition-colors cursor-pointer border border-transparent">
+                  <span className="material-symbols-outlined text-[16px] block">view_list</span>
                 </button>
               </div>
-              <select className="h-9 rounded-lg border-none bg-slate-100 dark:bg-dashboard-card text-sm text-slate-700 dark:text-text-input-dark focus:ring-primary focus:outline-none px-2 cursor-pointer">
-                <option>Last Edited</option>
-                <option>Name (A-Z)</option>
-                <option>Status</option>
+              <select className="h-8.5 rounded-lg border border-white/[0.05] bg-white/[0.02] text-[10px] font-mono text-white/60 focus:ring-0 focus:outline-none px-2.5 cursor-pointer uppercase tracking-wider">
+                <option className="bg-[#0c0d16]">Last Edited</option>
+                <option className="bg-[#0c0d16]">Name (A-Z)</option>
+                <option className="bg-[#0c0d16]">Status</option>
               </select>
             </div>
           </div>
 
           {/* Error State */}
           {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
-              {error}
+            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 font-mono text-xs text-center flex items-center justify-center gap-2">
+              <span>Error log: {error}</span>
               <button
                 onClick={() => { setError(null); hasFetched.current = false; fetchDesigns(); }}
-                className="ml-2 underline hover:no-underline"
+                className="underline hover:no-underline font-semibold"
               >
-                Retry
+                RETRY
               </button>
             </div>
           )}
@@ -214,7 +344,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <CreateDesignCard onClick={handleCreateDesign} isLoading={isCreating} />
               {[1, 2, 3].map((i) => (
-                <div key={i} className="aspect-[4/3] rounded-xl bg-dashboard-card animate-pulse" />
+                <div key={i} className="aspect-[4/3] rounded-xl bg-white/[0.01] border border-white/[0.04] animate-pulse" />
               ))}
             </div>
           ) : (
@@ -228,19 +358,19 @@ export default function DashboardPage() {
                   title={design.title}
                   status={design.status.toUpperCase() as 'DRAFT' | 'REVIEWED' | 'COMPLETED'}
                   editedTime={formatRelativeTime(design.updatedAt)}
-                  imageUrl={design.thumbnail}
                   nodeCount={design.nodeCount}
+                  connectionCount={design.connectionCount}
                   onDelete={handleDeleteDesign}
                 />
               ))}
 
               {/* Empty State */}
               {designs.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                  <span className="material-symbols-outlined text-6xl text-slate-600 mb-4">architecture</span>
-                  <h4 className="text-lg font-medium text-slate-400 mb-2">No designs yet</h4>
-                  <p className="text-sm text-slate-500 max-w-md">
-                    Click &quot;Create New Design&quot; to start building your first system architecture diagram.
+                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border border-dashed border-white/[0.05] rounded-xl">
+                  <span className="material-symbols-outlined text-4xl text-white/10 mb-4 select-none">architecture</span>
+                  <h4 className="text-xs font-mono font-bold tracking-wider text-white/40 mb-1">NO ACTIVE TOPOLOGY ARCHIVES</h4>
+                  <p className="text-[10px] font-mono text-white/20 max-w-sm">
+                    Provision your first sandbox environment to establish simulated node clusters.
                   </p>
                 </div>
               )}
