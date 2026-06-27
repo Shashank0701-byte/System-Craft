@@ -42,48 +42,26 @@ const timelineSteps = [
   },
 ];
 
-const demos = [
-  {
-    name: "Cache",
-    title: "Cache layer responds",
-    detail: "Hot paths served from memory instantly. Watch latency drop as the cache absorbs repeated reads.",
-    metric: "p95 328ms",
-    color: "#22d3ee",
-    barHeights: [0.9, 0.7, 0.95, 0.6, 0.85, 0.75],
-  },
-  {
-    name: "Database",
-    title: "Primary DB under pressure",
-    detail: "One overloaded primary ripples through the entire graph, amplifying tail latency across services.",
-    metric: "p95 3.2s",
-    color: "#f43f5e",
-    barHeights: [0.3, 0.5, 0.7, 0.9, 0.95, 0.85],
-  },
-  {
-    name: "Kafka",
-    title: "Queue depth growing",
-    detail: "Consumer lag builds, backpressure becomes visible, and the system signals it needs more throughput.",
-    metric: "lag 42k",
-    color: "#f59e0b",
-    barHeights: [0.2, 0.35, 0.5, 0.65, 0.8, 0.95],
-  },
-  {
-    name: "Load Balancer",
-    title: "Traffic rebalancing",
-    detail: "Unhealthy nodes fade out of the hot path. Traffic redistributes evenly across healthy replicas.",
-    metric: "4/4 healthy",
-    color: "#10b981",
-    barHeights: [0.8, 0.85, 0.8, 0.82, 0.78, 0.84],
-  },
-  {
-    name: "CDN",
-    title: "Edge propagation",
-    detail: "Requests terminate closer to users. Origin pressure drops as edge caches absorb global traffic.",
-    metric: "edge hit 93%",
-    color: "#8b5cf6",
-    barHeights: [0.6, 0.7, 0.8, 0.85, 0.9, 0.93],
-  },
-];
+const clusterEvents = [
+  { name: "Cache warming", service: "Cache", status: "Adapting", tone: "warning", detail: "Cold reads briefly reach the primary while popular keys enter memory.", throughput: "8.2k", latency: "142ms", errors: "0.3%", queue: "180" },
+  { name: "Replica promoted", service: "Database", status: "Failover", tone: "error", detail: "Writes pause while the healthy replica assumes primary responsibility.", throughput: "7.9k", latency: "218ms", errors: "0.8%", queue: "240" },
+  { name: "Queue spike", service: "Queue", status: "Backpressure", tone: "warning", detail: "Producers are outpacing consumers, so queued work begins to accumulate.", throughput: "8.6k", latency: "286ms", errors: "1.2%", queue: "1,420" },
+  { name: "Traffic stabilized", service: "Load balancer", status: "Healthy", tone: "healthy", detail: "Requests are evenly distributed and every replica has capacity remaining.", throughput: "9.1k", latency: "118ms", errors: "0.2%", queue: "96" },
+  { name: "Primary recovered", service: "Database", status: "Recovered", tone: "healthy", detail: "Replication is current and normal write routing has safely resumed.", throughput: "9.0k", latency: "124ms", errors: "0.2%", queue: "84" },
+] as const;
+
+const subsystemMonitors = [
+  { name: "Cache", concept: "Hit ratio", value: "94.2%", status: "healthy", note: "More hits remove database work", points: [28, 31, 30, 37, 42, 46, 54, 60] },
+  { name: "Database", concept: "p95 latency", value: "124ms", status: "healthy", note: "Tail latency reveals saturation", points: [24, 28, 25, 39, 52, 44, 34, 29] },
+  { name: "Queue", concept: "Queue depth", value: "84 jobs", status: "warning", note: "Depth exposes consumer backpressure", points: [18, 22, 30, 58, 66, 43, 29, 23] },
+  { name: "Load Balancer", concept: "Request distribution", value: "33 / 34 / 33", status: "healthy", note: "Even spread protects every replica", points: [35, 34, 36, 35, 34, 35, 34, 35] },
+] as const;
+
+const dashboardTone = {
+  healthy: { dot: "bg-emerald-400", text: "text-emerald-300", border: "border-emerald-400/20", surface: "bg-emerald-400/[0.065]" },
+  warning: { dot: "bg-amber-400", text: "text-amber-300", border: "border-amber-400/20", surface: "bg-amber-400/[0.065]" },
+  error: { dot: "bg-rose-400", text: "text-rose-300", border: "border-rose-400/20", surface: "bg-rose-400/[0.065]" },
+} as const;
 
 const nodes = [
   { id: "users", label: "Users", x: 10, y: 54 },
@@ -137,24 +115,33 @@ const heroTextVariants: Variants = {
   },
 };
 
-// ── Mini SVG Visualization for Demo Cards ───────────────────
-function DemoViz({ demo, isActive }: { demo: typeof demos[0]; isActive: boolean }) {
+function Sparkline({ points, stroke = "#818cf8" }: { points: readonly number[]; stroke?: string }) {
+  const path = points.map((point, index) => `${index === 0 ? "M" : "L"} ${(index / (points.length - 1)) * 100} ${72 - point}`).join(" ");
   return (
-    <div className="mb-4 flex h-20 items-end justify-center gap-1.5 rounded-xl border border-white/8 bg-black/40 px-4 pb-3 pt-2">
-      {demo.barHeights.map((h, i) => (
-        <motion.div
-          key={i}
-          className="w-4 rounded-sm"
-          style={{ backgroundColor: isActive ? demo.color : "rgba(255,255,255,0.12)" }}
-          initial={{ height: "12%" }}
-          animate={{
-            height: isActive ? `${h * 100}%` : "12%",
-            opacity: isActive ? 0.9 : 0.35,
-          }}
-          transition={{ duration: 0.5, delay: i * 0.06, ease: "easeOut" }}
-        />
-      ))}
-    </div>
+    <svg viewBox="0 0 100 72" preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
+      <path d={path} fill="none" stroke={stroke} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function SubsystemMonitor({ monitor }: { monitor: typeof subsystemMonitors[number] }) {
+  const tone = dashboardTone[monitor.status];
+  const chartColor = (monitor.status as string) === "warning" ? "#fbbf24" : (monitor.status as string) === "error" ? "#fb7185" : "#34d399";
+  return (
+    <motion.article tabIndex={0} whileHover={{ y: -2 }} whileFocus={{ y: -2 }} transition={{ duration: 0.18 }} className="group rounded-[1.35rem] border border-white/[0.07] bg-[#07090e]/80 p-5 outline-none transition-[border-color,background-color,box-shadow] duration-200 hover:border-white/[0.12] hover:bg-[#090c13] focus-visible:border-white/[0.16] focus-visible:bg-[#090c13] focus-visible:ring-2 focus-visible:ring-white/[0.04]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-white/85">{monitor.name}</h3>
+          <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/30">{monitor.concept}</p>
+        </div>
+        <span className={`mt-1 size-1.5 rounded-full ${tone.dot}`} title={monitor.status} />
+      </div>
+      <div className="mt-5 flex items-end justify-between gap-5">
+        <div className="font-mono text-xl tracking-[-0.04em] text-white/90">{monitor.value}</div>
+        <div className="h-12 w-28 opacity-70 transition-opacity duration-200 group-hover:opacity-100"><Sparkline points={monitor.points} stroke={chartColor} /></div>
+      </div>
+      <p className="mt-4 border-t border-white/[0.05] pt-3 text-xs leading-5 text-white/38">{monitor.note}</p>
+    </motion.article>
   );
 }
 
@@ -1080,15 +1067,16 @@ function Footer() {
 // ── Main Landing Page ───────────────────────────────────────
 export default function SystemCraftLanding() {
   const [phase, setPhase] = useState<HeroPhase>("assembly");
-  const [hoveredDemo, setHoveredDemo] = useState(demos[0]);
+  const [clusterEventIndex, setClusterEventIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [hoveredNav, setHoveredNav] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<string>("hero");
 
   const demoRef = useRef<HTMLDivElement>(null);
   const demosInView = useInView(demoRef, { once: true, margin: "-100px" });
   const ctaRef = useRef<HTMLDivElement>(null);
   const ctaInView = useInView(ctaRef, { once: true, margin: "-100px" });
+  const activeClusterEvent = clusterEvents[clusterEventIndex];
+  const activeEventTone = dashboardTone[activeClusterEvent.tone];
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -1102,6 +1090,14 @@ export default function SystemCraftLanding() {
 
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, []);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const timer = window.setInterval(() => {
+      setClusterEventIndex((current) => (current + 1) % clusterEvents.length);
+    }, 3200);
+    return () => window.clearInterval(timer);
+  }, [reduceMotion]);
 
   useEffect(() => {
     const sections = ["hero", "story", "scenarios", "demos", "ready", "faq"];
@@ -1132,87 +1128,78 @@ export default function SystemCraftLanding() {
       <InfrastructureEnvironment />
 
       {/* ── BESPOKE FLOATING NAVIGATION ─────────────────────────── */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex w-[90%] max-w-5xl items-center justify-between rounded-full border border-white/[0.04] bg-[#05060a]/50 px-5 py-2.5 backdrop-blur-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)]">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/5 text-cyan-300">
-            <span className="material-symbols-outlined text-[15px] select-none">hub</span>
+      <nav className="fixed left-1/2 top-5 z-50 flex w-[calc(100%-2rem)] max-w-6xl -translate-x-1/2 items-center justify-between rounded-full border border-white/[0.035] bg-[#05060a]/35 px-4 py-2 backdrop-blur-2xl sm:px-5">
+        <Link href="/" className="flex items-center gap-3 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50">
+          <div className="flex size-8 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.07] text-cyan-200">
+            <span className="material-symbols-outlined select-none text-[17px]">hub</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-bold tracking-wider leading-none text-white/90">SystemCraft</span>
-            <span className="text-[7px] uppercase tracking-[0.25em] text-white/20 mt-0.5 select-none">interviews</span>
-          </div>
+          <span className="text-sm font-semibold tracking-[-0.02em] text-white/95">SystemCraft</span>
         </Link>
 
-        {/* Center links with glass pill hover */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-8 md:flex">
           {[
             { href: "#story", label: "Story" },
-            { href: "#demos", label: "Demos" },
-            { href: "#ready", label: "Ready" }
-          ].map((link, idx) => (
+            { href: "#demos", label: "Systems" },
+            { href: "#ready", label: "Interview" }
+          ].map((link) => (
             <a
               key={link.label}
               href={link.href}
-              onMouseEnter={() => setHoveredNav(idx)}
-              onMouseLeave={() => setHoveredNav(null)}
-              className="relative rounded-full px-4 py-1.5 text-xs font-medium tracking-wide text-white/45 transition-colors duration-300 hover:text-white"
+              className="text-xs font-medium text-white/38 transition-colors duration-200 hover:text-white/75 focus-visible:outline-none focus-visible:text-white"
             >
-              <span className="relative z-10">{link.label}</span>
-              {hoveredNav === idx && (
-                <motion.div
-                  layoutId="nav-hover-pill"
-                  className="absolute inset-0 rounded-full border border-white/[0.04] bg-white/[0.03]"
-                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                />
-              )}
+              {link.label}
             </a>
           ))}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="text-xs font-semibold tracking-wider text-white/45 transition-colors duration-300 hover:text-white">
+        <div className="flex items-center gap-3">
+          <Link href="/login" className="hidden text-xs font-medium text-white/38 transition-colors duration-200 hover:text-white/75 sm:block">
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="group relative flex items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-wide text-white transition-all duration-300 hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+            className="flex items-center justify-center rounded-full border border-white/[0.09] bg-white/[0.055] px-4 py-2 text-xs font-medium text-white/82 outline-none transition-[background-color,border-color,color,transform] duration-200 hover:border-white/[0.16] hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98]"
           >
             Get started
           </Link>
         </div>
       </nav>
 
-      {/* ── LEFT MARGIN HUD AXIS ─────────────────────────────────── */}
-      <div className="fixed left-8 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col gap-6 font-mono text-[7px] uppercase tracking-[0.25em] pointer-events-none select-none">
+      {/* ── SECTION RAIL ──────────────────────────────────────────── */}
+      <nav aria-label="Page sections" className="fixed left-7 top-1/2 z-40 hidden -translate-y-1/2 xl:block">
+        <div className="relative flex flex-col gap-1 border-l border-white/[0.055] py-2 pl-4">
         {[
-          { id: "hero", label: "SYS_LOC.01 // HERO" },
-          { id: "story", label: "SYS_LOC.02 // STORY" },
-          { id: "scenarios", label: "SYS_LOC.03 // CONCEPTS" },
-          { id: "demos", label: "SYS_LOC.04 // DEMOS" },
-          { id: "ready", label: "SYS_LOC.05 // READY" },
-          { id: "faq", label: "SYS_LOC.06 // FAQ" },
-        ].map((item) => {
+          { id: "hero", label: "Overview" },
+          { id: "story", label: "Method" },
+          { id: "scenarios", label: "Concepts" },
+          { id: "demos", label: "Live system" },
+          { id: "ready", label: "Interview" },
+          { id: "faq", label: "Questions" },
+        ].map((item, index) => {
           const isActive = activeSection === item.id;
           return (
-            <div
+            <a
               key={item.id}
-              className={`flex items-center gap-3 transition-all duration-500 ${
-                isActive ? "text-cyan-400 font-bold" : "text-white/20"
+              href={`#${item.id}`}
+              aria-current={isActive ? "location" : undefined}
+              className={`group relative flex min-h-8 items-center gap-2.5 rounded-r-lg pr-3 font-mono text-[8px] uppercase tracking-[0.16em] outline-none transition-[color,background-color] duration-200 ${
+                isActive ? "bg-white/[0.035] text-white/68" : "text-white/18 hover:bg-white/[0.02] hover:text-white/42 focus-visible:text-white/65"
               }`}
             >
               <span
-                className={`h-[1.5px] transition-all duration-500 ${
+                className={`absolute -left-[17px] h-4 w-px rounded-full transition-[height,background-color,box-shadow] duration-300 ${
                   isActive
-                    ? "w-6 bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
-                    : "w-4 bg-white/10"
+                    ? "bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.35)]"
+                    : "h-0 bg-transparent"
                 }`}
               />
+              <span className={`w-4 text-right tabular-nums ${isActive ? "text-cyan-300/70" : "text-white/14"}`}>{String(index + 1).padStart(2, "0")}</span>
               <span>{item.label}</span>
-            </div>
+            </a>
           );
         })}
-      </div>
+        </div>
+      </nav>
 
       {/* ── HERO ───────────────────────────────────────────── */}
       <section id="hero" className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-6 sm:px-8 lg:px-10">
@@ -1296,7 +1283,7 @@ export default function SystemCraftLanding() {
       {/* ── SCENARIOS ──────────────────────────────────────── */}
       <ScenariosSection />
 
-      {/* ── DEMOS ──────────────────────────────────────────── */}
+      {/* ── LIVE SYSTEM ────────────────────────────────────── */}
       <motion.section
         id="demos"
         ref={demoRef}
@@ -1304,82 +1291,86 @@ export default function SystemCraftLanding() {
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, margin: "-120px" }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10"
+        className="relative z-10 mx-auto max-w-7xl px-6 py-32 sm:px-8 lg:px-10"
       >
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <motion.div
-            className="max-w-xl"
-            initial={{ opacity: 0, y: 40 }}
-            animate={demosInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-200/50">Interactive demonstrations</div>
-            <h2 className="mt-5 font-display text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-              Every component tells a story under load.
-            </h2>
-            <p className="mt-6 text-base leading-7 text-white/45">
-              Explore how each layer of a distributed system behaves when traffic spikes, nodes fail, and queues grow. Each visualization reacts in real time.
-            </p>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={demosInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }}>
+          <div className="max-w-2xl">
+            <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/30">Live system</div>
+            <h2 className="mt-5 max-w-xl font-display text-4xl font-semibold leading-[1.08] tracking-[-0.045em] sm:text-5xl">See the architecture respond.</h2>
+            <p className="mt-6 max-w-[34rem] text-[15px] leading-7 text-white/42">One event at a time. Every signal explains what changed, where pressure moved, and why the system recovered.</p>
+          </div>
 
-            {/* Live state panel */}
-            <div className="mt-10 rounded-2xl border border-white/[0.05] bg-[#050608]/90 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_20px_40px_rgba(0,0,0,0.5)]">
-              <div className="text-[10px] uppercase tracking-[0.28em] text-white/25">Live state</div>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={hoveredDemo.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="mt-3 font-display text-2xl font-semibold tracking-[-0.03em]">{hoveredDemo.title}</div>
-                  <p className="mt-2 text-sm leading-relaxed text-white/45">{hoveredDemo.detail}</p>
-                  <div
-                    className="mt-5 inline-flex rounded-full border px-3 py-1 text-sm font-mono"
-                    style={{
-                      borderColor: `${hoveredDemo.color}33`,
-                      backgroundColor: `${hoveredDemo.color}15`,
-                      color: hoveredDemo.color,
-                    }}
-                  >
-                    {hoveredDemo.metric}
+          <div className="mt-14 grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.85fr)]">
+            <article className="overflow-hidden rounded-[1.75rem] border border-white/[0.075] bg-[#06080d]/90 transition-[border-color,box-shadow] duration-300 hover:border-white/[0.11] hover:shadow-[0_24px_60px_rgba(0,0,0,.24)]">
+              <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] px-6 py-5 sm:px-7">
+                <div>
+                  <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-white/90">Live Cluster</h3>
+                  <p className="mt-1.5 text-[11px] text-white/30">Request lifecycle · 8 services</p>
+                </div>
+                <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-medium transition-colors duration-500 ${activeEventTone.border} ${activeEventTone.surface} ${activeEventTone.text}`}>
+                  <span className={`size-1.5 rounded-full ${activeEventTone.dot}`} /> {activeClusterEvent.status}
+                </div>
+              </header>
+
+              <div className="grid grid-cols-2 border-b border-white/[0.06] sm:grid-cols-4">
+                {[
+                  ["Throughput", `${activeClusterEvent.throughput} req/s`],
+                  ["p95 latency", activeClusterEvent.latency],
+                  ["Error rate", activeClusterEvent.errors],
+                  ["Queue size", activeClusterEvent.queue],
+                ].map(([label, value]) => (
+                  <div key={label} className="border-white/[0.06] px-5 py-4 even:border-l sm:border-l sm:first:border-l-0">
+                    <div className="text-[9px] font-medium uppercase tracking-[0.16em] text-white/24">{label}</div>
+                    <AnimatePresence mode="wait"><motion.div key={value} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} className="mt-2 font-mono text-[15px] tabular-nums text-white/82">{value}</motion.div></AnimatePresence>
                   </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </motion.div>
+                ))}
+              </div>
 
-          {/* Demo cards */}
-          <motion.div
-            className="grid gap-3 md:grid-cols-2"
-            initial="hidden"
-            animate={demosInView ? "visible" : "hidden"}
-            variants={staggerContainer}
-          >
-            {demos.map((demo) => {
-              const isActive = hoveredDemo.name === demo.name;
-              return (
-                <motion.button
-                  key={demo.name}
-                  variants={fadeUp}
-                  type="button"
-                  onMouseEnter={() => setHoveredDemo(demo)}
-                  onFocus={() => setHoveredDemo(demo)}
-                  className={`group rounded-2xl border p-5 text-left transition-all duration-[400ms] cubic-bezier(0.16,1,0.3,1) ${
-                    isActive
-                      ? "border-cyan-500/40 bg-[#050608]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_20px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(34,211,238,0.05)] translate-y-[-2px]"
-                      : "border-white/[0.05] bg-[#050608]/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] hover:border-white/[0.12] hover:bg-[#050608]/80 hover:translate-y-[-2px] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]"
-                  }`}
-                >
-                  <DemoViz demo={demo} isActive={isActive} />
-                  <div className="text-[10px] uppercase tracking-[0.26em] text-white/25">{demo.name}</div>
-                  <div className="mt-1.5 text-lg font-medium tracking-[-0.03em] text-white/85">{demo.title}</div>
-                  <p className="mt-1.5 text-sm leading-relaxed text-white/40">{demo.detail}</p>
-                </motion.button>
-              );
-            })}
-          </motion.div>
-        </div>
+              <div className="p-6 sm:p-8">
+                <div className={`rounded-2xl border p-4 transition-[border-color,background-color] duration-500 ${activeEventTone.border} ${activeEventTone.surface}`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-[9px] font-medium uppercase tracking-[0.18em] text-white/30">Current event</div>
+                    <div className="flex items-center gap-1.5" aria-label={`Event ${clusterEventIndex + 1} of ${clusterEvents.length}`}>
+                      {clusterEvents.map((event, index) => <span key={event.name} className={`h-1 rounded-full transition-[width,background-color] duration-300 ${index === clusterEventIndex ? `w-4 ${activeEventTone.dot}` : "w-1 bg-white/15"}`} />)}
+                    </div>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.div key={activeClusterEvent.name} initial={{ opacity: 0, x: 8, filter: "blur(3px)" }} animate={{ opacity: 1, x: 0, filter: "blur(0px)" }} exit={{ opacity: 0, x: -8, filter: "blur(3px)" }} transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }} className="mt-3">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className={`size-2 rounded-full ${activeEventTone.dot}`} />
+                        <span className="text-lg font-medium tracking-[-0.025em] text-white/92">{activeClusterEvent.name}</span>
+                        <span className={`text-[10px] font-medium uppercase tracking-[0.14em] ${activeEventTone.text}`}>{activeClusterEvent.status}</span>
+                      </div>
+                      <p className="ml-5 mt-2 max-w-xl text-xs leading-5 text-white/42">{activeClusterEvent.detail}</p>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <div className="relative mt-5 h-[280px] overflow-hidden rounded-2xl border border-white/[0.055] bg-[#030509] sm:h-[330px]">
+                  <svg className="absolute inset-0 size-full" viewBox="0 0 800 330" aria-hidden="true">
+                    {[[95,165,220,165],[220,165,350,90],[220,165,350,240],[350,90,500,90],[350,90,500,165],[350,240,500,240],[500,165,660,120],[500,165,660,220]].map((line, i) => (
+                      <line key={i} x1={line[0]} y1={line[1]} x2={line[2]} y2={line[3]} stroke="rgba(255,255,255,.09)" strokeWidth="1" />
+                    ))}
+                    {!reduceMotion && [0, 1, 2].map((packet) => <motion.circle key={packet} r={packet === 0 ? 2.5 : 2} fill="#67e8f9" opacity={packet === 0 ? 0.8 : 0.45} initial={{ cx: 95, cy: 165 }} animate={{ cx: [95,220,350,500,660], cy: [165,165,90,165,120] }} transition={{ duration: 4.8, delay: packet * 1.45, repeat: Infinity, ease: "linear" }} />)}
+                  </svg>
+                  {[
+                    ["Client","8.2k/s","12%","50%"],["Gateway","healthy","28%","50%"],["API","3 replicas","44%","27%"],["Queue","84 jobs","44%","73%"],
+                    ["Cache","94.2% hit","63%","27%"],["Primary","124ms","63%","50%"],["Replica","synced","83%","36%"],["Worker","2 active","83%","67%"],
+                  ].map(([name, detail, left, top]) => {
+                    const isChanging = activeClusterEvent.service.toLowerCase().includes(name.toLowerCase()) || (name === "Primary" && activeClusterEvent.service === "Database");
+                    return <div key={name} className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border px-3 py-2.5 transition-[border-color,background-color,transform,box-shadow] duration-500 ${isChanging ? `${activeEventTone.border} ${activeEventTone.surface} shadow-[0_8px_24px_rgba(0,0,0,.2)] scale-[1.03]` : "border-white/[0.07] bg-[#090c12] hover:border-white/[0.14]"}`} style={{ left, top }}>
+                      <div className="whitespace-nowrap text-xs font-medium text-white/80">{name}</div><div className="mt-1 whitespace-nowrap font-mono text-[9px] text-white/30">{detail}</div>
+                    </div>;
+                  })}
+                </div>
+              </div>
+            </article>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              {subsystemMonitors.map((monitor) => <SubsystemMonitor key={monitor.name} monitor={monitor} />)}
+            </div>
+          </div>
+        </motion.div>
       </motion.section>
 
       {/* ── CTA ────────────────────────────────────────────── */}
@@ -1390,32 +1381,22 @@ export default function SystemCraftLanding() {
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, margin: "-120px" }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 mx-auto max-w-7xl px-6 py-28 sm:px-8 lg:px-10"
+        className="relative z-10 mx-auto max-w-4xl px-6 py-32 sm:px-8 lg:px-10"
       >
-        <div
-          className="relative overflow-hidden rounded-[3rem] border border-white/[0.05] bg-[#050608]/95 p-10 sm:p-14 lg:p-20 shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_40px_100px_-20px_rgba(0,0,0,0.85)]"
-          style={{
-            background: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 60%)",
-          }}
-        >
-          {/* Subtle grid inside CTA */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] opacity-30 [mask-image:radial-gradient(circle_at_center,black,transparent_70%)]" />
-
-          <div className="relative max-w-3xl">
-            <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/50">Become interview ready</div>
-            <h2 className="mt-5 font-display text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
-              Design architectures that actually survive the interview.
-            </h2>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-white/50">
-              Build real distributed systems, face AI-driven chaos events, and receive structural feedback — all before your next system design round.
-            </p>
+        <div className="rounded-[2rem] border border-white/[0.075] bg-[#07090e]/88 p-8 sm:p-12">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-white/75">✓</span>
+            <div><div className="text-[10px] uppercase tracking-[0.22em] text-white/28">System Ready</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white/90">Architecture validated</h2></div>
           </div>
-          <div className="relative mt-10 flex flex-wrap gap-3">
-            <Link href="/signup" className="group relative overflow-hidden rounded-full bg-white px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-black transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-cyan-50 hover:shadow-[0_15px_30px_-5px_rgba(34,211,238,0.25)]">
-              Build my first system
-            </Link>
-            <Link href="/dashboard" className="group flex items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-white transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-white/[0.18] hover:bg-white/[0.08] hover:shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
-              Open dashboard
+          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            {["Cache configured", "Failover configured", "Scaling configured"].map((item, index) => (
+              <motion.div key={item} initial={{ opacity: 0, y: 6 }} animate={ctaInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: index * 0.12 }} className="flex items-center gap-2 text-sm text-white/50"><span className="text-white/65">✓</span>{item}</motion.div>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-col gap-6 border-t border-white/[0.07] pt-8 sm:flex-row sm:items-center sm:justify-between">
+            <div><div className="text-sm font-medium text-white/85">Ready to begin interview</div><div className="mt-1 text-xs text-white/30">Your architecture can handle the first constraint.</div></div>
+            <Link href="/interview" className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-xl border border-cyan-200/25 bg-cyan-200 px-6 text-sm font-semibold text-[#031014] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_8px_24px_rgba(34,211,238,.12)] transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-cyan-100 hover:shadow-[inset_0_1px_0_rgba(255,255,255,.8),0_12px_30px_rgba(34,211,238,.2)] focus-visible:ring-2 focus-visible:ring-cyan-200/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090e] active:translate-y-px active:scale-[0.985]">
+              Launch Interview <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
           </div>
         </div>
