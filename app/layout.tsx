@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../src/lib/firebase/AuthContext";
+import { AchievementNotificationProvider } from "@/components/achievements/AchievementNotificationProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -42,7 +43,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          {children}
+          <AchievementNotificationProvider>
+            {children}
+          </AchievementNotificationProvider>
         </AuthProvider>
       </body>
     </html>
