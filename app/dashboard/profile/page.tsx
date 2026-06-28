@@ -12,6 +12,7 @@ import { LEVELS } from '@/src/lib/achievements/levels';
 
 interface ProfileData {
     achievements: AchievementState[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metrics: Record<string, any>;
 }
 

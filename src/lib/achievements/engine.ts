@@ -12,7 +12,7 @@
 import type { Types } from 'mongoose';
 import UserMetrics, { type IUserMetricsData } from './metrics';
 import UserAchievement from './userAchievement';
-import { ACHIEVEMENT_DEFINITIONS, type AchievementDef, type AchievementTier } from './definitions';
+import { ACHIEVEMENT_DEFINITIONS, type AchievementTier } from './definitions';
 import { getLevelFromXP } from './xp';
 
 export interface UnlockedAchievement {

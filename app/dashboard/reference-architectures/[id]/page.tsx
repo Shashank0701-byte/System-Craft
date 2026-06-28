@@ -34,7 +34,6 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
   
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[] | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [quizError, setQuizError] = useState<string | null>(null);
   const [isQuizCompleted, setIsQuizCompleted] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -65,11 +64,10 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
           setQuizQuestions(data.questions);
         }
       } else {
-        setQuizError('Failed to generate knowledge check');
+        console.error('Failed to generate knowledge check');
       }
     } catch (err) {
       console.error(err);
-      setQuizError('Failed to generate knowledge check');
     }
   }, [arch]);
 
