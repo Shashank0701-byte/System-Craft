@@ -3,29 +3,30 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #4725f4;
-  --color-primary-hover: #3a1dc2;
+  --color-primary: #22d3ee;
+  --color-primary-hover: #0891b2;
   --color-background-light: #f6f5f8;
-  --color-background-dark: #0a0a0c;
-  --color-surface-dark: #131022;
-  --color-border-dark: #2b2839;
+  --color-background-dark: #060810;
+  --color-surface-dark: #0c0d16;
+  --color-border-dark: rgba(255, 255, 255, 0.06);
 
-  --font-display: var(--font-inter), sans-serif;
+  --font-display: var(--font-plus-jakarta), var(--font-inter), sans-serif;
   --font-body: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
 
-  --background-image-grid-pattern: linear-gradient(to right, #1f1d2b 1px, transparent 1px), linear-gradient(to bottom, #1f1d2b 1px, transparent 1px);
+  --background-image-grid-pattern: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 
-  --color-dashboard-bg: #131022;
-  --color-dashboard-surface: #1e1b2e;
-  --color-dashboard-card: #2b2839;
+  --color-dashboard-bg: #060810;
+  --color-dashboard-surface: #0c0d16;
+  --color-dashboard-card: #0c0d16;
 
-  --color-sidebar-bg-dark: #121118;
-  --color-text-muted-dark: #a19cba;
-  --color-text-label-dark: #5f5b7a;
-  --color-text-placeholder-dark: #6b6687;
-  --color-text-card-footer-dark: #8b86a8;
-  --color-surface-highlight-dark: #3f3b54;
-  --color-text-input-dark: #e0e0e0;
+  --color-sidebar-bg-dark: #060810;
+  --color-text-muted-dark: rgba(255, 255, 255, 0.6);
+  --color-text-label-dark: rgba(255, 255, 255, 0.4);
+  --color-text-placeholder-dark: rgba(255, 255, 255, 0.2);
+  --color-text-card-footer-dark: rgba(255, 255, 255, 0.3);
+  --color-surface-highlight-dark: rgba(255, 255, 255, 0.04);
+  --color-text-input-dark: rgba(255, 255, 255, 0.9);
 }
 
 @layer utilities {
@@ -53,12 +54,67 @@
     mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
     -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
   }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .animate-float {
+    animation: float 10s ease-in-out infinite;
+  }
+
+  /* Node pulse glow effect */
+  @keyframes node-pulse {
+    0%, 100% {
+      opacity: 0.2;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.15);
+    }
+  }
+
+  .animate-node-pulse {
+    animation: node-pulse 2s ease-in-out infinite;
+  }
+
+  /* Gradient mesh drift for CTA background */
+  @keyframes mesh-drift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-mesh {
+    background-size: 200% 200%;
+    animation: mesh-drift 12s ease-in-out infinite;
+  }
+
+  /* Noise texture overlay */
+  .noise-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
 }
 
 /* Dot grid pattern for the canvas - using @utility for Tailwind v4 */
 @utility bg-grid-pattern {
   background-size: 24px 24px;
-  background-image: radial-gradient(circle, #3f3b54 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
 @layer utilities {
@@ -69,30 +125,10 @@
   }
 
   .fade-in {
-    @keyframes fade-in {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
-    }
-
     animation-name: fade-in;
   }
 
   .slide-in-from-top-1 {
-    @keyframes slide-in-from-top {
-      from {
-        transform: translateY(-0.25rem);
-      }
-
-      to {
-        transform: translateY(0);
-      }
-    }
-
     animation-name: slide-in-from-top;
   }
 
@@ -104,6 +140,25 @@
     animation: slide-in-right 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-0.25rem);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 
 @keyframes slide-in-left {
   from {
@@ -125,6 +180,10 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Custom scrollbar for panels - WebKit browsers */
 ::-webkit-scrollbar {
   width: 6px;
@@ -136,16 +195,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3b54;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f4b64;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Firefox scrollbar support */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3f3b54 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }

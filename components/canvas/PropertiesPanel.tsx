@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useCanvasPanels } from './CanvasPanelsContext';
 
 const STORAGE_TYPES = new Set(['SQL', 'NoSQL', 'Blob', 'Cache', 'Search', 'GraphDB']);
@@ -7,10 +8,10 @@ const SHARDING_TYPES = new Set(['SQL', 'NoSQL', 'Search', 'GraphDB']);
 const REPLICA_TYPES = new Set(['SQL', 'NoSQL', 'Cache', 'Search', 'GraphDB', 'Server', 'Function', 'Worker']);
 
 const TYPE_ICON_COLOR: Record<string, string> = {
-  SQL: 'text-emerald-500', NoSQL: 'text-green-500', Cache: 'text-red-500',
-  Blob: 'text-yellow-500', Server: 'text-purple-500', Function: 'text-indigo-500',
-  LB: 'text-orange-500', Queue: 'text-pink-500', Kafka: 'text-cyan-500',
-  CDN: 'text-teal-500', Gateway: 'text-amber-500', Auth: 'text-sky-500',
+  SQL: 'text-emerald-400', NoSQL: 'text-green-400', Cache: 'text-red-400',
+  Blob: 'text-yellow-400', Server: 'text-purple-400', Function: 'text-indigo-400',
+  LB: 'text-orange-400', Queue: 'text-pink-400', Kafka: 'text-cyan-400',
+  CDN: 'text-teal-400', Gateway: 'text-amber-400', Auth: 'text-sky-400',
 };
 
 const TYPE_SUBTITLE: Record<string, string> = {
@@ -32,16 +33,33 @@ function storageLabel(gb: number): string {
 
 function latencyWarning(type: string, readReplicas: boolean, consistencyModel: string): string | null {
   if (readReplicas && consistencyModel === 'Strong Consistency' && STORAGE_TYPES.has(type)) {
-    return 'Synchronous replication may introduce significant latency to write operations.';
+    return 'Synchronous replication may introduce latency to write operations.';
   }
   if (type === 'SQL' && consistencyModel === 'Eventual Consistency') {
-    return 'Eventual consistency on a relational DB may cause stale reads.';
+    return 'Eventual consistency on relational database may cause stale reads.';
   }
   return null;
 }
 
 export default function PropertiesPanel() {
-  const { rightOpen, closeAll, selectedNode, getNodeConfig, updateNodeConfig } = useCanvasPanels();
+  const { rightOpen, closeAll, selectedNode, getNodeConfig, updateNodeConfig, activeView } = useCanvasPanels();
+
+  // Collapsed sections local state
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    general: false,
+    networking: true,
+    scaling: true,
+    storage: false,
+    security: true,
+    observability: true,
+    simulation: true,
+  });
+
+  if (activeView === 'whiteboard') return null;
+
+  const toggleSection = (section: string) => {
+    setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const config = selectedNode ? getNodeConfig(selectedNode.id) : null;
   const type = selectedNode?.type ?? '';
@@ -49,157 +67,314 @@ export default function PropertiesPanel() {
   const showSharding = SHARDING_TYPES.has(type);
   const showReplicas = REPLICA_TYPES.has(type);
   const warning = config ? latencyWarning(type, config.readReplicas, config.consistencyModel) : null;
-  const iconColor = TYPE_ICON_COLOR[type] ?? 'text-slate-400';
+  const iconColor = TYPE_ICON_COLOR[type] ?? 'text-white/40';
   const subtitle = TYPE_SUBTITLE[type] ?? type;
 
+  const renderSectionHeader = (key: string, label: string) => {
+    const isCollapsed = collapsed[key];
+    return (
+      <button
+        onClick={() => toggleSection(key)}
+        className="w-full flex items-center justify-between py-1.5 text-[8px] font-mono font-bold uppercase tracking-[0.2em] text-white/30 hover:text-white/70 transition-colors text-left select-none border-b border-white/[0.02] mb-1.5 focus:outline-none focus:text-white/70"
+      >
+        <span>{label}</span>
+        <span className="material-symbols-outlined text-[10px] transform transition-transform duration-200" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
+          expand_more
+        </span>
+      </button>
+    );
+  };
+
   const panelContent = selectedNode && config ? (
-    <>
-      <div className="p-5 border-b border-slate-200 dark:border-border-dark flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`material-symbols-outlined ${iconColor}`} style={{ fontSize: '20px' }}>
+    <div className="flex flex-col h-full bg-[#060810] select-none relative animate-in fade-in duration-300">
+      {/* Noise background */}
+      <div className="noise-overlay absolute inset-0 pointer-events-none opacity-[0.02]" />
+
+      {/* Title block */}
+      <div className="p-3.5 border-b border-white/[0.04] z-10 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="size-6 rounded-md bg-[#080a12] border border-white/[0.06] flex items-center justify-center shadow-inner">
+            <span className={`material-symbols-outlined text-[14px] ${iconColor}`}>
               {selectedNode.icon}
             </span>
-            <h3 className="font-bold text-slate-900 dark:text-white truncate max-w-[180px]">
+          </div>
+          <div>
+            <h3 className="text-[10px] font-mono font-bold tracking-widest text-white/90 uppercase truncate max-w-[130px]">
               {selectedNode.label || selectedNode.type}
             </h3>
+            <p className="text-[7px] font-mono tracking-widest text-white/30 uppercase mt-0.5">{subtitle}</p>
           </div>
-          <p className="text-xs text-slate-500">{subtitle}</p>
         </div>
+        <button
+          onClick={closeAll}
+          className="md:hidden p-1 rounded-md hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors"
+        >
+          <span className="material-symbols-outlined text-[14px]">close</span>
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-6">
-        <div className="space-y-3">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Capacity Planning</label>
-          <div className="bg-slate-50 dark:bg-[#121118] p-3 rounded-lg border border-slate-200 dark:border-[#2b2839]">
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Instances</span>
-              <span className="text-sm font-bold text-primary">{config.nodeCount}</span>
-            </div>
-            <input
-              className="w-full h-1.5 bg-slate-200 dark:bg-[#2b2839] rounded-lg appearance-none cursor-pointer accent-primary"
-              max="10" min="1" type="range"
-              value={config.nodeCount}
-              onChange={e => updateNodeConfig(selectedNode.id, { nodeCount: Number(e.target.value) })}
-            />
-            <div className="flex justify-between mt-1 text-[10px] text-slate-400">
-              <span>1</span><span>10</span>
-            </div>
-          </div>
-          {showStorage && (
-            <div className="bg-slate-50 dark:bg-[#121118] p-3 rounded-lg border border-slate-200 dark:border-[#2b2839]">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Storage Size</span>
-                <span className="text-xs text-slate-500">{storageLabel(config.storageGb)}</span>
+      {/* Main scrolling inspector content */}
+      <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-4 z-10 custom-scrollbar">
+        
+        {/* GROUP 1: General */}
+        <div className="space-y-1">
+          {renderSectionHeader('general', '1. General')}
+          {!collapsed.general && (
+            <div className="space-y-2.5 font-mono text-[9px] uppercase tracking-wider">
+              {/* Instances */}
+              <div className="bg-[#080a12] border border-white/[0.04] p-2.5 rounded-md space-y-2 transition-colors hover:border-white/[0.08]">
+                <div className="flex justify-between text-white/50">
+                  <span>Replicas</span>
+                  <span className="text-cyan-400 font-bold">{config.nodeCount} / 10</span>
+                </div>
+                <input
+                  className="w-full h-1 bg-black/40 rounded appearance-none cursor-pointer accent-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                  max="10" min="1" type="range"
+                  value={config.nodeCount}
+                  onChange={e => updateNodeConfig(selectedNode.id, { nodeCount: Number(e.target.value) })}
+                />
               </div>
-              <input
-                className="w-full h-1.5 bg-slate-200 dark:bg-[#2b2839] rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                max="2000" min="10" step="10" type="range"
-                value={config.storageGb}
-                onChange={e => updateNodeConfig(selectedNode.id, { storageGb: Number(e.target.value) })}
-              />
-              <div className="flex justify-between mt-1 text-[10px] text-slate-400">
-                <span>10 GB</span><span>2 TB</span>
+
+              {/* Storage size slider */}
+              {showStorage && (
+                <div className="bg-[#080a12] border border-white/[0.04] p-2.5 rounded-md space-y-2 transition-colors hover:border-white/[0.08]">
+                  <div className="flex justify-between text-white/50">
+                    <span>Storage</span>
+                    <span className="text-cyan-400 font-bold">{storageLabel(config.storageGb)}</span>
+                  </div>
+                  <input
+                    className="w-full h-1 bg-black/40 rounded appearance-none cursor-pointer accent-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                    max="2000" min="10" step="10" type="range"
+                    value={config.storageGb}
+                    onChange={e => updateNodeConfig(selectedNode.id, { storageGb: Number(e.target.value) })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* GROUP 2: Networking */}
+        <div className="space-y-1">
+          {renderSectionHeader('networking', '2. Networking')}
+          {!collapsed.networking && (
+            <div className="space-y-1.5 font-mono text-[9px] uppercase tracking-wider text-white/40">
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Interface</span>
+                <span className="text-white/60">0.0.0.0:8080</span>
+              </div>
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Protocol</span>
+                <span className="text-white/60">gRPC / HTTP2</span>
+              </div>
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>TLS</span>
+                <span className="text-cyan-400/80">STRICT</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="h-px bg-slate-200 dark:bg-border-dark" />
-
-        <div className="space-y-4">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Configuration</label>
-          {showReplicas && (
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium text-slate-900 dark:text-white">Read Replicas</span>
-                <p className="text-xs text-slate-500">Distribute read traffic</p>
+        {/* GROUP 3: Scaling */}
+        <div className="space-y-1">
+          {renderSectionHeader('scaling', '3. Scaling')}
+          {!collapsed.scaling && (
+            <div className="space-y-1.5 font-mono text-[9px] uppercase tracking-wider text-white/40">
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Engine</span>
+                <span className="text-white/60">K8s HPA</span>
               </div>
-              <button
-                onClick={() => updateNodeConfig(selectedNode.id, { readReplicas: !config.readReplicas })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${config.readReplicas ? 'bg-primary' : 'bg-slate-300 dark:bg-[#2b2839]'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${config.readReplicas ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-          )}
-          {showSharding && (
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-900 dark:text-white">Sharding Strategy</label>
-              <div className="relative">
-                <select
-                  className="w-full appearance-none bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2.5 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
-                  value={config.shardingStrategy}
-                  onChange={e => updateNodeConfig(selectedNode.id, { shardingStrategy: e.target.value })}
-                >
-                  <option>None</option>
-                  <option>Consistent Hashing</option>
-                  <option>Range Based</option>
-                  <option>Directory Based</option>
-                  <option>Hash Based</option>
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-2.5 text-slate-400 pointer-events-none" style={{ fontSize: '20px' }}>expand_more</span>
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Target CPU</span>
+                <span className="text-white/60">75%</span>
               </div>
             </div>
           )}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-900 dark:text-white">Consistency Model</label>
-            <div className="relative">
-              <select
-                className="w-full appearance-none bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-slate-900 dark:text-white text-sm rounded-lg px-3 py-2.5 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
-                value={config.consistencyModel}
-                onChange={e => updateNodeConfig(selectedNode.id, { consistencyModel: e.target.value })}
-              >
-                <option>Strong Consistency</option>
-                <option>Eventual Consistency</option>
-                <option>Causal Consistency</option>
-                <option>Read-Your-Writes</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-2.5 text-slate-400 pointer-events-none" style={{ fontSize: '20px' }}>expand_more</span>
-            </div>
-          </div>
         </div>
 
+        {/* GROUP 4: Storage Policies */}
+        {(showReplicas || showSharding) && (
+          <div className="space-y-1">
+            {renderSectionHeader('storage', '4. Storage')}
+            {!collapsed.storage && (
+              <div className="space-y-2.5 font-mono text-[9px] uppercase tracking-wider">
+                {showReplicas && (
+                  <div className="flex items-center justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-2 rounded-md">
+                    <div className="flex flex-col">
+                      <span className="text-white/60">Read Replicas</span>
+                      <span className="text-[7px] text-white/25 mt-0.5">DISTRIBUTE READS</span>
+                    </div>
+                    <button
+                      onClick={() => updateNodeConfig(selectedNode.id, { readReplicas: !config.readReplicas })}
+                      className={`relative inline-flex h-4 w-7 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:ring-offset-1 focus:ring-offset-[#080a12] cursor-pointer ${config.readReplicas ? 'bg-cyan-500' : 'bg-white/10 hover:bg-white/20'}`}
+                    >
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${config.readReplicas ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                )}
+
+                {showSharding && (
+                  <div className="space-y-1">
+                    <label className="text-white/40 px-1 text-[7px] tracking-widest">Strategy</label>
+                    <div className="relative">
+                      <select
+                        className="w-full appearance-none bg-black/20 border border-white/[0.04] hover:border-white/[0.08] text-white/80 rounded-md px-2.5 py-1.5 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 outline-none cursor-pointer uppercase text-[9px] font-mono tracking-wider transition-all"
+                        value={config.shardingStrategy}
+                        onChange={e => updateNodeConfig(selectedNode.id, { shardingStrategy: e.target.value })}
+                      >
+                        <option>None</option>
+                        <option>Consistent Hashing</option>
+                        <option>Range Based</option>
+                        <option>Directory Based</option>
+                        <option>Hash Based</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-2 top-1.5 text-white/30 pointer-events-none text-[14px]">expand_more</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-white/40 px-1 text-[7px] tracking-widest">Consistency</label>
+                  <div className="relative">
+                    <select
+                      className="w-full appearance-none bg-black/20 border border-white/[0.04] hover:border-white/[0.08] text-white/80 rounded-md px-2.5 py-1.5 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 outline-none cursor-pointer uppercase text-[9px] font-mono tracking-wider transition-all"
+                      value={config.consistencyModel}
+                      onChange={e => updateNodeConfig(selectedNode.id, { consistencyModel: e.target.value })}
+                    >
+                      <option>Strong Consistency</option>
+                      <option>Eventual Consistency</option>
+                      <option>Causal Consistency</option>
+                      <option>Read-Your-Writes</option>
+                    </select>
+                    <span className="material-symbols-outlined absolute right-2 top-1.5 text-white/30 pointer-events-none text-[14px]">expand_more</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* GROUP 5: Security */}
+        <div className="space-y-1">
+          {renderSectionHeader('security', '5. Security')}
+          {!collapsed.security && (
+            <div className="space-y-1.5 font-mono text-[9px] uppercase tracking-wider text-white/40">
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Encryption</span>
+                <span className="text-cyan-400/80">AES-GCM</span>
+              </div>
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>WAF</span>
+                <span className="text-white/60">ACTIVE</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* GROUP 6: Observability */}
+        <div className="space-y-1">
+          {renderSectionHeader('observability', '6. Telemetry')}
+          {!collapsed.observability && (
+            <div className="space-y-1.5 font-mono text-[9px] uppercase tracking-wider text-white/40">
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Level</span>
+                <span className="text-white/60">INFO</span>
+              </div>
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Scrape</span>
+                <span className="text-white/60">15s</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* GROUP 7: Simulation */}
+        <div className="space-y-1">
+          {renderSectionHeader('simulation', '7. Cost')}
+          {!collapsed.simulation && (
+            <div className="space-y-1.5 font-mono text-[9px] uppercase tracking-wider text-white/40">
+              <div className="flex justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-1.5 rounded-md">
+                <span>Sandbox Cost</span>
+                <span className="text-white/60">$0.024/Hr</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Warnings */}
         {warning && (
-          <>
-            <div className="h-px bg-slate-200 dark:bg-border-dark" />
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex gap-3 items-start">
-              <span className="material-symbols-outlined text-yellow-500 shrink-0" style={{ fontSize: '20px' }}>warning</span>
-              <div>
-                <p className="text-xs font-bold text-yellow-600 dark:text-yellow-500 mb-1">High Latency Risk</p>
-                <p className="text-[11px] text-yellow-700 dark:text-yellow-600/80 leading-relaxed">{warning}</p>
-              </div>
+          <div className="p-2.5 bg-red-500/10 border border-red-500/20 rounded-md flex gap-2 items-start select-none">
+            <span className="material-symbols-outlined text-red-400 shrink-0 text-[14px]">warning</span>
+            <div className="font-mono text-[8px] uppercase tracking-widest text-red-400 leading-normal">
+              <p className="font-bold mb-0.5">LATENCY PENALTY</p>
+              <p className="text-white/50">{warning}</p>
             </div>
-          </>
+          </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-[#121118]">
-        <p className="text-[10px] text-slate-500 text-center">
-          {config.nodeCount} instance{config.nodeCount !== 1 ? 's' : ''}
-          {showStorage ? ` · ${storageLabel(config.storageGb)}` : ''}
-          {config.readReplicas ? ' · replicated' : ''}
-        </p>
+      {/* Footer details summary */}
+      <div className="p-2.5 bg-[#080a12] border-t border-white/[0.04] text-center font-mono text-[7px] tracking-widest text-white/20 uppercase z-10">
+        <span>{config.nodeCount} NODES</span>
+        {showStorage && ` · ${storageLabel(config.storageGb)}`}
+        {config.readReplicas && ' · REPLICATED'}
       </div>
-    </>
+    </div>
   ) : (
-    <>
-      <div className="p-5 border-b border-slate-200 dark:border-border-dark">
-        <h3 className="font-bold text-slate-900 dark:text-white text-sm">Properties</h3>
+    <div className="flex flex-col h-full bg-[#060810] select-none relative animate-in fade-in duration-300">
+      <div className="noise-overlay absolute inset-0 pointer-events-none opacity-[0.02]" />
+      <div className="p-3.5 border-b border-white/[0.04] z-10 flex items-center justify-between">
+        <span className="text-[10px] font-mono tracking-widest uppercase text-white/40">Inspector</span>
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <span className="material-symbols-outlined text-4xl text-slate-600 mb-3">touch_app</span>
-        <p className="text-sm font-medium text-slate-400 mb-1">No component selected</p>
-        <p className="text-xs text-slate-600 leading-relaxed">Click any node on the canvas to configure its properties.</p>
+      <div className="flex-1 flex flex-col p-4 z-10 overflow-y-auto">
+        <div className="flex flex-col items-center justify-center text-center mb-6 mt-2">
+          <div className="size-10 rounded-full bg-white/[0.02] border border-white/[0.05] flex items-center justify-center mb-3">
+            <span className="material-symbols-outlined text-xl text-white/30">touch_app</span>
+          </div>
+          <p className="text-[10px] font-mono tracking-widest uppercase text-white/60 mb-1">No Node Selected</p>
+          <p className="text-[8px] font-mono tracking-wider text-white/30 max-w-[180px] leading-relaxed">Select a component on the canvas to configure its properties.</p>
+        </div>
+        
+        <div className="space-y-4 opacity-[0.15] pointer-events-none select-none grayscale blur-[0.5px]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.02]">
+              <span className="text-[8px] font-mono font-bold uppercase tracking-[0.2em] text-white/40">General</span>
+            </div>
+            <div className="bg-[#080a12] border border-white/[0.04] p-3 rounded-md h-10 flex items-center justify-between">
+               <div className="w-1/2 h-1.5 bg-white/10 rounded"></div>
+               <div className="w-1/4 h-1.5 bg-cyan-400/20 rounded"></div>
+            </div>
+            <div className="bg-[#080a12] border border-white/[0.04] p-3 rounded-md h-10 flex items-center justify-between">
+               <div className="w-2/3 h-1.5 bg-white/10 rounded"></div>
+               <div className="w-1/5 h-1.5 bg-cyan-400/20 rounded"></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between py-1 border-b border-white/[0.02]">
+              <span className="text-[8px] font-mono font-bold uppercase tracking-[0.2em] text-white/40">Networking</span>
+            </div>
+            <div className="bg-[#080a12] border border-white/[0.04] p-3 rounded-md h-8 flex items-center justify-between">
+              <div className="w-1/3 h-1.5 bg-white/10 rounded"></div>
+              <div className="w-1/3 h-1.5 bg-white/5 rounded"></div>
+            </div>
+            <div className="bg-[#080a12] border border-white/[0.04] p-3 rounded-md h-8 flex items-center justify-between">
+              <div className="w-1/4 h-1.5 bg-white/10 rounded"></div>
+              <div className="w-2/5 h-1.5 bg-white/5 rounded"></div>
+            </div>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
-      <aside className="hidden md:flex w-80 flex-col border-l border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-20 shadow-xl flex-shrink-0">
+      {/* Desktop: Fixed sidebar */}
+      <aside className="hidden md:flex w-60 flex-col border-l border-white/[0.04] bg-[#060810] z-10 flex-shrink-0 transition-all duration-300">
         {panelContent}
       </aside>
+      
+      {/* Mobile: Slide-in overlay */}
       {rightOpen && (
         <>
           <div
@@ -210,7 +385,7 @@ export default function PropertiesPanel() {
             tabIndex={0}
             aria-label="Close panel"
           />
-          <aside className="md:hidden fixed inset-y-0 right-0 z-40 w-80 max-w-[90vw] flex flex-col bg-white dark:bg-sidebar-bg-dark border-l border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-right">
+          <aside className="md:hidden fixed inset-y-0 right-0 z-40 w-60 flex flex-col bg-[#060810] border-l border-white/[0.04] shadow-2xl animate-slide-in-right">
             {panelContent}
           </aside>
         </>

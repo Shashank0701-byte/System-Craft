@@ -5,7 +5,7 @@ import { checkRateLimit } from '@/src/lib/rateLimit';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const UPSTREAM_TIMEOUT_MS = 60_000; // 60s timeout for OpenRouter
-const LLM_MODEL = 'google/gemini-2.0-flash-001';
+const LLM_MODEL = 'google/gemini-2.5-flash';
 
 export const POST = withMetrics('/api/reference-architectures/analyze', async (req: NextRequest) => {
   if (!OPENROUTER_API_KEY) {

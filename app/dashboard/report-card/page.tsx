@@ -24,9 +24,9 @@ interface ReportCardData {
 }
 
 const DIFFICULTY_COLOR: Record<string, string> = {
-    easy: '#22c55e',
-    medium: '#f59e0b',
-    hard: '#ef4444',
+    easy: '#34d399',
+    medium: '#fbbf24',
+    hard: '#f87171',
 };
 
 export default function ReportCardPage() {
@@ -111,17 +111,17 @@ export default function ReportCardPage() {
 
     if (insufficientData) {
         return (
-            <div className="min-h-screen flex flex-col bg-background-dark">
+            <div className="flex flex-col w-full bg-[#060810] overflow-hidden h-screen max-h-screen">
                 <Header />
-                <main className="flex-1 flex items-center justify-center p-6">
-                    <div className="text-center max-w-sm">
-                        <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                            <span className="material-symbols-outlined text-primary text-3xl">workspace_premium</span>
+                <main className="flex-1 flex items-center justify-center p-6 select-none font-mono">
+                    <div className="bg-[#0c0d16]/60 backdrop-blur-md rounded-3xl border border-white/[0.06] p-8 max-w-sm text-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
+                        <div className="size-12 mx-auto bg-cyan-500/5 border border-cyan-500/15 rounded flex items-center justify-center mb-4">
+                            <span className="material-symbols-outlined text-cyan-400 text-lg">workspace_premium</span>
                         </div>
-                        <h2 className="text-xl font-bold text-white mb-2">Almost there</h2>
-                        <p className="text-slate-400 mb-6">Complete at least 3 evaluated interviews to unlock your Report Card.</p>
-                        <Link href="/interview" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-                            <span className="material-symbols-outlined text-[20px]">play_circle</span>
+                        <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Almost there</h2>
+                        <p className="text-white/40 text-xs mb-6 leading-relaxed uppercase tracking-wider">Complete at least 3 evaluated interviews to unlock your Report Card.</p>
+                        <Link href="/interview" className="inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold uppercase tracking-widest rounded transition-all shadow-md shadow-cyan-500/10">
+                            <span className="material-symbols-outlined text-[16px]">play_circle</span>
                             Start Interview
                         </Link>
                     </div>
@@ -129,7 +129,7 @@ export default function ReportCardPage() {
             </div>
         );
     }
-
+ 
     if (error || !data) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background-dark text-slate-400">
@@ -141,25 +141,25 @@ export default function ReportCardPage() {
     const maxScore = Math.max(...data.scoreTrend.map(s => s.score), 1);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background-dark">
+        <div className="flex flex-col w-full bg-[#060810] overflow-hidden h-screen max-h-screen">
             <Header />
-            <main className="flex-1 overflow-y-auto p-6 md:p-8">
+            <main className="flex-1 overflow-y-auto p-6 md:p-8 select-none">
                 <div className="max-w-4xl mx-auto space-y-6">
 
                     {/* Page header */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between font-mono">
                         <div>
-                            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                                <span className="material-symbols-outlined text-primary text-[28px]">workspace_premium</span>
+                            <h1 className="text-base font-bold text-white flex items-center gap-2 uppercase tracking-wider">
+                                <span className="material-symbols-outlined text-cyan-400 text-[20px]">workspace_premium</span>
                                 Your Report Card
                             </h1>
-                            <p className="text-sm text-slate-500 mt-1">Based on {data.totalInterviews} evaluated interviews</p>
+                            <p className="text-[10px] text-white/30 mt-1 uppercase tracking-wider">Based on {data.totalInterviews} evaluated interviews</p>
                         </div>
                         <button
                             onClick={handleShare}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/15 hover:bg-primary/25 border border-primary/30 text-primary text-sm font-semibold transition-all"
+                            className="flex items-center gap-2 px-4 py-2 rounded border border-white/[0.06] bg-[#0c0d16]/50 hover:bg-[#0c0d16] text-white/60 hover:text-white text-[10px] uppercase tracking-wider font-bold transition-all"
                         >
-                            <span className="material-symbols-outlined text-[18px]">{copied ? 'check' : 'share'}</span>
+                            <span className="material-symbols-outlined text-[14px]">{copied ? 'check' : 'share'}</span>
                             {copied ? 'Copied!' : 'Share'}
                         </button>
                     </div>
@@ -167,22 +167,22 @@ export default function ReportCardPage() {
                     {/* Main card */}
                     <div
                         ref={cardRef}
-                        className="rounded-2xl border border-white/10 bg-[#131022] overflow-hidden shadow-[0_0_60px_-10px_rgba(71,37,244,0.3)]"
+                        className="rounded-3xl border border-white/[0.06] bg-[#0c0d16]/60 backdrop-blur-md overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]"
                     >
                         {/* Card header */}
-                        <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent">
+                        <div className="px-8 py-6 border-b border-white/[0.04] flex items-center justify-between bg-gradient-to-r from-cyan-500/5 to-transparent font-mono">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-primary text-[24px]">person</span>
+                                <div className="w-10 h-10 rounded-lg bg-cyan-500/5 border border-cyan-500/15 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-cyan-400 text-[18px]">person</span>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-0.5">System Design Profile</p>
-                                    <h2 className="text-lg font-bold text-white">{data.displayName}</h2>
+                                    <p className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-bold mb-0.5">System Design Profile</p>
+                                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">{data.displayName}</h2>
                                 </div>
                             </div>
                             <div
-                                className="px-4 py-2 rounded-full text-sm font-black uppercase tracking-wider border"
-                                style={{ color: data.level.color, borderColor: `${data.level.color}40`, background: `${data.level.color}15` }}
+                                className="px-3 py-1 rounded text-[10px] font-bold font-mono uppercase tracking-widest border"
+                                style={{ color: data.level.color, borderColor: `${data.level.color}30`, background: `${data.level.color}08` }}
                             >
                                 {data.level.label}
                             </div>
@@ -190,7 +190,7 @@ export default function ReportCardPage() {
 
                         <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Left — stats + sparkline */}
-                            <div className="space-y-6">
+                            <div className="space-y-6 font-mono">
                                 {/* Score stats */}
                                 <div className="grid grid-cols-3 gap-4">
                                     {[
@@ -198,143 +198,141 @@ export default function ReportCardPage() {
                                         { label: 'Best Score', value: data.bestScore, suffix: '/100' },
                                         { label: 'Interviews', value: data.totalInterviews, suffix: '' },
                                     ].map(s => (
-                                        <div key={s.label} className="rounded-xl bg-white/5 border border-white/5 p-4 text-center">
-                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">{s.label}</p>
-                                            <p className="text-2xl font-black text-white">{s.value}<span className="text-xs text-slate-500 font-normal">{s.suffix}</span></p>
+                                        <div key={s.label} className="rounded-xl bg-[#060810]/50 border border-white/[0.04] p-4 text-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
+                                            <p className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-bold mb-1.5">{s.label}</p>
+                                            <p className="text-xl font-bold text-white font-mono">{s.value}<span className="text-[10px] text-white/30 font-normal">{s.suffix}</span></p>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Improvement */}
-                                <div className="rounded-xl bg-white/5 border border-white/5 p-4 flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${data.improvementPercent >= 0 ? 'bg-emerald-500/15' : 'bg-red-500/15'}`}>
-                                        <span className={`material-symbols-outlined text-[20px] ${data.improvementPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                <div className="rounded-xl bg-[#060810]/50 border border-white/[0.04] p-4 flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
+                                    <div className={`w-8 h-8 rounded flex items-center justify-center ${data.improvementPercent >= 0 ? 'bg-emerald-500/5 border border-emerald-500/10' : 'bg-red-500/5 border border-red-500/10'}`}>
+                                        <span className={`material-symbols-outlined text-[16px] ${data.improvementPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                             {data.improvementPercent >= 0 ? 'trending_up' : 'trending_down'}
                                         </span>
                                     </div>
                                     <div>
-                                        <p className="text-[11px] text-slate-500 uppercase tracking-widest font-bold">Score Improvement</p>
-                                        <p className={`text-lg font-bold ${data.improvementPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        <p className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-bold">Score Improvement</p>
+                                        <p className={`text-sm font-bold ${data.improvementPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                             {data.improvementPercent >= 0 ? '+' : ''}{data.improvementPercent}% since first interview
                                         </p>
                                     </div>
                                 </div>
-
                                 {/* Sparkline */}
-                                <div className="rounded-xl bg-white/5 border border-white/5 p-4">
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Score Trend</p>
+                                <div className="rounded-xl bg-[#060810]/50 border border-white/[0.04] p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
+                                    <p className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-bold mb-3">Score Trend</p>
                                     <div className="flex items-end gap-1 h-16">
                                         {data.scoreTrend.map((s, i) => (
                                             <div
                                                 key={i}
-                                                className="flex-1 rounded-sm transition-all"
+                                                className="flex-1 rounded transition-all"
                                                 style={{
                                                     height: `${(s.score / maxScore) * 100}%`,
-                                                    background: DIFFICULTY_COLOR[s.difficulty] || '#6366f1',
+                                                    background: DIFFICULTY_COLOR[s.difficulty] || '#22d3ee',
                                                     opacity: 0.8,
                                                 }}
                                                 title={`${s.score}/100 (${s.difficulty})`}
                                             />
                                         ))}
                                     </div>
-                                    <div className="flex justify-between mt-2">
+                                    <div className="flex justify-between mt-2 font-mono">
                                         {Object.entries(DIFFICULTY_COLOR).map(([d, c]) => (
-                                            <span key={d} className="flex items-center gap-1 text-[10px] text-slate-500">
-                                                <span className="w-2 h-2 rounded-full" style={{ background: c }} />
+                                            <span key={d} className="flex items-center gap-1 text-[8px] text-white/30 uppercase tracking-wider">
+                                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
                                                 {d}
                                             </span>
                                         ))}
                                     </div>
                                 </div>
-
+ 
                                 {/* Difficulty breakdown */}
-                                <div className="rounded-xl bg-white/5 border border-white/5 p-4">
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Difficulty Mix</p>
+                                <div className="rounded-xl bg-[#060810]/50 border border-white/[0.04] p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
+                                    <p className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-bold mb-3">Difficulty Mix</p>
                                     <div className="flex gap-3">
                                         {['easy', 'medium', 'hard'].map(d => (
                                             <div key={d} className="flex-1 text-center">
-                                                <p className="text-xl font-black" style={{ color: DIFFICULTY_COLOR[d] }}>
+                                                <p className="text-lg font-bold font-mono" style={{ color: DIFFICULTY_COLOR[d] }}>
                                                     {data.difficultyCounts[d] || 0}
                                                 </p>
-                                                <p className="text-[10px] text-slate-500 capitalize">{d}</p>
+                                                <p className="text-[8px] text-white/30 uppercase tracking-wider capitalize mt-0.5">{d}</p>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-
                             {/* Right — radar + insights */}
                             <div className="space-y-6">
                                 {/* Radar chart */}
-                                <div className="rounded-xl bg-white/5 border border-white/5 p-4">
-                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Skill Radar</p>
+                                <div className="rounded-xl bg-[#060810]/50 border border-white/[0.04] p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
+                                    <p className="text-[8px] text-white/30 uppercase tracking-[0.2em] font-bold mb-2">Skill Radar</p>
                                     <div className="h-56">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <RadarChart data={data.radarData}>
-                                                <PolarGrid stroke="#2b2839" />
-                                                <PolarAngleAxis dataKey="dimension" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                                <PolarGrid stroke="rgba(255,255,255,0.03)" />
+                                                <PolarAngleAxis dataKey="dimension" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: 'monospace' }} />
                                                 <Radar
                                                     name="Score"
                                                     dataKey="score"
-                                                    stroke="#4725f4"
-                                                    fill="#4725f4"
-                                                    fillOpacity={0.25}
-                                                    strokeWidth={2}
+                                                    stroke="#22d3ee"
+                                                    fill="#22d3ee"
+                                                    fillOpacity={0.1}
+                                                    strokeWidth={1.5}
                                                 />
                                                 <Tooltip
-                                                    contentStyle={{ backgroundColor: '#1e1b2e', border: 'none', borderRadius: '8px', color: '#f8fafc', fontSize: 12 }}
+                                                    contentStyle={{ backgroundColor: '#0c0d16', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', color: '#ffffff', fontSize: 10, fontFamily: 'monospace' }}
                                                     formatter={(v) => [`${v ?? 0}/100`, 'Score']}
                                                 />
                                             </RadarChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
-
+ 
                                 {/* Strength */}
                                 {data.topStrength && (
-                                    <div className="rounded-xl bg-emerald-500/[8%] border border-emerald-500/20 p-4">
+                                    <div className="rounded-xl bg-emerald-500/[0.02] border border-emerald-500/10 p-4">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className="material-symbols-outlined text-emerald-400 text-[18px]">thumb_up</span>
-                                            <p className="text-[10px] text-emerald-500 uppercase tracking-widest font-bold">Top Strength</p>
+                                            <span className="material-symbols-outlined text-emerald-400 text-[15px]">thumb_up</span>
+                                            <p className="text-[8px] text-emerald-400 uppercase tracking-[0.2em] font-bold">Top Strength</p>
                                         </div>
-                                        <p className="text-sm text-slate-300 leading-relaxed">{data.topStrength}</p>
+                                        <p className="text-xs text-white/60 leading-relaxed font-mono">{data.topStrength}</p>
                                     </div>
                                 )}
-
+ 
                                 {/* Weakness */}
                                 {data.topWeakness && (
-                                    <div className="rounded-xl bg-red-500/[8%] border border-red-500/20 p-4">
+                                    <div className="rounded-xl bg-red-500/[0.02] border border-red-500/10 p-4">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className="material-symbols-outlined text-red-400 text-[18px]">flag</span>
-                                            <p className="text-[10px] text-red-500 uppercase tracking-widest font-bold">Focus Area</p>
+                                            <span className="material-symbols-outlined text-red-400 text-[15px]">flag</span>
+                                            <p className="text-[8px] text-red-400 uppercase tracking-[0.2em] font-bold">Focus Area</p>
                                         </div>
-                                        <p className="text-sm text-slate-300 leading-relaxed">{data.topWeakness}</p>
+                                        <p className="text-xs text-white/60 leading-relaxed font-mono">{data.topWeakness}</p>
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         {/* Card footer */}
-                        <div className="px-8 py-4 border-t border-white/5 flex items-center justify-between bg-white/[2%]">
-                            <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-primary text-[16px]">hub</span>
-                                <span className="text-xs text-slate-500 font-medium">SystemCraft · systemcraft.app</span>
+                        <div className="px-8 py-4 border-t border-white/[0.04] flex items-center justify-between bg-white/[0.01] font-mono">
+                            <div className="flex items-center gap-2 text-white/30">
+                                <span className="material-symbols-outlined text-cyan-400/80 text-[14px]">hub</span>
+                                <span className="text-[9px] uppercase tracking-wider">SystemCraft · systemcraft.app</span>
                             </div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-widest">System Design Simulator</p>
+                            <p className="text-[8px] text-white/20 uppercase tracking-[0.2em]">System Design Simulator</p>
                         </div>
                     </div>
 
                     {/* Share CTA */}
-                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="rounded-3xl border border-cyan-500/10 bg-cyan-500/[0.01] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono shadow-[inset_0_1px_1px_rgba(34,211,238,0.01)]">
                         <div>
-                            <h3 className="text-white font-semibold mb-1">Share your progress</h3>
-                            <p className="text-slate-400 text-sm">Copy a LinkedIn-ready post with your stats and a link to SystemCraft.</p>
+                            <h3 className="text-white text-xs font-bold uppercase tracking-wider mb-1">Share your progress</h3>
+                            <p className="text-white/40 text-[10px] uppercase tracking-wider">Copy a LinkedIn-ready post with your stats and a link to SystemCraft.</p>
                         </div>
                         <button
                             onClick={handleShare}
-                            className="flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-all"
+                            className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded bg-cyan-500 hover:bg-cyan-400 text-black font-mono text-[10px] uppercase tracking-widest font-bold transition-all shadow-md shadow-cyan-500/10"
                         >
-                            <span className="material-symbols-outlined text-[20px]">{copied ? 'check' : 'share'}</span>
+                            <span className="material-symbols-outlined text-[16px]">{copied ? 'check' : 'share'}</span>
                             {copied ? 'Copied to clipboard!' : 'Copy LinkedIn Post'}
                         </button>
                     </div>
