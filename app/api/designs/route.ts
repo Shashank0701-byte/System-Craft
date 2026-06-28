@@ -3,6 +3,8 @@ import dbConnect from '@/src/lib/db/mongoose';
 import Design from '@/src/lib/db/models/Design';
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
+import { trackMetric } from '@/src/lib/achievements/trackMetric';
+import { awardXP } from '@/src/lib/achievements/xp';
 
 // GET: Fetch all designs for authenticated user
 export async function GET(request: NextRequest) {
@@ -111,6 +113,12 @@ export async function POST(request: NextRequest) {
             nodes: [],
             connections: [],
         });
+
+        // Fire-and-forget: track metric + award XP (non-blocking)
+        Promise.all([
+            trackMetric(user._id, { architecturesCreated: 1 }),
+            awardXP(user._id, 'ARCHITECTURE_CREATED'),
+        ]).catch((err) => console.error('Achievement tracking failed (design create):', err));
 
         return NextResponse.json({
             success: true,
