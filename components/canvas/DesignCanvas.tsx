@@ -297,8 +297,8 @@ export function DesignCanvas({
 
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
-          const NODE_WIDTH = 144;
-          const NODE_HEIGHT = 56;
+          const NODE_WIDTH = 160;
+          const NODE_HEIGHT = 64;
           const PADDING = 60;
 
           let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -378,16 +378,18 @@ export function DesignCanvas({
   const handleUndo = useCallback(() => {
     dispatch({ type: 'UNDO' });
     setSelectedNodeId(null);
+    setSelectedNode(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, [dispatch]);
+  }, [dispatch, setSelectedNode]);
 
   const handleRedo = useCallback(() => {
     dispatch({ type: 'REDO' });
     setSelectedNodeId(null);
+    setSelectedNode(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, [dispatch]);
+  }, [dispatch, setSelectedNode]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -412,10 +414,10 @@ export function DesignCanvas({
 
     // Output from right edge center, input to left edge center
     return {
-      fromX: fromNode.x + 144,
-      fromY: fromNode.y + 28,
+      fromX: fromNode.x + 160,
+      fromY: fromNode.y + 32,
       toX: toNode.x,
-      toY: toNode.y + 28
+      toY: toNode.y + 32
     };
   };
 
@@ -442,8 +444,8 @@ export function DesignCanvas({
     if (!fromNode) return '';
 
     const scale = zoom / 100;
-    const fromX = fromNode.x + 144;
-    const fromY = fromNode.y + 28;
+    const fromX = fromNode.x + 160;
+    const fromY = fromNode.y + 32;
     const toX = (mousePos.x - panOffset.x) / scale;
     const toY = (mousePos.y - panOffset.y) / scale;
 
@@ -466,8 +468,8 @@ export function DesignCanvas({
       if (!rect) return;
 
       const scale = zoom / 100;
-      const x = (e.clientX - rect.left - panOffset.x) / scale - 72;
-      const y = (e.clientY - rect.top - panOffset.y) / scale - 28;
+      const x = (e.clientX - rect.left - panOffset.x) / scale - 80;
+      const y = (e.clientY - rect.top - panOffset.y) / scale - 32;
 
       const newNode: CanvasNode = {
         id: generateId(),
@@ -541,12 +543,14 @@ export function DesignCanvas({
     setDraggedNodeId(nodeId);
     setTempNodes([...nodes]);
 
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const scale = zoom / 100;
     setDragOffset({
-      x: e.clientX / scale - node.x,
-      y: e.clientY / scale - node.y,
+      x: (e.clientX - rect.left - panOffset.x) / scale - node.x,
+      y: (e.clientY - rect.top - panOffset.y) / scale - node.y,
     });
-  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly, setSelectedNode]);
+  }, [nodes, connections, toolMode, zoom, panOffset, saveToHistory, readOnly, setSelectedNode]);
 
   // Handle node mouse up
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
@@ -598,19 +602,22 @@ export function DesignCanvas({
     }
 
     if (draggedNodeId && toolMode === 'select') {
-      const scale = zoom / 100;
-      const newX = e.clientX / scale - dragOffset.x;
-      const newY = e.clientY / scale - dragOffset.y;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const scale = zoom / 100;
+        const newX = (e.clientX - rect.left - panOffset.x) / scale - dragOffset.x;
+        const newY = (e.clientY - rect.top - panOffset.y) / scale - dragOffset.y;
 
-      setTempNodes((prev) =>
-        prev?.map((node) =>
-          node.id === draggedNodeId
-            ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
-            : node
-        ) ?? null
-      );
+        setTempNodes((prev) =>
+          prev?.map((node) =>
+            node.id === draggedNodeId
+              ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
+              : node
+          ) ?? null
+        );
+      }
     }
-  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, readOnly]);
+  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, panOffset, readOnly]);
 
   const handleMouseUp = useCallback(() => {
     if (draggedNodeId && tempNodes) {
@@ -714,22 +721,26 @@ export function DesignCanvas({
       const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
       saveToHistory(newNodes, newConnections);
       setSelectedNodeId(null);
+      setSelectedNode(null);
     } else if (selectedConnectionId) {
       const newConnections = connections.filter((c) => c.id !== selectedConnectionId);
       saveToHistory(nodes, newConnections);
       setSelectedConnectionId(null);
     }
-  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly]);
+  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly, setSelectedNode]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (readOnly) return;
+      if (activeView === 'whiteboard') return;
+
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
+        return;
+      }
+
       if ((e.key === 'Delete' || e.key === 'Backspace')) {
-        const activeEl = document.activeElement;
-        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
-          return;
-        }
         if (selectedNodeId || selectedConnectionId) {
           e.preventDefault();
           handleDeleteSelected();
@@ -748,11 +759,6 @@ export function DesignCanvas({
 
       // Tool shortcuts
       if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        const activeEl = document.activeElement;
-        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
-          return;
-        }
-        
         if (e.key.toLowerCase() === 'v') setToolMode('select');
         if (e.key.toLowerCase() === 'h') setToolMode('pan');
         if (e.key.toLowerCase() === 'e') setToolMode('erase');
@@ -760,7 +766,7 @@ export function DesignCanvas({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo, readOnly]);
+  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo, readOnly, activeView]);
 
   const handleWhiteboardSave = useCallback((data: string) => {
     setWhiteboardData(data);
@@ -1010,6 +1016,7 @@ export function DesignCanvas({
                       if (isImpacted) {
                         e.stopPropagation();
                         setSelectedNodeId(node.id);
+                        setSelectedNode({ id: node.id, type: node.type, label: node.label, icon: node.icon });
                         return;
                       }
                       handleNodeMouseDown(e, node.id);
@@ -1140,6 +1147,7 @@ export function DesignCanvas({
                       } else {
                         setSelectedConnectionId(conn.id);
                         setSelectedNodeId(null);
+                        setSelectedNode(null);
                       }
                     }}
                     onDoubleClick={(e) => {
@@ -1215,6 +1223,7 @@ export function DesignCanvas({
                               e.stopPropagation();
                               setSelectedConnectionId(conn.id);
                               setSelectedNodeId(null);
+                              setSelectedNode(null);
                             }}
                           >
                             {conn.label}

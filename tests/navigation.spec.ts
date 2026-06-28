@@ -5,18 +5,18 @@ import { test, expect } from '@playwright/test';
  * Tests public pages (landing, login, signup) since dashboard requires auth.
  */
 test.describe('Navigation', () => {
-  test('landing page navbar has Features, Pricing, Blog links', async ({ page }) => {
+  test('landing page navbar has Story, Systems, Interview links', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByRole('link', { name: /Features/i })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('link', { name: /Pricing/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Blog/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Story/i }).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('link', { name: /Systems/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Interview', exact: true }).first()).toBeVisible();
   });
 
   test('login page has link back to signup', async ({ page }) => {
     await page.goto('/login');
 
-    const createLink = page.getByRole('link', { name: /create an account/i });
+    const createLink = page.getByRole('link', { name: /Create a workspace/i });
     await expect(createLink).toBeVisible({ timeout: 15_000 });
     await createLink.click();
 
@@ -26,7 +26,7 @@ test.describe('Navigation', () => {
   test('signup page has link back to login', async ({ page }) => {
     await page.goto('/signup');
 
-    const signInLink = page.getByRole('link', { name: /sign in/i });
+    const signInLink = page.getByRole('link', { name: /Authenticate/i });
     await expect(signInLink).toBeVisible({ timeout: 15_000 });
     await signInLink.click();
 

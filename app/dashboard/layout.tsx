@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { SidebarProvider } from "@/components/dashboard/SidebarContext";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -9,9 +10,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useRequireAuth();
+  const pathname = usePathname();
+  const isPublicRoute = pathname?.startsWith('/dashboard/reference-architectures');
+  const { isAuthenticated, isLoading } = useRequireAuth({ disabled: isPublicRoute });
 
-  if (isLoading) {
+  if (isLoading && !isPublicRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
         <div className="flex flex-col items-center gap-4">
@@ -22,7 +25,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated && !isPublicRoute) return null;
 
   return (
     <SidebarProvider>

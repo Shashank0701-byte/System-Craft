@@ -358,7 +358,7 @@ function AnalysisPanel({
       )}
 
       {/* Rendered markdown content — sanitized to prevent XSS from model output */}
-      <div className="markdown-body" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(content)) }} />
+      <div className="markdown-body" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(escapeHtml(content))) }} />
 
       {/* Blinking cursor while streaming */}
       {isLoading && (
@@ -366,6 +366,15 @@ function AnalysisPanel({
       )}
     </div>
   );
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 /* ── Minimal Markdown Renderer ────────────────────────────────────── */

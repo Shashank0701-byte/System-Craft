@@ -11,7 +11,7 @@ test.describe('Login Page', () => {
   });
 
   test('renders login heading', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: /Welcome Back/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('heading', { name: /Resume Session/i })).toBeVisible({ timeout: 5_000 });
   });
 
   test('renders email and password inputs', async ({ page }) => {
@@ -28,11 +28,11 @@ test.describe('Login Page', () => {
   });
 
   test('renders Sign In submit button', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /^Sign In$/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('button', { name: /^Authenticate$/i })).toBeVisible({ timeout: 5_000 });
   });
 
   test('has link to create account (signup)', async ({ page }) => {
-    const signupLink = page.getByRole('link', { name: /create an account/i });
+    const signupLink = page.getByRole('link', { name: /Create a workspace/i });
     await expect(signupLink).toBeVisible({ timeout: 5_000 });
   });
 });
@@ -43,7 +43,7 @@ test.describe('Signup Page', () => {
   });
 
   test('renders signup heading and name field', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: /Create an Account/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('heading', { name: /Initialize Sandbox/i })).toBeVisible({ timeout: 5_000 });
     await expect(page.getByLabel(/full name/i)).toBeVisible();
   });
 
@@ -53,7 +53,7 @@ test.describe('Signup Page', () => {
   });
 
   test('renders Create Account submit button', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /Create Account/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('button', { name: /Initialize Sandbox/i })).toBeVisible({ timeout: 5_000 });
   });
 
   test('renders Google and GitHub sign-in buttons', async ({ page }) => {
@@ -62,6 +62,6 @@ test.describe('Signup Page', () => {
   });
 
   test('has link to sign in (login)', async ({ page }) => {
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('link', { name: /Authenticate/i })).toBeVisible({ timeout: 5_000 });
   });
 });

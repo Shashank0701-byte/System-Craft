@@ -66,11 +66,13 @@ export function CanvasPanelsProvider({ children }: { children: ReactNode }) {
     const [nodeConfigs, setNodeConfigs] = useState<Record<string, NodeConfig>>({});
     const [activeView, setActiveViewRaw] = useState<'architecture' | 'whiteboard'>('architecture');
 
-    // Restore the last active tab from session storage on mount
     useEffect(() => {
         const saved = sessionStorage.getItem('canvasActiveView');
         if (saved === 'whiteboard' || saved === 'architecture') {
-            setActiveViewRaw(saved as 'architecture' | 'whiteboard');
+            const timer = setTimeout(() => {
+                setActiveViewRaw(saved as 'architecture' | 'whiteboard');
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, []);
 

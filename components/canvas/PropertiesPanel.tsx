@@ -124,10 +124,11 @@ export default function PropertiesPanel() {
               {/* Instances */}
               <div className="bg-[#080a12] border border-white/[0.04] p-2.5 rounded-md space-y-2 transition-colors hover:border-white/[0.08]">
                 <div className="flex justify-between text-white/50">
-                  <span>Replicas</span>
+                  <label htmlFor="replicas-slider" className="cursor-pointer">Replicas</label>
                   <span className="text-cyan-400 font-bold">{config.nodeCount} / 10</span>
                 </div>
                 <input
+                  id="replicas-slider"
                   className="w-full h-1 bg-black/40 rounded appearance-none cursor-pointer accent-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                   max="10" min="1" type="range"
                   value={config.nodeCount}
@@ -139,10 +140,11 @@ export default function PropertiesPanel() {
               {showStorage && (
                 <div className="bg-[#080a12] border border-white/[0.04] p-2.5 rounded-md space-y-2 transition-colors hover:border-white/[0.08]">
                   <div className="flex justify-between text-white/50">
-                    <span>Storage</span>
+                    <label htmlFor="storage-slider" className="cursor-pointer">Storage</label>
                     <span className="text-cyan-400 font-bold">{storageLabel(config.storageGb)}</span>
                   </div>
                   <input
+                    id="storage-slider"
                     className="w-full h-1 bg-black/40 rounded appearance-none cursor-pointer accent-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
                     max="2000" min="10" step="10" type="range"
                     value={config.storageGb}
@@ -201,10 +203,13 @@ export default function PropertiesPanel() {
                 {showReplicas && (
                   <div className="flex items-center justify-between bg-[#080a12] border border-white/[0.04] px-2.5 py-2 rounded-md">
                     <div className="flex flex-col">
-                      <span className="text-white/60">Read Replicas</span>
+                      <span id="read-replicas-label" className="text-white/60">Read Replicas</span>
                       <span className="text-[7px] text-white/25 mt-0.5">DISTRIBUTE READS</span>
                     </div>
                     <button
+                      role="switch"
+                      aria-checked={config.readReplicas}
+                      aria-labelledby="read-replicas-label"
                       onClick={() => updateNodeConfig(selectedNode.id, { readReplicas: !config.readReplicas })}
                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:ring-offset-1 focus:ring-offset-[#080a12] cursor-pointer ${config.readReplicas ? 'bg-cyan-500' : 'bg-white/10 hover:bg-white/20'}`}
                     >
@@ -215,9 +220,10 @@ export default function PropertiesPanel() {
 
                 {showSharding && (
                   <div className="space-y-1">
-                    <label className="text-white/40 px-1 text-[7px] tracking-widest">Strategy</label>
+                    <label htmlFor="sharding-strategy-select" className="text-white/40 px-1 text-[7px] tracking-widest cursor-pointer">Strategy</label>
                     <div className="relative">
                       <select
+                        id="sharding-strategy-select"
                         className="w-full appearance-none bg-black/20 border border-white/[0.04] hover:border-white/[0.08] text-white/80 rounded-md px-2.5 py-1.5 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 outline-none cursor-pointer uppercase text-[9px] font-mono tracking-wider transition-all"
                         value={config.shardingStrategy}
                         onChange={e => updateNodeConfig(selectedNode.id, { shardingStrategy: e.target.value })}
@@ -234,9 +240,10 @@ export default function PropertiesPanel() {
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-white/40 px-1 text-[7px] tracking-widest">Consistency</label>
+                  <label htmlFor="consistency-select" className="text-white/40 px-1 text-[7px] tracking-widest cursor-pointer">Consistency</label>
                   <div className="relative">
                     <select
+                      id="consistency-select"
                       className="w-full appearance-none bg-black/20 border border-white/[0.04] hover:border-white/[0.08] text-white/80 rounded-md px-2.5 py-1.5 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 outline-none cursor-pointer uppercase text-[9px] font-mono tracking-wider transition-all"
                       value={config.consistencyModel}
                       onChange={e => updateNodeConfig(selectedNode.id, { consistencyModel: e.target.value })}

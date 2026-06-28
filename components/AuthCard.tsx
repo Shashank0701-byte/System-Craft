@@ -116,19 +116,18 @@ export default function AuthCard({ mode = 'login' }: AuthCardProps) {
     ) => {
         setSignInError(null);
         setSuccessMessage(null);
+        setSyncFailed(false);
         setLoading(true);
         signingInRef.current = true;
         setAuthPhase('authenticating');
         try {
             const user = await signInFn();
-            if (!user) {
-                setSignInError(`Failed to sign in with ${provider}. Please try again.`);
-                setAuthPhase('idle');
-                return;
+            if (user) {
+                await syncUserWithDB(user, provider);
+                setUserSynced(true);
             }
-            await syncUserWithDB(user, provider);
-            setUserSynced(true);
         } catch (error) {
+            setSyncFailed(true);
             setSignInError(
                 error instanceof Error
                     ? error.message
