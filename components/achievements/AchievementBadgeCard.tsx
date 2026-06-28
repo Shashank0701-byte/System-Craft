@@ -34,7 +34,7 @@ export function AchievementBadgeCard({ achievement }: AchievementBadgeCardProps)
   const tierConfig = highestTier ? TIER_CONFIG[highestTier] : null;
   const progress = achievement.progress;
 
-  if (isSecret) {
+  if (isSecret && isLocked) {
     return (
       <div className="rounded-xl border border-white/[0.04] bg-[#0c0d16]/30 p-4 font-mono flex flex-col items-center justify-center gap-2 h-40">
         <span className="material-symbols-outlined text-[28px] text-white/10">lock</span>

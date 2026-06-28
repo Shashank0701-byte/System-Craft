@@ -41,7 +41,11 @@ export function useTrackEvent() {
       authFetch('/api/user/track', {
         method: 'POST',
         body: JSON.stringify({ event, payload }),
-      }).catch((err) => {
+      })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      })
+      .catch((err) => {
         console.warn(`Failed to track event "${event}":`, err);
       });
     },

@@ -14,14 +14,12 @@ import dbConnect from '@/src/lib/db/mongoose';
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 import { trackMetric, setMetricIfHigher } from '@/src/lib/achievements/trackMetric';
-import { awardXP } from '@/src/lib/achievements/xp';
 import type { UnlockedAchievement } from '@/src/lib/achievements/engine';
 
 type TrackEvent =
   | 'simulation_executed'
   | 'simulation_million_rps'
   | 'reference_architecture_completed'
-  | 'ai_review_completed'
   | 'chaos_constraints_addressed'
   | 'high_availability_design'
   | 'max_nodes_in_design';
@@ -64,11 +62,7 @@ export async function POST(request: NextRequest) {
           simulationsExecuted: 1,
           ...(isMillionRps ? { millionRpsSimulations: 1 } : {}),
         };
-        const [unlocked] = await Promise.all([
-          trackMetric(userId, patch),
-          awardXP(userId, 'SIMULATION_EXECUTED'),
-        ]);
-        newlyUnlocked = unlocked;
+        newlyUnlocked = await trackMetric(userId, patch);
         break;
       }
 
@@ -78,20 +72,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'reference_architecture_completed': {
-        const [unlocked] = await Promise.all([
-          trackMetric(userId, { referenceArchitecturesCompleted: 1 }),
-          awardXP(userId, 'REFERENCE_ARCHITECTURE'),
-        ]);
-        newlyUnlocked = unlocked;
-        break;
-      }
-
-      case 'ai_review_completed': {
-        const [unlocked] = await Promise.all([
-          trackMetric(userId, {}), // heatmap + streak still updated
-          awardXP(userId, 'AI_REVIEW'),
-        ]);
-        newlyUnlocked = unlocked;
+        newlyUnlocked = await trackMetric(userId, { referenceArchitecturesCompleted: 1 });
         break;
       }
 

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
                 longest: metrics.longestStreak ?? 0,
                 lastActivityDate: metrics.lastActivityDate ?? null,
             },
-            heatmap: Object.fromEntries(metrics.activityHeatmap ?? new Map()),
+            heatmap: metrics.activityHeatmap || {},
             skills: buildSkillBreakdown(metrics),
             pinnedAchievements: metrics.pinnedAchievements ?? [],
             levels: LEVELS,

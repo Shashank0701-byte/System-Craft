@@ -90,8 +90,14 @@ export default function ProfilePage() {
                     </div>
 
                     {error ? (
-                        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 font-mono text-xs text-center">
-                            Error loading profile: {error}
+                        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 font-mono text-xs text-center flex flex-col items-center gap-3">
+                            <p>Error loading profile: {error}</p>
+                            <button 
+                                onClick={fetchProfile}
+                                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded cursor-pointer"
+                            >
+                                Retry Connection
+                            </button>
                         </div>
                     ) : isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4">

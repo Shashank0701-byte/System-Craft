@@ -24,10 +24,17 @@ export const POST = withMetrics('/api/reference-architectures/quiz', async (req:
   }
 
   try {
-    const { title, analysis } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    
+    const { title, analysis } = body;
 
-    if (!title || !analysis) {
-      return NextResponse.json({ error: 'Missing title or analysis data' }, { status: 400 });
+    if (!title || typeof title !== 'string' || !analysis || typeof analysis !== 'string') {
+      return NextResponse.json({ error: 'Missing or invalid title or analysis data' }, { status: 400 });
     }
 
     const prompt = `You are a strict technical evaluator. Generate a 5-question multiple-choice quiz based on the following architecture analysis.
@@ -113,8 +120,17 @@ Do not include markdown blocks (\`\`\`json) around the response, just the raw JS
         cleanContent = cleanContent.replace(/^\`\`\`json\n?/, '').replace(/\n?\`\`\`$/, '');
       }
       parsedContent = JSON.parse(cleanContent);
-    } catch {
-      console.error('Failed to parse AI response as JSON:', content);
+      
+      if (!parsedContent || !Array.isArray(parsedContent.questions) || parsedContent.questions.length === 0) {
+        throw new Error('Invalid LLM output schema');
+      }
+      for (const q of parsedContent.questions) {
+        if (!q.question || !Array.isArray(q.options) || typeof q.correctIndex !== 'number') {
+          throw new Error('Invalid question schema');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse or validate AI response:', content, e);
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
 

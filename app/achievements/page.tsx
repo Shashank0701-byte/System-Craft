@@ -24,12 +24,13 @@ const CATEGORIES: { key: AchievementCategory | 'all'; label: string; icon: strin
 
 export default function AchievementsPage() {
   const { isLoading: authLoading, isAuthenticated } = useRequireAuth();
-  const { achievements, recentlyUnlocked, isLoading: achLoading } = useAchievements();
-  const { xp, streaks, skills, isLoading: metricsLoading } = useMetrics();
+  const { achievements, recentlyUnlocked, isLoading: achLoading, error: achievementsError, refresh: refreshAchievements } = useAchievements();
+  const { xp, streaks, skills, isLoading: metricsLoading, error: metricsError, refresh: refreshMetrics } = useMetrics();
   const [activeCategory, setActiveCategory] = useState<AchievementCategory | 'all'>('all');
   const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
 
   const isLoading = authLoading || achLoading || metricsLoading;
+  const error = achievementsError ?? metricsError;
 
   const filtered = achievements.filter((a) => {
     if (activeCategory !== 'all' && a.category !== activeCategory) return false;
@@ -51,6 +52,28 @@ export default function AchievementsPage() {
     );
   }
   if (!isAuthenticated) return null;
+
+  if (error) {
+    return (
+      <div className="flex flex-col w-full bg-[#060810] min-h-screen">
+        <Header />
+        <main className="flex-1 p-6 md:p-8">
+          <div className="max-w-[1400px] mx-auto rounded-xl border border-red-500/20 bg-red-500/10 p-4 font-mono text-xs text-red-300">
+            Failed to load achievement data.
+            <button
+              onClick={() => {
+                refreshAchievements();
+                refreshMetrics();
+              }}
+              className="ml-3 underline cursor-pointer hover:text-red-200"
+            >
+              Retry
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full bg-[#060810] min-h-screen">

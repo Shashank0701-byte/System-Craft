@@ -13,7 +13,21 @@ import type { Types } from 'mongoose';
 import UserMetrics, { type IUserMetricsData } from './metrics';
 import { evaluateAchievements, type UnlockedAchievement } from './engine';
 
-export type MetricPatch = Partial<Record<keyof IUserMetricsData, number>>;
+export type AllowedMetricKey = Exclude<
+  keyof IUserMetricsData,
+  | 'totalXP'
+  | 'level'
+  | 'currentStreak'
+  | 'longestStreak'
+  | 'lastActivityDate'
+  | 'activityHeatmap'
+  | 'pinnedAchievements'
+  | 'achievementCategoriesUnlocked'
+  | 'scalabilityAchievementsCompleted'
+  | 'highScoreAcrossDifficulties'
+>;
+
+export type MetricPatch = Partial<Record<AllowedMetricKey, number>>;
 
 /**
  * Increment one or more metrics by the supplied deltas, then evaluate achievements.
@@ -45,23 +59,14 @@ export async function trackMetric(
   return evaluateAchievements(userId);
 }
 
-/**
- * Set a metric to a specific value (not increment).
- * Used for max-tracking metrics like maxNodesInSingleDesign.
- */
 export async function setMetricIfHigher(
   userId: Types.ObjectId | string,
   key: keyof IUserMetricsData,
   value: number
 ): Promise<UnlockedAchievement[]> {
-  const current = await UserMetrics.findOne({ userId }).select(key).lean();
-  const currentVal = current ? (current[key as keyof typeof current] as number ?? 0) : 0;
-
-  if (value <= currentVal) return [];
-
   await UserMetrics.findOneAndUpdate(
     { userId },
-    { $set: { [key]: value } },
+    { $max: { [key]: value } },
     { upsert: true }
   );
 

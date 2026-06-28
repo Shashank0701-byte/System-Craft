@@ -40,7 +40,7 @@ export function BadgeShowcase({ achievements }: BadgeShowcaseProps) {
     // Unlocked first (by highest tier then progress), then locked.
     const visible = useMemo(() => {
         return achievements
-            .filter((a) => !a.hidden)
+            .filter((a) => !a.hidden || a.highestTier !== null)
             .sort((a, b) => {
                 if (a.highestTier && !b.highestTier) return -1;
                 if (!a.highestTier && b.highestTier) return 1;
