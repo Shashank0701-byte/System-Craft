@@ -215,7 +215,7 @@ export const POST = withMetrics('/api/interview/[id]/evaluate', async (request: 
                 const bonusXP = finalScore >= 100 ? 50 : finalScore >= 90 ? 25 : 0;
 
                 await Promise.all([
-                    trackMetric(user._id, metricPatch as any),
+                    trackMetric(user._id, metricPatch as import('@/src/lib/achievements/trackMetric').MetricPatch),
                     awardXP(user._id, 'INTERVIEW_COMPLETED', bonusXP),
                     setMetricIfHigher(user._id, 'consistentPerformerStreak', streakCount),
                     setMetricIfHigher(user._id, 'highScoreAcrossDifficulties', difficultiesWithHighScore.size),
