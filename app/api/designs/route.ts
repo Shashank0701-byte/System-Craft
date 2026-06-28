@@ -114,8 +114,8 @@ export async function POST(request: NextRequest) {
             connections: [],
         });
 
-        // Fire-and-forget: track metric + award XP (non-blocking)
-        Promise.all([
+        // Track metric + award XP (must await in Next.js Serverless)
+        await Promise.all([
             trackMetric(user._id, { architecturesCreated: 1 }),
             awardXP(user._id, 'ARCHITECTURE_CREATED'),
         ]).catch((err) => console.error('Achievement tracking failed (design create):', err));

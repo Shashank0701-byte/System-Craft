@@ -216,7 +216,7 @@ export const POST = withMetrics('/api/interview/[id]/evaluate', async (request: 
 
                 const bonusXP = finalScore >= 100 ? 50 : finalScore >= 90 ? 25 : 0;
 
-                Promise.all([
+                await Promise.all([
                     trackMetric(user._id, metricPatch),
                     awardXP(user._id, 'INTERVIEW_COMPLETED', bonusXP),
                     setMetricIfHigher(user._id, 'maxNodesInSingleDesign', nodeCount),

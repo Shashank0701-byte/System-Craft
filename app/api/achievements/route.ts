@@ -42,14 +42,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             achievements,
-            metrics: {
-                totalXP: baseMetrics.totalXP,
-                level: baseMetrics.level,
-                currentStreak: baseMetrics.currentStreak,
-                longestStreak: baseMetrics.longestStreak,
-                activityHeatmap: baseMetrics.activityHeatmap,
-                pinnedAchievements: baseMetrics.pinnedAchievements,
-            }
+            metrics: baseMetrics
         });
 
     } catch (error) {

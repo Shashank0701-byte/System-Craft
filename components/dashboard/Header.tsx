@@ -110,7 +110,7 @@ export function Header() {
 
   return (
     <>
-      <header className="h-14 flex-shrink-0 border-b border-white/[0.04] bg-[#060810] flex items-center justify-between px-4 md:px-6 z-10 relative select-none">
+      <header className="h-14 flex-shrink-0 border-b border-white/[0.04] bg-[#060810] flex items-center justify-between px-4 md:px-6 z-40 relative select-none">
         <div className="flex items-center gap-3 w-full md:w-1/3">
           {/* Hamburger toggle (mobile only) */}
           <button
