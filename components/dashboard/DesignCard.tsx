@@ -304,7 +304,7 @@ export function DesignCard({ id, title, status, editedTime, nodeCount = 0, conne
             {/* Health status led dot */}
             <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/45 border border-white/[0.03] text-[7px] font-mono tracking-widest uppercase">
               <span className={`inline-block h-1.5 w-1.5 rounded-full ${mockHealth.dot} opacity-70 animate-pulse`} />
-              <span className="text-white/30">{mockHealth.label}</span>
+              <span className="text-white/30">{mockHealth.label} · {mockLatency}MS</span>
             </div>
           </div>
 
@@ -319,6 +319,8 @@ export function DesignCard({ id, title, status, editedTime, nodeCount = 0, conne
               <span>{nodeCount} Nodes</span>
               <span className="text-white/20">·</span>
               <span>{connectionCount} Links</span>
+              <span className="text-white/20">·</span>
+              <span>{mockComplexity} COMPLEXITY</span>
             </div>
 
             {/* Footer status pill & schedule edited timestamp */}

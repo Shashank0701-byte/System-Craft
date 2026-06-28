@@ -93,12 +93,6 @@ const phaseCopy: Record<HeroPhase, string> = {
   stable: "System stabilized",
 };
 
-// ── Framer Motion Variants ──────────────────────────────────
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 },
-};
-
 const staggerContainer: Variants = {
   hidden: {},
   visible: {
@@ -826,7 +820,7 @@ function ScenariosSection() {
                     <motion.div
                       key={i}
                       className="w-1.5 rounded-full bg-gradient-to-t from-indigo-500 to-cyan-400"
-                      animate={{ height: [8, Math.random() * 20 + 10, 8] }}
+                      animate={{ height: [8, 10 + ((i * 7 + 13) % 15), 8] }}
                       transition={{ duration: 0.5 + i * 0.1, repeat: Infinity, ease: "easeInOut" }}
                     />
                   ))}
@@ -1080,15 +1074,24 @@ export default function SystemCraftLanding() {
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduceMotion(media.matches);
-    if (media.matches) return;
+    const matches = media.matches;
+    
+    let timers: number[] = [];
+    
+    const initTimer = window.setTimeout(() => {
+      setReduceMotion(matches);
+      if (!matches) {
+        const sequence: HeroPhase[] = ["assembly", "flow", "cache", "failure", "autoscale", "stable"];
+        timers = sequence.map((nextPhase, index) =>
+          window.setTimeout(() => setPhase(nextPhase), 1400 + index * 1200),
+        );
+      }
+    }, 0);
 
-    const sequence: HeroPhase[] = ["assembly", "flow", "cache", "failure", "autoscale", "stable"];
-    const timers = sequence.map((nextPhase, index) =>
-      window.setTimeout(() => setPhase(nextPhase), 1400 + index * 1200),
-    );
-
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    return () => {
+      window.clearTimeout(initTimer);
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
   }, []);
 
   useEffect(() => {
