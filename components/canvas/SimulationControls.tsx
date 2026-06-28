@@ -103,6 +103,9 @@ const DashboardMetric = ({
 interface SimulationControlsProps {
   isRunning: boolean;
   targetRps: number;
+  globalStatus?: 'healthy' | 'degraded' | 'critical';
+  bottleneckCount?: number;
+  warningCount?: number;
   onToggle: (running: boolean) => void;
   onChangeRps: (rps: number) => void;
 }
@@ -110,17 +113,28 @@ interface SimulationControlsProps {
 export function SimulationControls({
   isRunning,
   targetRps,
+  globalStatus = 'healthy',
+  bottleneckCount = 0,
+  warningCount = 0,
   onToggle,
   onChangeRps
 }: SimulationControlsProps) {
 
   const isHighLoad = targetRps > 150000;
   const isMediumLoad = targetRps > 70000;
+  const hasEnginePressure = bottleneckCount > 0 || warningCount > 0;
+  const effectiveStatus = !isRunning
+    ? 'inactive'
+    : globalStatus === 'critical'
+    ? 'critical'
+    : globalStatus === 'degraded' || hasEnginePressure
+    ? 'degraded'
+    : 'healthy';
 
   // Base metrics derived from targetRps
-  const baseLatency = isHighLoad ? 48 : isMediumLoad ? 19 : 8;
-  const baseErrorRate = isHighLoad ? 4.85 : isMediumLoad ? 0.12 : 0.00;
-  const baseQueue = isHighLoad ? 128 : isMediumLoad ? 14 : 0;
+  const baseLatency = effectiveStatus === 'critical' ? 72 : effectiveStatus === 'degraded' ? 34 : isHighLoad ? 48 : isMediumLoad ? 19 : 8;
+  const baseErrorRate = effectiveStatus === 'critical' ? 8.2 : effectiveStatus === 'degraded' ? 1.25 : isHighLoad ? 4.85 : isMediumLoad ? 0.12 : 0.0;
+  const baseQueue = effectiveStatus === 'critical' ? 188 : effectiveStatus === 'degraded' ? 44 : isHighLoad ? 128 : isMediumLoad ? 14 : 0;
 
   // History hooks
   const tpHistory = useMetricHistory(isRunning ? targetRps : 0, isRunning, 250000, 0.05);
@@ -129,8 +143,15 @@ export function SimulationControls({
   const errHistory = useMetricHistory(isRunning ? baseErrorRate : 0, isRunning, 10, 0.3);
 
   // Overall Health
-  const healthStatus = !isRunning ? 'INACTIVE' : isHighLoad ? 'DEGRADED' : 'HEALTHY';
-  const healthColor = !isRunning ? 'bg-white/20' : isHighLoad ? 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]' : 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]';
+  const healthStatus = effectiveStatus === 'inactive' ? 'INACTIVE' : effectiveStatus === 'critical' ? 'CRITICAL' : effectiveStatus === 'degraded' ? 'DEGRADED' : 'HEALTHY';
+  const healthColor =
+    effectiveStatus === 'inactive'
+      ? 'bg-white/20'
+      : effectiveStatus === 'critical'
+      ? 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.7)]'
+      : effectiveStatus === 'degraded'
+      ? 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]'
+      : 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]';
 
   return (
     <div className={`absolute top-4 right-4 z-45 bg-[#0a0b10]/95 backdrop-blur-xl border rounded-xl p-3 w-[260px] flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 select-none overflow-hidden transition-all duration-500 ${isRunning ? 'border-cyan-500/30 shadow-[0_0_50px_rgba(34,211,238,0.15)]' : 'border-white/[0.08] shadow-2xl'}`}>
@@ -230,7 +251,7 @@ export function SimulationControls({
           points={errHistory.points}
           colorGroup="rose"
           active={isRunning}
-          alert={isRunning && isHighLoad}
+          alert={effectiveStatus === 'critical' || effectiveStatus === 'degraded'}
         />
         <DashboardMetric
           title="Queue Depth"
@@ -239,7 +260,7 @@ export function SimulationControls({
           points={qHistory.points}
           colorGroup="violet"
           active={isRunning}
-          alert={isRunning && isHighLoad}
+          alert={effectiveStatus === 'critical' || effectiveStatus === 'degraded'}
         />
       </div>
 
@@ -247,15 +268,17 @@ export function SimulationControls({
       <div className="border-t border-white/[0.05] pt-2.5 flex items-center justify-between text-[7px] font-mono tracking-wider">
         <div className="flex items-center gap-1.5">
           <span className="text-white/30 uppercase">Scaling Action</span>
-          <span className={`px-1 py-0.5 rounded text-[6px] ${isRunning && isHighLoad ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-white/[0.05] text-white/40'}`}>
-            {isRunning && isHighLoad ? 'AUTO-SCALE UP' : 'STABLE BASELINE'}
+          <span className={`px-1 py-0.5 rounded text-[6px] ${effectiveStatus === 'critical' || effectiveStatus === 'degraded' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-white/[0.05] text-white/40'}`}>
+            {effectiveStatus === 'critical' || effectiveStatus === 'degraded' ? 'AUTO-SCALE UP' : 'STABLE BASELINE'}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-white/30 uppercase">Chaos</span>
-          <span className={`flex items-center gap-1 ${isRunning && isHighLoad ? 'text-amber-400' : 'text-white/40'}`}>
-            {isRunning && isHighLoad && <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping" />}
-            {isRunning && isHighLoad ? 'CPU_THROTTLE' : 'NONE'}
+          <span className={`flex items-center gap-1 ${effectiveStatus === 'critical' ? 'text-rose-400' : effectiveStatus === 'degraded' ? 'text-amber-400' : 'text-white/40'}`}>
+            {effectiveStatus !== 'healthy' && effectiveStatus !== 'inactive' && (
+              <div className={`w-1.5 h-1.5 rounded-full animate-ping ${effectiveStatus === 'critical' ? 'bg-rose-400' : 'bg-amber-400'}`} />
+            )}
+            {effectiveStatus === 'critical' ? 'MULTI_NODE_FAILURE' : effectiveStatus === 'degraded' ? 'CPU_THROTTLE' : 'NONE'}
           </span>
         </div>
       </div>

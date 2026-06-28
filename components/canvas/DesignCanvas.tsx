@@ -246,6 +246,8 @@ export function DesignCanvas({
   }, [initialTargetRps]);
 
   const simulationMetrics = useSimulationEngine(nodes, connections, targetRps, isSimulationRunning);
+  const bottleneckCount = Object.values(simulationMetrics.nodeMetrics).filter((m) => m.status === 'bottlenecked').length;
+  const warningCount = Object.values(simulationMetrics.nodeMetrics).filter((m) => m.status === 'warning').length;
 
   // Expose simulation changes to parent
   useEffect(() => {
@@ -866,6 +868,9 @@ export function DesignCanvas({
             <SimulationControls 
                isRunning={isSimulationRunning} 
                targetRps={targetRps} 
+               globalStatus={simulationMetrics.globalStatus}
+               bottleneckCount={bottleneckCount}
+               warningCount={warningCount}
                onToggle={setIsSimulationRunning} 
                onChangeRps={setTargetRps} 
             />
