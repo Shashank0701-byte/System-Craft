@@ -23,14 +23,12 @@ export function useAchievementNotifications() {
   const sessionStartRef = useRef(new Date().toISOString());
   const seenKeysRef = useRef(new Set<string>());
 
-  const [prevUserUid, setPrevUserUid] = useState(user?.uid);
-
-  if (user?.uid !== prevUserUid) {
+  useEffect(() => {
     sessionStartRef.current = new Date().toISOString();
     seenKeysRef.current.clear();
-    setPrevUserUid(user?.uid);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setQueue([]);
-  }
+  }, [user?.uid]);
 
   const poll = useCallback(async () => {
     if (!user) return;
