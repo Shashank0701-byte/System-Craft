@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Header } from '@/components/dashboard/Header';
 import { DesignCanvas } from '@/components/canvas/DesignCanvas';
 import { REFERENCE_ARCHITECTURES } from '@/src/lib/referenceArchitectures';
+import { KnowledgeCheck, QuizQuestion } from '@/components/dashboard/KnowledgeCheck';
+import { authFetch } from '@/src/lib/firebase/authClient';
 
 const DIFFICULTY_COLORS = {
   easy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
@@ -29,7 +31,47 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
   const [analysisContent, setAnalysisContent] = useState('');
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[] | null>(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
+  const [isQuizCompleted, setIsQuizCompleted] = useState(false);
+
   const abortRef = useRef<AbortController | null>(null);
+
+  const handleQuizPass = useCallback(async () => {
+    setIsQuizCompleted(true);
+    try {
+      await authFetch('/api/user/track', {
+        method: 'POST',
+        body: JSON.stringify({ event: 'reference_architecture_completed' }),
+      });
+    } catch (err) {
+      console.error('Failed to track completion:', err);
+    }
+  }, []);
+
+  const triggerQuizGeneration = useCallback(async (analysisText: string) => {
+    if (!arch) return;
+    try {
+      const response = await fetch('/api/reference-architectures/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: arch.title, analysis: analysisText }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.questions) {
+          setQuizQuestions(data.questions);
+        }
+      } else {
+        setQuizError('Failed to generate knowledge check');
+      }
+    } catch (err) {
+      console.error(err);
+      setQuizError('Failed to generate knowledge check');
+    }
+  }, [arch]);
 
   const handleGenerateAnalysis = useCallback(async () => {
     if (!arch || isAnalysing) return;
@@ -76,6 +118,8 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
         accumulated += decoder.decode(value, { stream: true });
         setAnalysisContent(accumulated);
       }
+      
+      triggerQuizGeneration(accumulated);
     } catch (error) {
       if ((error as Error).name === 'AbortError') return;
       console.error('Analysis error:', error);
@@ -83,7 +127,7 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
     } finally {
       setIsAnalysing(false);
     }
-  }, [arch, isAnalysing]);
+  }, [arch, isAnalysing, triggerQuizGeneration]);
 
   if (!arch) {
     return (
@@ -219,6 +263,11 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
                   isLoading={isAnalysing}
                   error={analysisError}
                   onRetry={handleGenerateAnalysis}
+                  quizQuestions={quizQuestions}
+                  showQuiz={showQuiz}
+                  setShowQuiz={setShowQuiz}
+                  onQuizPass={handleQuizPass}
+                  isQuizCompleted={isQuizCompleted}
                 />
               )}
             </div>
@@ -301,11 +350,21 @@ function AnalysisPanel({
   isLoading,
   error,
   onRetry,
+  quizQuestions,
+  showQuiz,
+  setShowQuiz,
+  onQuizPass,
+  isQuizCompleted
 }: {
   content: string;
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
+  quizQuestions: QuizQuestion[] | null;
+  showQuiz: boolean;
+  setShowQuiz: (v: boolean) => void;
+  onQuizPass: () => void;
+  isQuizCompleted: boolean;
 }) {
   // Empty state — not yet triggered
   if (!content && !isLoading && !error) {
@@ -347,8 +406,23 @@ function AnalysisPanel({
     );
   }
 
+  if (showQuiz && quizQuestions) {
+    return (
+      <div className="font-mono pt-4">
+        <button
+          onClick={() => setShowQuiz(false)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white/[0.05] hover:bg-white/[0.1] text-white/50 text-[10px] uppercase tracking-widest font-bold mb-6 transition-colors"
+        >
+          <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+          Back to Analysis
+        </button>
+        <KnowledgeCheck questions={quizQuestions} onPass={onQuizPass} />
+      </div>
+    );
+  }
+
   return (
-    <div className="font-mono">
+    <div className="font-mono relative pb-20">
       {/* Streaming indicator */}
       {isLoading && (
         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded bg-cyan-500/5 border border-cyan-500/20">
@@ -363,6 +437,36 @@ function AnalysisPanel({
       {/* Blinking cursor while streaming */}
       {isLoading && (
         <span className="inline-block w-1.5 h-3.5 bg-cyan-400 animate-pulse rounded-sm ml-0.5" />
+      )}
+      
+      {/* Knowledge Check Action */}
+      {!isLoading && content && (
+        <div className="mt-12 pt-6 border-t border-white/[0.06] flex flex-col items-center justify-center text-center">
+          {isQuizCompleted ? (
+            <div className="flex items-center gap-2 px-4 py-2 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <span className="material-symbols-outlined text-[16px]">verified</span>
+              <span className="text-[10px] font-mono font-bold tracking-widest uppercase">Verified Studied</span>
+            </div>
+          ) : quizQuestions ? (
+            <>
+              <h4 className="text-[11px] font-bold text-white uppercase tracking-widest mb-2">Ready to verify?</h4>
+              <p className="text-[10px] text-white/40 mb-4 max-w-[260px]">
+                Pass a short 5-question knowledge check to mark this architecture as studied.
+              </p>
+              <button
+                onClick={() => setShowQuiz(true)}
+                className="px-6 py-2.5 rounded bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-colors"
+              >
+                Take Knowledge Check
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-white/40">
+              <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest">Preparing knowledge check...</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
