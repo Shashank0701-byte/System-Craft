@@ -289,12 +289,24 @@ export default function CanvasPage({ params }: PageProps) {
     // Loading state
     if (authLoading || isLoading) {
         return (
-            <div className="flex flex-col h-screen overflow-hidden bg-background-dark">
-                <div className="h-16 border-b border-border-dark bg-sidebar-bg-dark" />
-                <div className="flex flex-1 items-center justify-center">
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                        <p className="text-slate-400">Loading canvas...</p>
+            <div className="flex flex-col h-screen overflow-hidden bg-[#060810]">
+                {/* Header placeholder */}
+                <div className="h-14 border-b border-white/[0.03] bg-[#0c0d16]/90 flex items-center px-4">
+                    <div className="w-32 h-4 bg-white/[0.03] rounded animate-pulse" />
+                </div>
+                {/* Main loading area */}
+                <div className="flex flex-1 items-center justify-center relative">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(6,8,16,0.6)_100%)] pointer-events-none" />
+                    <div className="flex flex-col items-center gap-6 z-10">
+                        <div className="relative flex items-center justify-center">
+                            <div className="w-16 h-16 border border-cyan-500/20 rounded-full absolute animate-ping" />
+                            <div className="w-12 h-12 border border-cyan-500/40 rounded-full absolute animate-[spin_3s_linear_infinite]" />
+                            <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                            <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-cyan-400 font-bold">Initializing Workspace</p>
+                            <p className="text-[8px] font-mono tracking-wider uppercase text-white/30">Loading architecture state & nodes...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -304,18 +316,26 @@ export default function CanvasPage({ params }: PageProps) {
     // Error state
     if (error) {
         return (
-            <div className="flex flex-col h-screen overflow-hidden bg-background-dark">
-                <div className="h-16 border-b border-border-dark bg-sidebar-bg-dark" />
-                <div className="flex flex-1 items-center justify-center">
-                    <div className="text-center max-w-md">
-                        <span className="material-symbols-outlined text-5xl text-red-500 mb-4">error</span>
-                        <h2 className="text-xl font-bold text-white mb-2">Failed to Load</h2>
-                        <p className="text-slate-400 mb-6">{error}</p>
+            <div className="flex flex-col h-screen overflow-hidden bg-[#060810]">
+                {/* Header placeholder */}
+                <div className="h-14 border-b border-white/[0.03] bg-[#0c0d16]/90 flex items-center px-4">
+                    <div className="flex items-center gap-2 text-white/40 font-mono text-[10px] uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[14px]">warning</span>
+                        <span>System Error</span>
+                    </div>
+                </div>
+                <div className="flex flex-1 items-center justify-center relative">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(6,8,16,0.6)_100%)] pointer-events-none" />
+                    <div className="text-center max-w-md z-10 p-8 border border-red-500/20 bg-red-500/5 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.05)] backdrop-blur-xl">
+                        <span className="material-symbols-outlined text-4xl text-red-400 mb-4 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">gpp_bad</span>
+                        <h2 className="text-[12px] font-mono font-bold text-white mb-2 uppercase tracking-widest">Failed to Load Workspace</h2>
+                        <p className="text-[9px] font-mono text-red-400/80 mb-8 uppercase tracking-wider">{error}</p>
                         <a
                             href="/dashboard"
-                            className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg text-[9px] font-mono font-bold uppercase tracking-wider transition-all hover:border-white/20"
                         >
-                            Back to Dashboard
+                            <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+                            Return to Dashboard
                         </a>
                     </div>
                 </div>

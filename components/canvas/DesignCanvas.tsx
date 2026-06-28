@@ -10,33 +10,33 @@ import { Whiteboard } from './Whiteboard';
 
 // Color mapping for different component types
 const COLOR_MAP: Record<string, { text: string; darkText: string }> = {
-  Client: { text: 'text-blue-500', darkText: 'dark:text-blue-400' },
-  Server: { text: 'text-purple-500', darkText: 'dark:text-purple-400' },
-  Function: { text: 'text-indigo-500', darkText: 'dark:text-indigo-400' },
-  Worker: { text: 'text-violet-500', darkText: 'dark:text-violet-400' },
-  Container: { text: 'text-sky-500', darkText: 'dark:text-sky-400' },
-  Gateway: { text: 'text-amber-500', darkText: 'dark:text-amber-400' },
-  LB: { text: 'text-orange-500', darkText: 'dark:text-orange-400' },
-  CDN: { text: 'text-teal-500', darkText: 'dark:text-teal-400' },
-  DNS: { text: 'text-lime-500', darkText: 'dark:text-lime-400' },
-  Firewall: { text: 'text-rose-500', darkText: 'dark:text-rose-400' },
-  Proxy: { text: 'text-fuchsia-500', darkText: 'dark:text-fuchsia-400' },
-  SQL: { text: 'text-emerald-500', darkText: 'dark:text-emerald-400' },
-  NoSQL: { text: 'text-green-500', darkText: 'dark:text-green-400' },
-  Cache: { text: 'text-red-500', darkText: 'dark:text-red-400' },
-  Blob: { text: 'text-yellow-600', darkText: 'dark:text-yellow-400' },
-  Search: { text: 'text-orange-500', darkText: 'dark:text-orange-400' },
-  GraphDB: { text: 'text-indigo-500', darkText: 'dark:text-indigo-400' },
-  Queue: { text: 'text-pink-500', darkText: 'dark:text-pink-400' },
-  Kafka: { text: 'text-cyan-500', darkText: 'dark:text-cyan-400' },
-  PubSub: { text: 'text-purple-500', darkText: 'dark:text-purple-400' },
-  WebSocket: { text: 'text-teal-500', darkText: 'dark:text-teal-400' },
-  Logger: { text: 'text-slate-400', darkText: 'dark:text-slate-300' },
-  Metrics: { text: 'text-emerald-500', darkText: 'dark:text-emerald-400' },
-  Tracer: { text: 'text-amber-500', darkText: 'dark:text-amber-400' },
-  Auth: { text: 'text-sky-500', darkText: 'dark:text-sky-400' },
-  WAF: { text: 'text-rose-500', darkText: 'dark:text-rose-400' },
-  Vault: { text: 'text-violet-500', darkText: 'dark:text-violet-400' },
+  Client: { text: 'text-blue-400', darkText: 'dark:text-blue-400' },
+  Server: { text: 'text-purple-400', darkText: 'dark:text-purple-400' },
+  Function: { text: 'text-indigo-400', darkText: 'dark:text-indigo-400' },
+  Worker: { text: 'text-violet-400', darkText: 'dark:text-violet-400' },
+  Container: { text: 'text-sky-400', darkText: 'dark:text-sky-400' },
+  Gateway: { text: 'text-amber-400', darkText: 'dark:text-amber-400' },
+  LB: { text: 'text-orange-400', darkText: 'dark:text-orange-400' },
+  CDN: { text: 'text-teal-400', darkText: 'dark:text-teal-400' },
+  DNS: { text: 'text-lime-400', darkText: 'dark:text-lime-400' },
+  Firewall: { text: 'text-rose-400', darkText: 'dark:text-rose-400' },
+  Proxy: { text: 'text-fuchsia-400', darkText: 'dark:text-fuchsia-400' },
+  SQL: { text: 'text-emerald-400', darkText: 'dark:text-emerald-400' },
+  NoSQL: { text: 'text-green-400', darkText: 'dark:text-green-400' },
+  Cache: { text: 'text-red-400', darkText: 'dark:text-red-400' },
+  Blob: { text: 'text-yellow-400', darkText: 'dark:text-yellow-400' },
+  Search: { text: 'text-orange-400', darkText: 'dark:text-orange-400' },
+  GraphDB: { text: 'text-indigo-400', darkText: 'dark:text-indigo-400' },
+  Queue: { text: 'text-pink-400', darkText: 'dark:text-pink-400' },
+  Kafka: { text: 'text-cyan-400', darkText: 'dark:text-cyan-400' },
+  PubSub: { text: 'text-purple-400', darkText: 'dark:text-purple-400' },
+  WebSocket: { text: 'text-teal-400', darkText: 'dark:text-teal-400' },
+  Logger: { text: 'text-slate-300', darkText: 'dark:text-slate-300' },
+  Metrics: { text: 'text-emerald-400', darkText: 'dark:text-emerald-400' },
+  Tracer: { text: 'text-amber-400', darkText: 'dark:text-amber-400' },
+  Auth: { text: 'text-sky-400', darkText: 'dark:text-sky-400' },
+  WAF: { text: 'text-rose-400', darkText: 'dark:text-rose-400' },
+  Vault: { text: 'text-violet-400', darkText: 'dark:text-violet-400' },
 };
 
 // Friendly default labels assigned when a component is dropped onto the canvas
@@ -169,8 +169,6 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
       };
     }
     case 'RESET': {
-      // Replace present without pushing old state into undo history.
-      // Used for programmatic loads (e.g. async initial data) that aren't user edits.
       return {
         past: [],
         present: action.payload,
@@ -211,33 +209,16 @@ export function DesignCanvas({
   const canRedo = historyState.future.length > 0;
 
   // Panels context — sync selected node so PropertiesPanel can react
-  const { setSelectedNode } = useCanvasPanels();
-
-  const [activeView, setActiveView] = useState<'architecture' | 'whiteboard'>('architecture');
-
-  // Restore the last active tab from session storage
-  useEffect(() => {
-    const saved = sessionStorage.getItem('canvasActiveView');
-    if (saved === 'whiteboard' || saved === 'architecture') {
-      setActiveView(saved);
-    }
-  }, []);
-
-  // Save the tab to session storage whenever it changes
-  useEffect(() => {
-    sessionStorage.setItem('canvasActiveView', activeView);
-  }, [activeView]);
+  const { setSelectedNode, activeView, setActiveView } = useCanvasPanels();
 
   const [whiteboardData, setWhiteboardData] = useState<string | undefined>(initialWhiteboardData);
   const whiteboardDataRef = useRef(whiteboardData);
   useEffect(() => { whiteboardDataRef.current = whiteboardData; }, [whiteboardData]);
 
-  // Sync reducer when initial data arrives asynchronously (e.g. result page fetch)
+  // Sync reducer when initial data arrives asynchronously
   const initialDataLoadedRef = useRef(initialNodes.length > 0 || initialConnections.length > 0);
   useEffect(() => {
-    // Skip if data was already present at mount time (already in reducer initial state)
     if (initialDataLoadedRef.current) return;
-    // Only sync once when real data arrives
     if (initialNodes.length > 0 || initialConnections.length > 0) {
       initialDataLoadedRef.current = true;
       dispatch({ type: 'RESET', payload: { nodes: initialNodes, connections: initialConnections } });
@@ -259,14 +240,14 @@ export function DesignCanvas({
   const isSimulationRunning = isSimulationRunningRaw && !readOnly;
   const [targetRps, setTargetRps] = useState(initialTargetRps);
 
-  // Keep targetRps in sync when the prop changes (async template loads)
+  // Keep targetRps in sync when the prop changes
   useEffect(() => {
     setTargetRps(initialTargetRps);
   }, [initialTargetRps]);
 
   const simulationMetrics = useSimulationEngine(nodes, connections, targetRps, isSimulationRunning);
 
-  // Expose simulation changes to parent (used by Templates system)
+  // Expose simulation changes to parent
   useEffect(() => {
     if (onSimulationChange) {
         onSimulationChange(simulationMetrics);
@@ -287,10 +268,8 @@ export function DesignCanvas({
   const [editingConnectionLabel, setEditingConnectionLabel] = useState('');
   const connectionLabelInputRef = useRef<HTMLInputElement>(null);
 
-  // Guards against blur re-firing handleLabelSubmit after Enter/Escape already resolved the edit
   const editResolvedRef = useRef(false);
   const connectionEditResolvedRef = useRef(false);
-  // Signals the debounced save effect to skip one cycle after an immediate save
   const skipNextDebouncedSaveRef = useRef(false);
 
   // Tool mode
@@ -302,65 +281,56 @@ export function DesignCanvas({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
-  // Auto-fit: in readOnly mode, calculate zoom & pan to show all nodes
-  const hasAutoFitRef = useRef(false);
+  // Auto-fit helper for readOnly mode
   useEffect(() => {
-    if (!readOnly || hasAutoFitRef.current || nodes.length === 0) return;
+    if (!readOnly || nodes.length === 0) return;
 
-    let rafId: number;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 20; // ~20 frames ≈ 330ms at 60fps
+    const container = canvasRef.current;
+    if (!container) return;
 
-    const tryAutoFit = () => {
-      const container = canvasRef.current;
-      if (!container) return;
+    let timeoutId: NodeJS.Timeout;
 
-      const containerW = container.clientWidth;
-      const containerH = container.clientHeight;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width === 0 || height === 0) continue;
 
-      // Container has no dimensions yet — retry on next animation frame
-      if (containerW === 0 || containerH === 0) {
-        attempts++;
-        if (attempts < MAX_ATTEMPTS) {
-          rafId = requestAnimationFrame(tryAutoFit);
-        }
-        return;
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          const NODE_WIDTH = 160;
+          const NODE_HEIGHT = 64;
+          const PADDING = 60;
+
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const node of nodes) {
+            minX = Math.min(minX, node.x);
+            minY = Math.min(minY, node.y);
+            maxX = Math.max(maxX, node.x + NODE_WIDTH);
+            maxY = Math.max(maxY, node.y + NODE_HEIGHT);
+          }
+
+          const contentW = maxX - minX + PADDING * 2;
+          const contentH = maxY - minY + PADDING * 2;
+
+          const scaleX = width / contentW;
+          const scaleY = height / contentH;
+          const fitScale = Math.min(scaleX, scaleY, 1);
+          const clampedScale = Math.max(0.5, Math.round(fitScale * 100) / 100);
+
+          const offsetX = (width - contentW * clampedScale) / 2 - (minX - PADDING) * clampedScale;
+          const offsetY = (height - contentH * clampedScale) / 2 - (minY - PADDING) * clampedScale;
+
+          setZoom(Math.round(clampedScale * 100));
+          setPanOffset({ x: offsetX, y: offsetY });
+        }, 150);
       }
+    });
 
-      const NODE_SIZE = 60;
-      const PADDING = 60; // px around the bounding box
-
-      // Bounding box of all nodes
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const node of nodes) {
-        minX = Math.min(minX, node.x);
-        minY = Math.min(minY, node.y);
-        maxX = Math.max(maxX, node.x + NODE_SIZE);
-        maxY = Math.max(maxY, node.y + NODE_SIZE);
-      }
-
-      const contentW = maxX - minX + PADDING * 2;
-      const contentH = maxY - minY + PADDING * 2;
-
-      // Scale to fit, clamped between 50% and 100%
-      const scaleX = containerW / contentW;
-      const scaleY = containerH / contentH;
-      const fitScale = Math.min(scaleX, scaleY, 1); // never zoom in past 100%
-      const clampedScale = Math.max(0.5, Math.round(fitScale * 100) / 100);
-
-      // Center the content
-      const offsetX = (containerW - contentW * clampedScale) / 2 - (minX - PADDING) * clampedScale;
-      const offsetY = (containerH - contentH * clampedScale) / 2 - (minY - PADDING) * clampedScale;
-
-      setZoom(Math.round(clampedScale * 100));
-      setPanOffset({ x: offsetX, y: offsetY });
-      hasAutoFitRef.current = true;
+    resizeObserver.observe(container);
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeoutId);
     };
-
-    // Kick off the first attempt after a rAF so the layout has a chance to paint
-    rafId = requestAnimationFrame(tryAutoFit);
-
-    return () => cancelAnimationFrame(rafId);
   }, [readOnly, nodes]);
 
   // Drag state for moving nodes
@@ -376,13 +346,9 @@ export function DesignCanvas({
   const [connectionStart, setConnectionStart] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Use tempNodes while dragging, otherwise use history nodes
   const displayNodes = tempNodes ?? nodes;
-
-  // Generate unique ID
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  // Save to history
   const saveToHistory = useCallback((newNodes: CanvasNode[], newConnections: Connection[]) => {
     dispatch({ type: 'SET', payload: { nodes: newNodes, connections: newConnections } });
   }, []);
@@ -390,19 +356,13 @@ export function DesignCanvas({
   // Debounced auto-save to database
   useEffect(() => {
     if (!onSave) return;
-
-    // If an immediate save was already triggered (e.g. label edit), skip this cycle
     if (skipNextDebouncedSaveRef.current) {
       skipNextDebouncedSaveRef.current = false;
       return;
     }
-
-    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-
-    // Debounce save by 2 seconds
     saveTimeoutRef.current = setTimeout(() => {
       onSave(nodes, connections, whiteboardDataRef.current);
     }, 2000);
@@ -418,16 +378,18 @@ export function DesignCanvas({
   const handleUndo = useCallback(() => {
     dispatch({ type: 'UNDO' });
     setSelectedNodeId(null);
+    setSelectedNode(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, [dispatch, setSelectedNodeId, setSelectedConnectionId, setTempNodes]);
+  }, [dispatch, setSelectedNode]);
 
   const handleRedo = useCallback(() => {
     dispatch({ type: 'REDO' });
     setSelectedNodeId(null);
+    setSelectedNode(null);
     setSelectedConnectionId(null);
     setTempNodes(null);
-  }, [dispatch, setSelectedNodeId, setSelectedConnectionId, setTempNodes]);
+  }, [dispatch, setSelectedNode]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
@@ -440,25 +402,26 @@ export function DesignCanvas({
 
   // Get color classes for node type
   const getColorClasses = (type: string) => {
-    return COLOR_MAP[type] || { text: 'text-slate-500', darkText: 'dark:text-slate-400' };
+    return COLOR_MAP[type] || { text: 'text-slate-400', darkText: 'dark:text-slate-400' };
   };
 
-  // Helper to compute connection endpoint coordinates
+  // Helper to compute connection endpoint coordinates (side-to-side graph lines routing)
   const getConnectionCoords = (fromId: string, toId: string) => {
     const nodeList = displayNodes;
     const fromNode = nodeList.find((n) => n.id === fromId);
     const toNode = nodeList.find((n) => n.id === toId);
     if (!fromNode || !toNode) return null;
 
+    // Output from right edge center, input to left edge center
     return {
-      fromX: fromNode.x + 60,
-      fromY: fromNode.y + 30,
+      fromX: fromNode.x + 160,
+      fromY: fromNode.y + 32,
       toX: toNode.x,
-      toY: toNode.y + 30
+      toY: toNode.y + 32
     };
   };
 
-  // Calculate path between two nodes
+  // Calculate bezier path between two nodes
   const getConnectionPath = (fromId: string, toId: string): string => {
     const coords = getConnectionCoords(fromId, toId);
     if (!coords) return '';
@@ -468,13 +431,10 @@ export function DesignCanvas({
     return `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`;
   };
 
-  // Calculate geometric midpoint of a connection for label positioning
   const getConnectionMidpoint = (fromId: string, toId: string): { x: number, y: number } | null => {
     const coords = getConnectionCoords(fromId, toId);
     if (!coords) return null;
-
-    const { fromX, fromY, toX, toY } = coords;
-    return { x: (fromX + toX) / 2, y: (fromY + toY) / 2 };
+    return { x: (coords.fromX + coords.toX) / 2, y: (coords.fromY + coords.toY) / 2 };
   };
 
   // Get path for connection being drawn
@@ -484,8 +444,8 @@ export function DesignCanvas({
     if (!fromNode) return '';
 
     const scale = zoom / 100;
-    const fromX = fromNode.x + 60;
-    const fromY = fromNode.y + 30;
+    const fromX = fromNode.x + 160;
+    const fromY = fromNode.y + 32;
     const toX = (mousePos.x - panOffset.x) / scale;
     const toY = (mousePos.y - panOffset.y) / scale;
 
@@ -508,8 +468,8 @@ export function DesignCanvas({
       if (!rect) return;
 
       const scale = zoom / 100;
-      const x = (e.clientX - rect.left - panOffset.x) / scale - 30;
-      const y = (e.clientY - rect.top - panOffset.y) / scale - 30;
+      const x = (e.clientX - rect.left - panOffset.x) / scale - 80;
+      const y = (e.clientY - rect.top - panOffset.y) / scale - 32;
 
       const newNode: CanvasNode = {
         id: generateId(),
@@ -528,7 +488,7 @@ export function DesignCanvas({
     } catch (err) {
       console.error('Failed to parse dropped component:', err);
     }
-  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly, setSelectedNodeId, setSelectedNode, setSelectedConnectionId]);
+  }, [nodes, connections, zoom, panOffset, saveToHistory, readOnly, setSelectedNode]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -540,7 +500,7 @@ export function DesignCanvas({
     setIsDragOver(false);
   }, []);
 
-  // Handle canvas mouse down (for panning)
+  // Handle canvas mouse down
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
     if (toolMode === 'pan') {
       setIsPanning(true);
@@ -548,14 +508,13 @@ export function DesignCanvas({
     }
   }, [toolMode, panOffset]);
 
-  // Handle starting to draw a connection (Shift+Click on node)
+  // Handle node mouse down
   const handleNodeMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
     if (readOnly) return;
     e.stopPropagation();
 
     if (toolMode === 'pan') return;
 
-    // Erase mode: immediately delete node on click
     if (toolMode === 'erase') {
       const newNodes = nodes.filter((n) => n.id !== nodeId);
       const newConnections = connections.filter((c) => c.from !== nodeId && c.to !== nodeId);
@@ -565,7 +524,6 @@ export function DesignCanvas({
       return;
     }
 
-    // Shift+Click to start drawing a connection
     if (e.shiftKey) {
       setIsDrawingConnection(true);
       setConnectionStart(nodeId);
@@ -576,30 +534,30 @@ export function DesignCanvas({
       return;
     }
 
-    // Normal click to select and prepare for drag
     setSelectedNodeId(nodeId);
-    setSelectedConnectionId(null); // Clear connection selection
+    setSelectedConnectionId(null);
     const node = nodes.find((n) => n.id === nodeId);
     if (!node) return;
     setSelectedNode({ id: node.id, type: node.type, label: node.label, icon: node.icon });
 
     setDraggedNodeId(nodeId);
-    setTempNodes([...nodes]); // Start with current nodes for dragging
+    setTempNodes([...nodes]);
 
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const scale = zoom / 100;
     setDragOffset({
-      x: e.clientX / scale - node.x,
-      y: e.clientY / scale - node.y,
+      x: (e.clientX - rect.left - panOffset.x) / scale - node.x,
+      y: (e.clientY - rect.top - panOffset.y) / scale - node.y,
     });
-  }, [nodes, connections, toolMode, zoom, saveToHistory, readOnly, setSelectedNodeId, setSelectedNode, setSelectedConnectionId]);
+  }, [nodes, connections, toolMode, zoom, panOffset, saveToHistory, readOnly, setSelectedNode]);
 
-  // Handle completing a connection (mouse up on another node)
+  // Handle node mouse up
   const handleNodeMouseUp = useCallback((e: React.MouseEvent, nodeId: string) => {
     if (readOnly) return;
     e.stopPropagation();
 
     if (isDrawingConnection && connectionStart && connectionStart !== nodeId) {
-      // Only check for exact same connection (same direction), allow bidirectional connections
       const exists = connections.some(
         (c) => c.from === connectionStart && c.to === nodeId
       );
@@ -615,7 +573,6 @@ export function DesignCanvas({
       }
     }
 
-    // Save dragged node position
     if (draggedNodeId && tempNodes) {
       saveToHistory(tempNodes, connections);
       setTempNodes(null);
@@ -632,7 +589,6 @@ export function DesignCanvas({
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    // Handle panning
     if (isPanning) {
       setPanOffset({
         x: e.clientX - panStart.x,
@@ -641,31 +597,29 @@ export function DesignCanvas({
       return;
     }
 
-    // Update mouse position for connection drawing
     if (isDrawingConnection) {
       setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     }
 
-    // Handle node dragging - update tempNodes
     if (draggedNodeId && toolMode === 'select') {
-      const scale = zoom / 100;
-      const newX = e.clientX / scale - dragOffset.x;
-      const newY = e.clientY / scale - dragOffset.y;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const scale = zoom / 100;
+        const newX = (e.clientX - rect.left - panOffset.x) / scale - dragOffset.x;
+        const newY = (e.clientY - rect.top - panOffset.y) / scale - dragOffset.y;
 
-      // Use functional updater to avoid stale closure
-      setTempNodes((prev) =>
-        prev?.map((node) =>
-          node.id === draggedNodeId
-            ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
-            : node
-        ) ?? null
-      );
+        setTempNodes((prev) =>
+          prev?.map((node) =>
+            node.id === draggedNodeId
+              ? { ...node, x: Math.max(0, newX), y: Math.max(0, newY) }
+              : node
+          ) ?? null
+        );
+      }
     }
-  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, readOnly]);
+  }, [draggedNodeId, dragOffset, isDrawingConnection, isPanning, panStart, toolMode, zoom, panOffset, readOnly]);
 
-  // Handle mouse up on canvas
   const handleMouseUp = useCallback(() => {
-    // Save dragged node position to history
     if (draggedNodeId && tempNodes) {
       saveToHistory(tempNodes, connections);
       setTempNodes(null);
@@ -676,34 +630,29 @@ export function DesignCanvas({
     setIsPanning(false);
   }, [draggedNodeId, tempNodes, connections, saveToHistory]);
 
-  // Handle canvas click to deselect - but not if clicking on a node
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    // Only deselect if clicking on canvas background, not on nodes
     const target = e.target as HTMLElement;
     if (target.closest('[data-node]') || target.closest('[data-connection]')) {
-      return; // Don't deselect when clicking on nodes or connections
+      return;
     }
     setSelectedNodeId(null);
     setSelectedConnectionId(null);
     setSelectedNode(null);
     setEditingNodeId(null);
-    setEditingConnectionId(null); // Cancel any open connection label editor
-  }, [setSelectedNodeId, setSelectedNode, setSelectedConnectionId, setEditingConnectionId]);
+    setEditingConnectionId(null);
+  }, [setSelectedNode]);
 
-  // Handle double-click on a node's label to start editing
   const handleLabelDoubleClick = useCallback((e: React.MouseEvent, nodeId: string) => {
     if (readOnly) return;
     e.stopPropagation();
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
-    editResolvedRef.current = false; // Reset for the new edit session
+    editResolvedRef.current = false;
     setEditingNodeId(nodeId);
     setEditingLabel(node.label || '');
-    // Focus the input on next render
     setTimeout(() => labelInputRef.current?.focus(), 0);
   }, [readOnly, nodes]);
 
-  // Commit the edited label and trigger an immediate save
   const handleLabelSubmit = useCallback((nodeId: string) => {
     const trimmed = editingLabel.trim();
     if (!trimmed) {
@@ -715,21 +664,19 @@ export function DesignCanvas({
       n.id === nodeId ? { ...n, label: trimmed } : n
     );
     saveToHistory(newNodes, connections);
-    editResolvedRef.current = true; // Prevent onBlur from re-running this
+    editResolvedRef.current = true;
     setEditingNodeId(null);
 
-    // Bypass the 2-second debounce — save immediately so labels persist faster
     if (onSave) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
-      skipNextDebouncedSaveRef.current = true; // Suppress the debounced echo
+      skipNextDebouncedSaveRef.current = true;
       onSave(newNodes, connections, whiteboardDataRef.current);
     }
   }, [editingLabel, nodes, connections, saveToHistory, onSave]);
 
-  // Handle double-click on a connection (or its label) to start editing
   const handleConnectionLabelDoubleClick = useCallback((e: React.MouseEvent, connectionId: string) => {
     if (readOnly) return;
     e.stopPropagation();
@@ -739,13 +686,10 @@ export function DesignCanvas({
     setEditingConnectionId(connectionId);
     setEditingConnectionLabel(conn.label || '');
     setTimeout(() => connectionLabelInputRef.current?.focus(), 0);
-  }, [readOnly, connections, setEditingConnectionId, setEditingConnectionLabel]);
+  }, [readOnly, connections]);
 
-  // Commit the edited connection label
   const handleConnectionLabelSubmit = useCallback((connectionId: string) => {
     const trimmed = editingConnectionLabel.trim();
-
-    // Early exit if the label didn't change
     const conn = connections.find(c => c.id === connectionId);
     if (!conn || trimmed === (conn.label || '')) {
       connectionEditResolvedRef.current = true;
@@ -753,7 +697,6 @@ export function DesignCanvas({
       return;
     }
 
-    // For connections, empty string clears the label
     const newConnections = connections.map(c =>
       c.id === connectionId ? { ...c, label: trimmed || undefined } : c
     );
@@ -761,7 +704,6 @@ export function DesignCanvas({
     connectionEditResolvedRef.current = true;
     setEditingConnectionId(null);
 
-    // Bypass debounce
     if (onSave) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
@@ -770,9 +712,8 @@ export function DesignCanvas({
       skipNextDebouncedSaveRef.current = true;
       onSave(nodes, newConnections, whiteboardDataRef.current);
     }
-  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave, setEditingConnectionId]);
+  }, [editingConnectionLabel, nodes, connections, saveToHistory, onSave]);
 
-  // Delete selected node or connection
   const handleDeleteSelected = useCallback(() => {
     if (readOnly) return;
     if (selectedNodeId) {
@@ -780,46 +721,52 @@ export function DesignCanvas({
       const newConnections = connections.filter((c) => c.from !== selectedNodeId && c.to !== selectedNodeId);
       saveToHistory(newNodes, newConnections);
       setSelectedNodeId(null);
+      setSelectedNode(null);
     } else if (selectedConnectionId) {
       const newConnections = connections.filter((c) => c.id !== selectedConnectionId);
       saveToHistory(nodes, newConnections);
       setSelectedConnectionId(null);
     }
-  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly, setSelectedNodeId, setSelectedConnectionId]);
+  }, [selectedNodeId, selectedConnectionId, nodes, connections, saveToHistory, readOnly, setSelectedNode]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (readOnly) return;
-      // Delete selected node or connection
-      if ((e.key === 'Delete' || e.key === 'Backspace')) {
-        // Don't delete if user is typing in an input
-        const activeEl = document.activeElement;
-        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
-          return;
-        }
+      if (activeView === 'whiteboard') return;
 
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
+        return;
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace')) {
         if (selectedNodeId || selectedConnectionId) {
           e.preventDefault();
           handleDeleteSelected();
         }
       }
 
-      // Undo: Ctrl+Z
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         handleUndo();
       }
 
-      // Redo: Ctrl+Shift+Z or Ctrl+Y (fixed: use toLowerCase for shift+z)
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
         handleRedo();
       }
+
+      // Tool shortcuts
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        if (e.key.toLowerCase() === 'v') setToolMode('select');
+        if (e.key.toLowerCase() === 'h') setToolMode('pan');
+        if (e.key.toLowerCase() === 'e') setToolMode('erase');
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo, readOnly]);
+  }, [selectedNodeId, selectedConnectionId, handleDeleteSelected, handleUndo, handleRedo, readOnly, activeView]);
 
   const handleWhiteboardSave = useCallback((data: string) => {
     setWhiteboardData(data);
@@ -832,7 +779,7 @@ export function DesignCanvas({
     <main
       ref={canvasRef}
       tabIndex={0}
-      className={`relative flex-1 bg-dashboard-bg dark:bg-[#1A1825] overflow-hidden focus:outline-none select-none ${toolMode === 'pan' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-default'
+      className={`relative flex-1 bg-[#060810] overflow-hidden focus:outline-none select-none ${toolMode === 'pan' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-default'
         }`}
       onMouseDown={handleCanvasMouseDown}
       onMouseMove={handleMouseMove}
@@ -845,23 +792,23 @@ export function DesignCanvas({
     >
       {/* View Toggle Tabs */}
       {enableWhiteboard && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex bg-white/10 dark:bg-black/20 backdrop-blur-md p-1 rounded-lg border border-slate-200 dark:border-white/10 shadow-lg">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex bg-[#0c0d16]/80 backdrop-blur-md p-1 rounded-lg border border-white/[0.06] shadow-lg font-mono text-[9px] uppercase tracking-wider">
             <button
                 onClick={() => setActiveView('architecture')}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-3 py-1 font-semibold rounded transition-all cursor-pointer ${
                     activeView === 'architecture' 
-                    ? 'bg-primary text-white shadow-md' 
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+                    ? 'bg-white text-black shadow-sm' 
+                    : 'text-white/40 hover:text-white/80'
                 }`}
             >
                 Architecture
             </button>
             <button
                 onClick={() => setActiveView('whiteboard')}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-3 py-1 font-semibold rounded transition-all cursor-pointer ${
                     activeView === 'whiteboard' 
-                    ? 'bg-primary text-white shadow-md' 
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+                    ? 'bg-white text-black shadow-sm' 
+                    : 'text-white/40 hover:text-white/80'
                 }`}
             >
                 Whiteboard
@@ -871,7 +818,7 @@ export function DesignCanvas({
 
       {activeView === 'whiteboard' && enableWhiteboard ? (
         <div
-            className="absolute inset-0 z-40 bg-white dark:bg-[#1A1825]"
+            className="absolute inset-0 z-40 bg-[#060810]"
             style={{ touchAction: 'none' }}
             onPointerDown={(e) => e.stopPropagation()}
             onPointerMove={(e) => e.stopPropagation()}
@@ -891,475 +838,515 @@ export function DesignCanvas({
         </div>
       ) : (
         <>
-            {/* Grid background */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                backgroundImage: `
-                    linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: `${20 * (zoom / 100)}px ${20 * (zoom / 100)}px`,
-                backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
-                }}
-            />
-      <style>{`
-        @keyframes dash {
-          to { stroke-dashoffset: -12; }
-        }
-      `}</style>
-      
-      {!readOnly && (
-        <SimulationControls 
-           isRunning={isSimulationRunning} 
-           targetRps={targetRps} 
-           onToggle={setIsSimulationRunning} 
-           onChangeRps={setTargetRps} 
-        />
-      )}
+          {/* Blueprint Grid background */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgba(34, 211, 238, 0.015) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(34, 211, 238, 0.015) 1px, transparent 1px)
+              `,
+              backgroundSize: `${20 * (zoom / 100)}px ${20 * (zoom / 100)}px`,
+              backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
+              opacity: zoom < 45 ? 0.2 : 0.85,
+              transition: 'opacity 0.25s ease',
+            }}
+          />
 
-      {/* Grid Background (fixed) */}
-      <div className="absolute inset-0 bg-grid-pattern pointer-events-none" />
+          {/* Vignette Depth Shadow Overlay */}
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_40%,rgba(6,8,16,0.6)_100%)]" />
 
-      {/* Instructions Tooltip */}
-      {!readOnly && (
-        <div className="absolute top-4 left-4 bg-black/70 text-white text-xs px-3 py-2 rounded-lg z-50 max-w-xs">
-          <p className="font-medium mb-1">Controls:</p>
-          <ul className="space-y-0.5 text-white/80">
-            <li>• Drag from palette to add</li>
-            <li>• Click & drag nodes to move</li>
-            <li>• <kbd className="bg-white/20 px-1 rounded">Shift</kbd>+Click to draw arrows</li>
-            <li>• <kbd className="bg-white/20 px-1 rounded">Delete</kbd> to remove selected</li>
-            <li>• <kbd className="bg-white/20 px-1 rounded">Ctrl+Z</kbd> Undo / <kbd className="bg-white/20 px-1 rounded">Ctrl+Y</kbd> Redo</li>
-          </ul>
-        </div>
-      )}
-
-      {/* Drop Zone Indicator */}
-      {isDragOver && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
-          <div className="bg-primary/10 border-2 border-dashed border-primary rounded-xl px-6 py-4">
-            <span className="text-primary font-medium">Drop component here</span>
-          </div>
-        </div>
-      )}
-
-      {/* Zoomable/Pannable Content */}
-      <div
-        ref={contentRef}
-        data-canvas-content
-        className="absolute inset-0 origin-top-left"
-        style={{
-          transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom / 100})`,
-        }}
-      >
-        {/* Connecting Lines (SVG Layer) - visible lines below nodes */}
-        <svg
-          className="absolute inset-0 pointer-events-none z-0"
-          style={{ width: '100%', height: '100%', overflow: 'visible' }}
-        >
-          <defs>
-            <marker id={arrowId} markerHeight="7" markerWidth="10" orient="auto" refX="9" refY="3.5">
-              <polygon fill="#4f4b64" points="0 0, 10 3.5, 0 7"></polygon>
-            </marker>
-          </defs>
-
-          {/* Visible connection lines */}
-          {connections.map((conn) => {
-            const isSelected = conn.id === selectedConnectionId;
-            const pathD = getConnectionPath(conn.from, conn.to);
-            const edgeMetric = simulationMetrics.edgeMetrics[conn.id];
-            const isFlowing = isSimulationRunning && edgeMetric && edgeMetric.trafficFlow > 0;
-
-            return (
-              <g key={conn.id}>
-                <path
-                  d={pathD}
-                  fill="none"
-                  markerEnd={`url(#${arrowId})`}
-                  stroke={isSelected ? '#4725f4' : '#4f4b64'}
-                  strokeWidth={isSelected ? 3 : 2}
-                  className={`pointer-events-none ${isSelected ? 'opacity-100' : 'opacity-60'}`}
-                />
-                {isFlowing && (
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="3"
-                    strokeDasharray="6,6"
-                    className="pointer-events-none opacity-80"
-                    style={{ animation: 'dash 1s linear infinite' }}
-                  />
-                )}
-              </g>
-            );
-          })}
-
-          {/* Connection being drawn */}
-          {isDrawingConnection && connectionStart && (
-            <path
-              d={getDrawingPath()}
-              fill="none"
-              stroke="#4725f4"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-              className="opacity-80"
+          <style>{`
+            @keyframes dash {
+              to { stroke-dashoffset: -10; }
+            }
+          `}</style>
+          
+          {!readOnly && (
+            <SimulationControls 
+               isRunning={isSimulationRunning} 
+               targetRps={targetRps} 
+               onToggle={setIsSimulationRunning} 
+               onChangeRps={setTargetRps} 
             />
           )}
-        </svg>
 
-        {/* Canvas Nodes */}
-        <div className="absolute inset-0 z-10 pointer-events-none">
-          {displayNodes.map((node) => {
-            const colors = getColorClasses(node.type);
-            const isSelected = node.id === selectedNodeId;
+          {/* Tooltip instructions */}
+          {!readOnly && (
+            <div className="absolute top-4 left-4 bg-[#0c0d16]/90 border border-white/[0.04] text-[8px] font-mono tracking-widest text-white/30 p-3 rounded-lg z-50 max-w-xs uppercase space-y-1.5 shadow-xl select-none">
+              <p className="font-bold text-white/60 mb-2">OPERATIONAL CONSOLE</p>
+              <ul className="space-y-1 text-white/30">
+                <li>• Drag items from catalog</li>
+                <li>• Click + drag nodes to move</li>
+                <li>• Shift + click node to link</li>
+                <li>• Delete key to decommission</li>
+                <li>• Double click to name</li>
+                <li>• Ctrl+Z Undo / Ctrl+Y Redo</li>
+              </ul>
+            </div>
+          )}
 
-            const isImpacted = activeConstraints.some(c => c.impactedNodeId === node.id && c.status === 'active');
-            
-            const nodeMetric = simulationMetrics.nodeMetrics[node.id];
-            const isBottlenecked = isSimulationRunning && nodeMetric?.status === 'bottlenecked';
-            const isWarning = isSimulationRunning && nodeMetric?.status === 'warning';
-
-            return (
-              <div
-                key={node.id}
-                data-node
-                style={{ left: node.x, top: node.y }}
-                className={`absolute w-[60px] h-[60px] rounded-xl flex flex-col items-center justify-center select-none shadow-lg transition-all duration-300 ${isImpacted
-                  ? 'bg-red-500/10 border-2 border-red-500/50 opacity-80 grayscale-[50%] cursor-not-allowed pointer-events-auto'
-                  : isBottlenecked
-                  ? 'bg-red-600 border-2 border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.7)] text-white ring-2 ring-red-500 animate-pulse pointer-events-auto'
-                  : isWarning
-                  ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)] pointer-events-auto'
-                  : 'bg-white dark:bg-[#1e1e24] cursor-move transition-shadow pointer-events-auto ' + (isSelected
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#0f1115] shadow-[0_0_20px_rgba(71,37,244,0.3)] z-20'
-                    : 'border-2 border-transparent hover:border-primary')
-                  }`}
-                onMouseDown={(e) => {
-                  if (isImpacted) {
-                    e.stopPropagation();
-                    setSelectedNodeId(node.id);
-                    return;
-                  }
-                  handleNodeMouseDown(e, node.id);
-                }}
-                onMouseUp={(e) => {
-                  if (isImpacted) {
-                    e.stopPropagation();
-                    return;
-                  }
-                  handleNodeMouseUp(e, node.id);
-                }}
-              >
-                {isBottlenecked && !isImpacted && (
-                  <div className="absolute -top-6 bg-red-600 text-[9px] text-white font-bold px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)] whitespace-nowrap z-40 outline outline-2 outline-white dark:outline-[#1e1e24] animate-bounce">
-                    BOTTLENECK
-                  </div>
-                )}
-                
-                {isSimulationRunning && nodeMetric && node.type !== 'Client' && (
-                  <div className={`absolute -bottom-8 bg-black/80 dark:bg-black/90 text-white text-[8px] font-mono px-1.5 py-0.5 rounded shadow-sm z-30 whitespace-nowrap flex items-center gap-1 opacity-90 backdrop-blur-sm ${isBottlenecked ? 'text-red-300' : isWarning ? 'text-amber-300' : 'text-slate-300'}`}>
-                    <span>{(nodeMetric.trafficIn / 1000).toFixed(1)}k</span>
-                    <span className="text-slate-500">/</span>
-                    <span className="text-slate-400">{(nodeMetric.capacity / 1000).toFixed(1)}k RPS</span>
-                  </div>
-                )}
-
-                {/* Delete button - visible when selected and not readOnly */}
-                {isSelected && !readOnly && (
-                  <button
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSelected();
-                    }}
-                    className="absolute -top-3 -right-3 size-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg z-30 cursor-pointer transition-colors"
-                    title="Delete node"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
-                  </button>
-                )}
-
-                {isImpacted && (
-                  <div className="absolute -top-3 -right-3 size-6 bg-red-600 outline outline-2 outline-white dark:outline-[#1e1e24] text-white rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.5)] z-30 animate-pulse">
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span>
-                  </div>
-                )}
-                <span
-                  className={`material-symbols-outlined ${colors.text} ${colors.darkText}`}
-                  style={{ fontSize: '28px' }}
-                >
-                  {node.icon}
-                </span>
-
-                {/* Always-visible label below node */}
-                {editingNodeId === node.id ? (
-                  <input
-                    ref={labelInputRef}
-                    type="text"
-                    value={editingLabel}
-                    maxLength={25}
-                    onChange={(e) => setEditingLabel(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleLabelSubmit(node.id);
-                      if (e.key === 'Escape') {
-                        editResolvedRef.current = true;
-                        setEditingNodeId(null);
-                      }
-                      e.stopPropagation(); // prevent canvas hotkeys
-                    }}
-                    onBlur={() => {
-                      if (editResolvedRef.current) return; // Already handled by Enter/Escape
-                      handleLabelSubmit(node.id);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-24 text-center text-[10px] font-medium bg-white dark:bg-[#1e1e24] border border-primary rounded px-1 py-0.5 text-slate-800 dark:text-white outline-none shadow-lg z-30"
-                  />
-                ) : (
-                  <div
-                    className={`absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold tracking-wide whitespace-nowrap max-w-[90px] truncate text-center px-1.5 py-0.5 rounded-full ${node.label
-                      ? isSelected
-                        ? 'bg-primary/15 text-primary'
-                        : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
-                      : 'bg-transparent text-slate-400/60 dark:text-slate-600 italic'
-                      } ${readOnly ? 'pointer-events-none' : 'cursor-text'}`}
-                    title={node.label || node.type}
-                    onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    {node.label || node.type}
-                  </div>
-                )}
+          {/* Drop Zone Indicator */}
+          {isDragOver && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-45">
+              <div className="bg-cyan-500/5 border border-dashed border-cyan-500/20 rounded-xl px-6 py-4 font-mono text-[9px] tracking-wider uppercase text-cyan-400">
+                Drop Component in Canvas
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
 
-        {/* Connection click targets (between visible lines and nodes so clicks reach them but don't block nodes) */}
-        <svg
-          className="absolute inset-0 pointer-events-none z-[5]"
-          style={{ width: '100%', height: '100%', overflow: 'visible' }}
-        >
-          {connections.map((conn) => {
-            const pathD = getConnectionPath(conn.from, conn.to);
-            return (
-              <path
-                key={conn.id}
-                data-connection
-                d={pathD}
-                fill="none"
-                stroke="transparent"
-                strokeWidth="20"
-                className={`pointer-events-auto ${toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-pointer'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (readOnly) return;
-                  if (toolMode === 'erase') {
-                    const newConnections = connections.filter((c) => c.id !== conn.id);
-                    saveToHistory(nodes, newConnections);
-                    setSelectedConnectionId(null);
-                  } else {
-                    setSelectedConnectionId(conn.id);
-                    setSelectedNodeId(null);
-                  }
-                }}
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  if (readOnly || toolMode === 'erase') return;
-                  handleConnectionLabelDoubleClick(e, conn.id);
-                }}
-              />
-            );
-          })}
-        </svg>
+          {/* Zoomable/Pannable Content Area */}
+          <div
+            ref={contentRef}
+            data-canvas-content
+            className="absolute inset-0 origin-top-left"
+            style={{
+              transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom / 100})`,
+            }}
+          >
+            {/* Connecting Lines Layer */}
+            <svg
+              className="absolute inset-0 pointer-events-none z-0"
+              style={{ width: '100%', height: '100%', overflow: 'visible' }}
+            >
+              <defs>
+                <marker id={arrowId} markerHeight="5" markerWidth="7" orient="auto" refX="6" refY="2">
+                  <polygon fill="rgba(34,211,238,0.45)" points="0 0, 7 2, 0 4"></polygon>
+                </marker>
+              </defs>
 
-        {/* Connection Labels */}
-        <div className="absolute inset-0 z-[15] pointer-events-none">
-          {connections.map((conn) => {
-            const midpoint = getConnectionMidpoint(conn.from, conn.to);
-            if (!midpoint) return null;
+              {/* Active connections */}
+              {connections.map((conn) => {
+                const isSelected = conn.id === selectedConnectionId;
+                const pathD = getConnectionPath(conn.from, conn.to);
+                const edgeMetric = simulationMetrics.edgeMetrics[conn.id];
+                const isFlowing = isSimulationRunning && edgeMetric && edgeMetric.trafficFlow > 0;
 
-            const isEditing = editingConnectionId === conn.id;
-            const isSelected = selectedConnectionId === conn.id;
+                return (
+                  <g key={conn.id}>
+                    <path
+                      d={pathD}
+                      fill="none"
+                      markerEnd={`url(#${arrowId})`}
+                      stroke={isSelected ? 'rgba(34, 211, 238, 0.8)' : 'rgba(148, 163, 184, 0.15)'}
+                      strokeWidth={isSelected ? 1.5 : 1}
+                      className="transition-all duration-300"
+                    />
+                    {isFlowing && (
+                      <>
+                        <path
+                          d={pathD}
+                          fill="none"
+                          stroke="#22d3ee"
+                          strokeWidth="1.5"
+                          strokeDasharray="4,6"
+                          className="opacity-60 pointer-events-none"
+                          style={{ animation: 'dash 1s linear infinite' }}
+                        />
+                        <circle r="1.5" fill="#22d3ee" className="opacity-100 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]">
+                          <animateMotion
+                            dur="0.8s"
+                            repeatCount="indefinite"
+                            path={pathD}
+                          />
+                        </circle>
+                        <circle r="1.5" fill="#22d3ee" className="opacity-100 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]">
+                          <animateMotion
+                            dur="0.8s"
+                            begin="0.4s"
+                            repeatCount="indefinite"
+                            path={pathD}
+                          />
+                        </circle>
+                        <circle r="1.5" fill="#22d3ee" className="opacity-100 drop-shadow-[0_0_4px_rgba(34,211,238,0.8)]">
+                          <animateMotion
+                            dur="0.8s"
+                            begin="0.2s"
+                            repeatCount="indefinite"
+                            path={pathD}
+                          />
+                        </circle>
+                      </>
+                    )}
+                  </g>
+                );
+              })}
 
-            return (
-              <div
-                key={`label-${conn.id}`}
-                className="absolute flex items-center justify-center"
-                style={{
-                  left: midpoint.x,
-                  top: midpoint.y,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                {isEditing ? (
-                  <input
-                    ref={connectionLabelInputRef}
-                    type="text"
-                    value={editingConnectionLabel}
-                    maxLength={25}
-                    onChange={(e) => setEditingConnectionLabel(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleConnectionLabelSubmit(conn.id);
-                      if (e.key === 'Escape') {
-                        connectionEditResolvedRef.current = true;
-                        setEditingConnectionId(null);
+              {/* Pending connection layout */}
+              {isDrawingConnection && connectionStart && (
+                <path
+                  d={getDrawingPath()}
+                  fill="none"
+                  stroke="#22d3ee"
+                  strokeWidth="1.2"
+                  strokeDasharray="3,3"
+                  className="opacity-50"
+                />
+              )}
+            </svg>
+
+            {/* Nodes Render Layer */}
+            <div className="absolute inset-0 z-10 pointer-events-none">
+              {displayNodes.map((node) => {
+                const colors = getColorClasses(node.type);
+                const isSelected = node.id === selectedNodeId;
+
+                const isImpacted = activeConstraints.some(c => c.impactedNodeId === node.id && c.status === 'active');
+                const nodeMetric = simulationMetrics.nodeMetrics[node.id];
+                const isBottlenecked = isSimulationRunning && nodeMetric?.status === 'bottlenecked';
+                const isWarning = isSimulationRunning && nodeMetric?.status === 'warning';
+
+                return (
+                  <div
+                    key={node.id}
+                    data-node
+                    style={{ transform: `translate(${node.x}px, ${node.y}px)`, willChange: 'transform' }}
+                    className={`absolute top-0 left-0 w-[160px] h-[64px] rounded-xl flex items-center p-3 select-none bg-[#0c0d16]/90 backdrop-blur-md border transition-all duration-200 pointer-events-auto shadow-lg group ${
+                      isImpacted
+                        ? 'border-red-500/40 bg-red-500/[0.04] opacity-90 z-20'
+                        : isBottlenecked
+                        ? 'border-red-500 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.2)] text-white z-20'
+                        : isWarning
+                        ? 'border-amber-500/40 bg-amber-500/[0.04] shadow-[0_0_20px_rgba(245,158,11,0.08)] text-amber-400 z-20'
+                        : isSelected
+                        ? 'border-cyan-500/50 shadow-[0_0_25px_rgba(34,211,238,0.12)] bg-[#0c0d16] z-20'
+                        : 'border-white/[0.06] hover:border-white/[0.15] hover:bg-[#0c0d16] z-10'
+                    }`}
+                    onMouseDown={(e) => {
+                      if (isImpacted) {
+                        e.stopPropagation();
+                        setSelectedNodeId(node.id);
+                        setSelectedNode({ id: node.id, type: node.type, label: node.label, icon: node.icon });
+                        return;
                       }
-                      e.stopPropagation();
+                      handleNodeMouseDown(e, node.id);
                     }}
-                    onBlur={() => {
-                      if (connectionEditResolvedRef.current) return;
-                      handleConnectionLabelSubmit(conn.id);
+                    onMouseUp={(e) => {
+                      if (isImpacted) {
+                        e.stopPropagation();
+                        return;
+                      }
+                      handleNodeMouseUp(e, node.id);
                     }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="w-24 text-center text-[10px] font-medium bg-white dark:bg-[#1e1e24] border border-primary rounded px-1 py-0.5 text-slate-800 dark:text-white outline-none shadow-lg pointer-events-auto"
-                    placeholder="e.g. gRPC, HTTP"
-                  />
-                ) : (
-                  <>
-                    {conn.label ? (
-                      <div
-                        className={`text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer shadow-sm transition-colors ${isSelected
-                          ? 'bg-primary text-white'
-                          : 'bg-white/90 dark:bg-[#1e1e24]/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#3f3b54]'
-                          } ${readOnly || toolMode === 'erase' ? 'pointer-events-none' : 'pointer-events-auto'}`}
-                        title={conn.label}
-                        onClick={(e) => {
-                          if (!readOnly) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                          }
-                        }}
-                        onDoubleClick={(e) => handleConnectionLabelDoubleClick(e, conn.id)}
-                        onMouseDown={(e) => {
-                          if (readOnly) return;
-                          e.stopPropagation();
-                          setSelectedConnectionId(conn.id);
-                          setSelectedNodeId(null);
-                        }}
-                      >
-                        {conn.label}
+                  >
+                    {isBottlenecked && !isImpacted && (
+                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-red-500/90 text-[7px] text-white font-bold font-mono tracking-widest px-1.5 py-0.5 rounded shadow z-40 uppercase border border-red-400/20 whitespace-nowrap animate-pulse">
+                        LIMIT REACHED
                       </div>
-                    ) : (
-                      isSelected && !readOnly && (
-                        <div
-                          className={`text-[9.5px] font-medium tracking-wide whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer bg-primary/10 text-primary border border-primary/30 transition-colors hover:bg-primary/20 backdrop-blur-sm ${toolMode === 'erase' ? 'pointer-events-none' : 'pointer-events-auto'}`}
-                          title="Add label to connection"
-                          onClick={(e) => {
+                    )}
+                    
+                    {isSimulationRunning && nodeMetric && node.type !== 'Client' && (
+                      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-black/85 text-[7px] font-mono tracking-widest text-white/50 px-1 py-0.5 rounded shadow-md border border-white/[0.03] whitespace-nowrap uppercase">
+                        {(nodeMetric.trafficIn / 1000).toFixed(1)}k / {(nodeMetric.capacity / 1000).toFixed(1)}k RPS
+                      </div>
+                    )}
+
+                    {/* Left Icon Panel */}
+                    <div className="flex-shrink-0 size-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mr-3 group-hover:bg-white/[0.05] transition-colors">
+                      <span className={`material-symbols-outlined text-[16px] drop-shadow-md ${colors.text} ${colors.darkText}`}>
+                        {node.icon}
+                      </span>
+                    </div>
+
+                    {/* Center Text Panel */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                      {editingNodeId === node.id ? (
+                        <input
+                          ref={labelInputRef}
+                          type="text"
+                          value={editingLabel}
+                          maxLength={20}
+                          onChange={(e) => setEditingLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleLabelSubmit(node.id);
+                            if (e.key === 'Escape') {
+                              editResolvedRef.current = true;
+                              setEditingNodeId(null);
+                            }
                             e.stopPropagation();
-                            handleConnectionLabelDoubleClick(e, conn.id);
+                          }}
+                          onBlur={() => {
+                            if (editResolvedRef.current) return;
+                            handleLabelSubmit(node.id);
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
+                          className="bg-[#060810] border border-cyan-500/50 rounded px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-wider text-white outline-none w-full shadow-inner"
+                        />
+                      ) : (
+                        <span
+                          className="text-[9px] font-bold text-white/90 truncate uppercase tracking-wider font-mono cursor-text select-text drop-shadow-sm group-hover:text-white transition-colors"
+                          onDoubleClick={(e) => handleLabelDoubleClick(e, node.id)}
                         >
-                          + Label
-                        </div>
-                      )
+                          {node.label || node.type}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1.5 opacity-60">
+                        <span className="text-[7px] font-mono text-white/50 uppercase tracking-widest">
+                          GLOBAL-MUM
+                        </span>
+                        <span className="text-white/20 text-[6px]">·</span>
+                        <span className="text-[7px] font-mono text-white/40 uppercase tracking-widest">
+                          R:1
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right Status LED Dot */}
+                    <div className="absolute top-2.5 right-2.5 flex items-center">
+                      <span className={`h-1.5 w-1.5 rounded-full ${isImpacted ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : isBottlenecked ? 'bg-red-500 animate-ping' : isWarning ? 'bg-amber-400 animate-pulse' : 'bg-cyan-400/80 shadow-[0_0_6px_rgba(34,211,238,0.4)]'} transition-all duration-300`} />
+                    </div>
+
+                    {/* Delete button - top right when selected */}
+                    {isSelected && !readOnly && (
+                      <button
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSelected();
+                        }}
+                        className="absolute -top-2.5 -right-2.5 size-5 bg-red-500/10 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-full flex items-center justify-center shadow-lg z-30 cursor-pointer transition-colors"
+                        title="Delete node"
+                      >
+                        <span className="material-symbols-outlined text-[11px]">close</span>
+                      </button>
                     )}
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Floating Canvas Controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white dark:bg-[#1e1e24] border border-slate-200 dark:border-border-dark p-1.5 rounded-full shadow-xl flex items-center gap-1 z-30">
-        {!readOnly && (
-          <>
-            {/* Pan Tool */}
-            <button
-              onClick={() => setToolMode('pan')}
-              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'pan' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-                }`}
-              title="Pan Tool (drag to move canvas)"
+                    {isImpacted && (
+                      <div className="absolute -top-2.5 -right-2.5 size-5 bg-red-600 border border-red-500 text-white rounded-full flex items-center justify-center shadow-lg z-30 animate-pulse">
+                        <span className="material-symbols-outlined text-[11px]">warning</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Connection click targets layer */}
+            <svg
+              className="absolute inset-0 pointer-events-none z-[5]"
+              style={{ width: '100%', height: '100%', overflow: 'visible' }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>pan_tool</span>
+              {connections.map((conn) => {
+                const pathD = getConnectionPath(conn.from, conn.to);
+                return (
+                  <path
+                    key={conn.id}
+                    data-connection
+                    d={pathD}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth="20"
+                    className={`pointer-events-auto ${toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-pointer'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (readOnly) return;
+                      if (toolMode === 'erase') {
+                        const newConnections = connections.filter((c) => c.id !== conn.id);
+                        saveToHistory(nodes, newConnections);
+                        setSelectedConnectionId(null);
+                      } else {
+                        setSelectedConnectionId(conn.id);
+                        setSelectedNodeId(null);
+                        setSelectedNode(null);
+                      }
+                    }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      if (readOnly || toolMode === 'erase') return;
+                      handleConnectionLabelDoubleClick(e, conn.id);
+                    }}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Connection labels */}
+            <div className="absolute inset-0 z-[15] pointer-events-none">
+              {connections.map((conn) => {
+                const midpoint = getConnectionMidpoint(conn.from, conn.to);
+                if (!midpoint) return null;
+
+                const isEditing = editingConnectionId === conn.id;
+                const isSelected = selectedConnectionId === conn.id;
+
+                return (
+                  <div
+                    key={`label-${conn.id}`}
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      left: midpoint.x,
+                      top: midpoint.y,
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  >
+                    {isEditing ? (
+                      <input
+                        ref={connectionLabelInputRef}
+                        type="text"
+                        value={editingConnectionLabel}
+                        maxLength={25}
+                        onChange={(e) => setEditingConnectionLabel(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleConnectionLabelSubmit(conn.id);
+                          if (e.key === 'Escape') {
+                            connectionEditResolvedRef.current = true;
+                            setEditingConnectionId(null);
+                          }
+                          e.stopPropagation();
+                        }}
+                        onBlur={() => {
+                          if (connectionEditResolvedRef.current) return;
+                          handleConnectionLabelSubmit(conn.id);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        className="bg-[#0c0d16] border border-cyan-500/30 rounded px-1.5 py-0.5 text-[8px] font-mono uppercase tracking-wider text-white outline-none w-24 text-center pointer-events-auto"
+                        placeholder="HTTP, GRPC"
+                      />
+                    ) : (
+                      <>
+                        {conn.label ? (
+                          <div
+                            className={`text-[8px] font-mono uppercase tracking-wider whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer shadow-sm transition-colors ${isSelected
+                              ? 'bg-cyan-500 text-black font-semibold'
+                              : 'bg-[#0c0d16]/90 text-white/50 border border-white/[0.04]'
+                              } ${readOnly || toolMode === 'erase' ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                            title={conn.label}
+                            onClick={(e) => {
+                              if (!readOnly) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                              }
+                            }}
+                            onDoubleClick={(e) => handleConnectionLabelDoubleClick(e, conn.id)}
+                            onMouseDown={(e) => {
+                              if (readOnly) return;
+                              e.stopPropagation();
+                              setSelectedConnectionId(conn.id);
+                              setSelectedNodeId(null);
+                              setSelectedNode(null);
+                            }}
+                          >
+                            {conn.label}
+                          </div>
+                        ) : (
+                          isSelected && !readOnly && (
+                            <div
+                              className={`text-[8px] font-mono uppercase tracking-wider whitespace-nowrap px-1.5 py-0.5 rounded cursor-pointer bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 transition-colors hover:bg-cyan-500/20 backdrop-blur-sm ${toolMode === 'erase' ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                              title="Add label"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConnectionLabelDoubleClick(e, conn.id);
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              + LINK TAG
+                            </div>
+                          )
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Floating Canvas Controls (Linear/Figma styling) */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#0a0b10]/95 backdrop-blur-xl border border-white/[0.08] p-1.5 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.05)] flex items-center gap-1 z-30 font-mono text-[9px] uppercase tracking-wider transition-all duration-300">
+            {!readOnly && (
+              <>
+                {/* Select Tool */}
+                <button
+                  onClick={() => setToolMode('select')}
+                  className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${toolMode === 'select' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80 hover:bg-white/[0.02]'
+                    }`}
+                  title="Select (V)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">near_me</span>
+                </button>
+
+                {/* Pan Tool */}
+                <button
+                  onClick={() => setToolMode('pan')}
+                  className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${toolMode === 'pan' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80 hover:bg-white/[0.02]'
+                    }`}
+                  title="Pan (H)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">pan_tool</span>
+                </button>
+
+                {/* Erase Tool */}
+                <button
+                  onClick={() => setToolMode('erase')}
+                  className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${toolMode === 'erase' ? 'bg-red-500/15 text-red-400 shadow-sm' : 'text-white/40 hover:text-red-400 hover:bg-red-500/[0.02]'
+                    }`}
+                  title="Erase (E)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">ink_eraser</span>
+                </button>
+
+                <div className="w-px h-5 bg-white/[0.06] mx-1.5 rounded-full"></div>
+
+                {/* Undo */}
+                <button
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${canUndo
+                    ? 'text-white/40 hover:text-white/90 hover:bg-white/[0.04]'
+                    : 'text-white/15 cursor-not-allowed'
+                    }`}
+                  title="Undo (Ctrl+Z)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">undo</span>
+                </button>
+
+                {/* Redo */}
+                <button
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${canRedo
+                    ? 'text-white/40 hover:text-white/90 hover:bg-white/[0.04]'
+                    : 'text-white/15 cursor-not-allowed'
+                    }`}
+                  title="Redo (Ctrl+Y)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">redo</span>
+                </button>
+
+                <div className="w-px h-5 bg-white/[0.06] mx-1.5 rounded-full"></div>
+              </>
+            )}
+
+            {/* Zoom Out */}
+            <button
+              onClick={handleZoomOut}
+              disabled={zoom <= 25}
+              className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${zoom > 25
+                ? 'text-white/40 hover:text-white/90 hover:bg-white/[0.04]'
+                : 'text-white/15 cursor-not-allowed'
+                }`}
+              title="Zoom Out"
+            >
+              <span className="material-symbols-outlined text-[16px]">remove</span>
             </button>
 
-            {/* Select Tool */}
+            {/* Zoom Level */}
+            <span className="text-[10px] font-mono font-medium text-white/50 w-12 text-center select-none">{zoom}%</span>
+
+            {/* Zoom In */}
             <button
-              onClick={() => setToolMode('select')}
-              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'select' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
+              onClick={handleZoomIn}
+              disabled={zoom >= 200}
+              className={`size-8 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer ${zoom < 200
+                ? 'text-white/40 hover:text-white/90 hover:bg-white/[0.04]'
+                : 'text-white/15 cursor-not-allowed'
                 }`}
-              title="Select Tool (click to select, drag to move nodes)"
+              title="Zoom In"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>near_me</span>
+              <span className="material-symbols-outlined text-[16px]">add</span>
             </button>
-
-            {/* Erase Tool */}
-            <button
-              onClick={() => setToolMode('erase')}
-              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${toolMode === 'erase' ? 'bg-red-500/15 text-red-500' : 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-                }`}
-              title="Erase Tool (click any node or connection to delete)"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>ink_eraser</span>
-            </button>
-
-            <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
-
-            {/* Undo */}
-            <button
-              onClick={handleUndo}
-              disabled={!canUndo}
-              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canUndo
-                ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                }`}
-              title="Undo (Ctrl+Z)"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>undo</span>
-            </button>
-
-            {/* Redo */}
-            <button
-              onClick={handleRedo}
-              disabled={!canRedo}
-              className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${canRedo
-                ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-                : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                }`}
-              title="Redo (Ctrl+Y)"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>redo</span>
-            </button>
-
-            <div className="w-px h-4 bg-slate-200 dark:bg-border-dark mx-1"></div>
-          </>
-        )}
-
-        {/* Zoom Out */}
-        <button
-          onClick={handleZoomOut}
-          disabled={zoom <= 25}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${zoom > 25
-            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-            }`}
-          title="Zoom Out"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>remove</span>
-        </button>
-
-        {/* Zoom Level */}
-        <span className="text-xs font-mono text-slate-500 w-10 text-center">{zoom}%</span>
-
-        {/* Zoom In */}
-        <button
-          onClick={handleZoomIn}
-          disabled={zoom >= 200}
-          className={`size-8 flex items-center justify-center rounded-full transition-colors cursor-pointer ${zoom < 200
-            ? 'hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400'
-            : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-            }`}
-          title="Zoom In"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>add</span>
-        </button>
-      </div>
-      </>
+          </div>
+        </>
       )}
     </main>
   );

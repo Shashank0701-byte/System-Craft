@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
                     status: derivedStatus,
                     thumbnail: design.thumbnail,
                     nodeCount,
+                    connectionCount,
                     createdAt: design.createdAt,
                     updatedAt: design.updatedAt,
                 };

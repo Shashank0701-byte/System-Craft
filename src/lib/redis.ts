@@ -16,6 +16,7 @@ if (REDIS_URL) {
             global.redisCache = new Redis(REDIS_URL, {
                 lazyConnect: true, // Don't crash on startup if Redis is down
                 maxRetriesPerRequest: 3,
+                family: 4, // Force IPv4 for docker compatibility
                 retryStrategy(times) {
                     // Exponential backoff with a max of 3 seconds
                     return Math.min(times * 50, 3000);
@@ -27,6 +28,7 @@ if (REDIS_URL) {
         redisClient = new Redis(REDIS_URL, {
             lazyConnect: true,
             maxRetriesPerRequest: 3,
+            family: 4,
             retryStrategy(times) {
                 return Math.min(times * 50, 3000);
             },
