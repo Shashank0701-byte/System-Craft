@@ -3,30 +3,30 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #4725f4;
-  --color-primary-hover: #3a1dc2;
+  --color-primary: #22d3ee;
+  --color-primary-hover: #0891b2;
   --color-background-light: #f6f5f8;
-  --color-background-dark: #0a0a0c;
-  --color-surface-dark: #131022;
-  --color-border-dark: #2b2839;
+  --color-background-dark: #060810;
+  --color-surface-dark: #0c0d16;
+  --color-border-dark: rgba(255, 255, 255, 0.06);
 
   --font-display: var(--font-plus-jakarta), var(--font-inter), sans-serif;
   --font-body: var(--font-inter), sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
 
-  --background-image-grid-pattern: linear-gradient(to right, #1f1d2b 1px, transparent 1px), linear-gradient(to bottom, #1f1d2b 1px, transparent 1px);
+  --background-image-grid-pattern: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 
-  --color-dashboard-bg: #131022;
-  --color-dashboard-surface: #1e1b2e;
-  --color-dashboard-card: #2b2839;
+  --color-dashboard-bg: #060810;
+  --color-dashboard-surface: #0c0d16;
+  --color-dashboard-card: #0c0d16;
 
-  --color-sidebar-bg-dark: #121118;
-  --color-text-muted-dark: #a19cba;
-  --color-text-label-dark: #5f5b7a;
-  --color-text-placeholder-dark: #6b6687;
-  --color-text-card-footer-dark: #8b86a8;
-  --color-surface-highlight-dark: #3f3b54;
-  --color-text-input-dark: #e0e0e0;
+  --color-sidebar-bg-dark: #060810;
+  --color-text-muted-dark: rgba(255, 255, 255, 0.6);
+  --color-text-label-dark: rgba(255, 255, 255, 0.4);
+  --color-text-placeholder-dark: rgba(255, 255, 255, 0.2);
+  --color-text-card-footer-dark: rgba(255, 255, 255, 0.3);
+  --color-surface-highlight-dark: rgba(255, 255, 255, 0.04);
+  --color-text-input-dark: rgba(255, 255, 255, 0.9);
 }
 
 @layer utilities {
@@ -114,7 +114,7 @@
 /* Dot grid pattern for the canvas - using @utility for Tailwind v4 */
 @utility bg-grid-pattern {
   background-size: 24px 24px;
-  background-image: radial-gradient(circle, #3f3b54 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
 @layer utilities {
@@ -195,16 +195,16 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3b54;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f4b64;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Firefox scrollbar support */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3f3b54 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }

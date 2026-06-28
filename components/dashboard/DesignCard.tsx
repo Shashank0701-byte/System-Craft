@@ -314,24 +314,15 @@ export function DesignCard({ id, title, status, editedTime, nodeCount = 0, conne
               {title}
             </h4>
 
-            {/* Structured aligned columns/metrics */}
-            <div className="mt-3.5 space-y-1.5 border-t border-dashed border-white/[0.03] pt-3">
-              <div className="flex items-center justify-between font-mono text-[8px] tracking-widest uppercase">
-                <span className="text-white/20">Nodes Configured</span>
-                <span className="text-white/50 tabular-nums">{nodeCount} NODES</span>
-              </div>
-              <div className="flex items-center justify-between font-mono text-[8px] tracking-widest uppercase">
-                <span className="text-white/20">Connections</span>
-                <span className="text-white/50 tabular-nums">{connectionCount} LINKS</span>
-              </div>
-              <div className="flex items-center justify-between font-mono text-[8px] tracking-widest uppercase">
-                <span className="text-white/20">Complexity</span>
-                <span className="text-white/40">{mockComplexity}</span>
-              </div>
+            {/* Simple metadata */}
+            <div className="mt-2 text-[9px] font-mono tracking-wider uppercase text-white/40 flex items-center gap-1.5">
+              <span>{nodeCount} Nodes</span>
+              <span className="text-white/20">·</span>
+              <span>{connectionCount} Links</span>
             </div>
 
             {/* Footer status pill & schedule edited timestamp */}
-            <div className="mt-4 pt-3 border-t border-white/[0.02] flex items-center justify-between">
+            <div className="mt-auto pt-4 flex items-center justify-between">
               <span className={`px-2 py-0.5 rounded text-[8px] font-mono tracking-widest uppercase border ${statusColor}`}>
                 {status}
               </span>

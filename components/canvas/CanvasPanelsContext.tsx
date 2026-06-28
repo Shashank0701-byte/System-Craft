@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from 'react';
 
 // Node config stored per node type
 export interface NodeConfig {
@@ -39,6 +39,9 @@ interface CanvasPanelsContextType {
     nodeConfigs: Record<string, NodeConfig>;
     updateNodeConfig: (nodeId: string, patch: Partial<NodeConfig>) => void;
     getNodeConfig: (nodeId: string) => NodeConfig;
+    // Active View state (architecture vs whiteboard)
+    activeView: 'architecture' | 'whiteboard';
+    setActiveView: (view: 'architecture' | 'whiteboard') => void;
 }
 
 const CanvasPanelsContext = createContext<CanvasPanelsContextType>({
@@ -52,6 +55,8 @@ const CanvasPanelsContext = createContext<CanvasPanelsContextType>({
     nodeConfigs: {},
     updateNodeConfig: () => { },
     getNodeConfig: () => DEFAULT_CONFIG,
+    activeView: 'architecture',
+    setActiveView: () => { },
 });
 
 export function CanvasPanelsProvider({ children }: { children: ReactNode }) {
@@ -59,6 +64,25 @@ export function CanvasPanelsProvider({ children }: { children: ReactNode }) {
     const [rightOpen, setRightOpen] = useState(false);
     const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null);
     const [nodeConfigs, setNodeConfigs] = useState<Record<string, NodeConfig>>({});
+    const [activeView, setActiveViewRaw] = useState<'architecture' | 'whiteboard'>('architecture');
+
+    // Restore the last active tab from session storage on mount
+    useEffect(() => {
+        const saved = sessionStorage.getItem('canvasActiveView');
+        if (saved === 'whiteboard' || saved === 'architecture') {
+            setActiveViewRaw(saved as 'architecture' | 'whiteboard');
+        }
+    }, []);
+
+    const setActiveView = useCallback((view: 'architecture' | 'whiteboard') => {
+        setActiveViewRaw(view);
+        sessionStorage.setItem('canvasActiveView', view);
+        // Automatically close side panels on mobile when switching to whiteboard
+        if (view === 'whiteboard') {
+            setLeftOpen(false);
+            setRightOpen(false);
+        }
+    }, []);
 
     const toggleLeft = useCallback(() => {
         setLeftOpen(prev => !prev);
@@ -90,8 +114,10 @@ export function CanvasPanelsProvider({ children }: { children: ReactNode }) {
         leftOpen, rightOpen, toggleLeft, toggleRight, closeAll,
         selectedNode, setSelectedNode,
         nodeConfigs, updateNodeConfig, getNodeConfig,
+        activeView, setActiveView
     }), [leftOpen, rightOpen, toggleLeft, toggleRight, closeAll,
-        selectedNode, nodeConfigs, updateNodeConfig, getNodeConfig]);
+        selectedNode, nodeConfigs, updateNodeConfig, getNodeConfig,
+        activeView, setActiveView]);
 
     return (
         <CanvasPanelsContext.Provider value={value}>

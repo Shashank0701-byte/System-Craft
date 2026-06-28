@@ -53,13 +53,13 @@ const ToolBtn = ({ t, icon, label, currentTool, setTool }: { t: ToolType; icon: 
     <button
         onClick={() => setTool(t)}
         title={label}
-        className={`size-9 flex items-center justify-center rounded-lg transition-all ${
+        className={`size-8 flex items-center justify-center rounded-lg transition-all ${
             currentTool === t
-                ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
-                : 'text-slate-400 hover:text-white hover:bg-white/10'
+                ? 'bg-white/10 text-white ring-1 ring-white/20'
+                : 'text-white/40 hover:text-white/80 hover:bg-white/5'
         }`}
     >
-        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{icon}</span>
     </button>
 );
 
@@ -78,7 +78,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
     const [strokeWidth, setStrokeWidth] = useState(4);
     const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
 
-    // Drawing state (refs to avoid re-renders during draw)
+    // Drawing state
     const isDrawingRef = useRef(false);
     const isPanningRef = useRef(false);
     const currentElementRef = useRef<WhiteboardElement | null>(null);
@@ -108,13 +108,13 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                 if (parsed.elements) setElements(parsed.elements);
                 if (parsed.viewport) setViewport(parsed.viewport);
             } catch {
-                // ignore invalid data
+                // ignore
             }
         }, 0);
         return () => clearTimeout(timer);
     }, [initialData]);
 
-    // ─── Auto-save on element changes ──────────────────────────
+    // ─── Auto-save ─────────────────────────────────────────────
     useEffect(() => {
         if (!onSave || readOnly) return;
         if (isInitialLoadRef.current) {
@@ -156,7 +156,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         return () => window.removeEventListener('resize', resizeCanvas);
     }, [resizeCanvas]);
 
-    // ─── Canvas coordinate conversion ──────────────────────────
+    // ─── Screen to canvas ──────────────────────────────────────
     const screenToCanvas = useCallback((clientX: number, clientY: number): Point => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
@@ -168,7 +168,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         };
     }, []);
 
-    // ─── Drawing functions ─────────────────────────────────────
+    // ─── Drawing logic ─────────────────────────────────────────
     const drawElement = useCallback((ctx: CanvasRenderingContext2D, el: WhiteboardElement) => {
         ctx.save();
         ctx.strokeStyle = el.color;
@@ -204,7 +204,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                 ctx.lineTo(end.x, end.y);
                 ctx.stroke();
 
-                // Arrowhead
                 const angle = Math.atan2(end.y - start.y, end.x - start.x);
                 const headLen = Math.max(12, el.strokeWidth * 3);
                 ctx.beginPath();
@@ -241,7 +240,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         ctx.restore();
     }, []);
 
-    // ─── Render all elements ───────────────────────────────────
     const render = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -253,12 +251,11 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         const h = canvas.height / dpr;
         const vp = viewportRef.current;
 
-        // Clear
         ctx.clearRect(0, 0, w, h);
 
-        // Draw dot grid
+        // Blueprint dot grid
         ctx.save();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.015)';
         const gridSize = 24 * vp.zoom;
         const offsetX = vp.x % gridSize;
         const offsetY = vp.y % gridSize;
@@ -269,17 +266,14 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         }
         ctx.restore();
 
-        // Apply viewport transform
         ctx.save();
         ctx.translate(vp.x, vp.y);
         ctx.scale(vp.zoom, vp.zoom);
 
-        // Draw committed elements
         for (const el of elementsRef.current) {
             drawElement(ctx, el);
         }
 
-        // Draw current in-progress element
         if (currentElementRef.current) {
             drawElement(ctx, currentElementRef.current);
         }
@@ -287,7 +281,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         ctx.restore();
     }, [drawElement]);
 
-    // ─── Animation loop ────────────────────────────────────────
     useEffect(() => {
         let frameId: number;
         const loop = () => {
@@ -298,9 +291,9 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         return () => cancelAnimationFrame(frameId);
     }, [render]);
 
-    // ─── History helpers ───────────────────────────────────────
+    // History
     const pushHistory = useCallback((prev: WhiteboardElement[]) => {
-        setHistory(h => [...h.slice(-50), prev]); // keep last 50
+        setHistory(h => [...h.slice(-50), prev]);
         setFuture([]);
     }, []);
 
@@ -331,7 +324,7 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         setElements([]);
     }, [pushHistory]);
 
-    // ─── Eraser hit-test ───────────────────────────────────────
+    // Hit test
     const hitTest = useCallback((point: Point, el: WhiteboardElement): boolean => {
         const threshold = Math.max(10, el.strokeWidth);
         switch (el.type) {
@@ -377,13 +370,12 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         }
     }, []);
 
-    // ─── Mouse handlers ────────────────────────────────────────
+    // Pointer events
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         if (readOnly) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Pan with middle mouse or space+left
         if (e.button === 1 || (e.button === 0 && spaceDownRef.current)) {
             isPanningRef.current = true;
             lastPanRef.current = { x: e.clientX, y: e.clientY };
@@ -392,7 +384,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         }
 
         if (e.button !== 0) return;
-
         const point = screenToCanvas(e.clientX, e.clientY);
 
         if (tool === 'eraser') {
@@ -486,13 +477,11 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
 
         if (!isDrawingRef.current) return;
         isDrawingRef.current = false;
-
         if (tool === 'eraser') return;
 
         const el = currentElementRef.current;
         if (!el) return;
 
-        // Don't commit tiny/empty elements
         if (el.type === 'pen' && el.points.length < 2) {
             currentElementRef.current = null;
             return;
@@ -507,7 +496,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         currentElementRef.current = null;
     }, [tool, pushHistory]);
 
-    // ─── Text commit ───────────────────────────────────────────
     const commitText = useCallback(() => {
         if (!textValue.trim()) {
             setTextInput(v => ({ ...v, visible: false }));
@@ -529,11 +517,9 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         setTextValue('');
     }, [textValue, color, strokeWidth, pushHistory]);
 
-    // ─── Scroll zoom ───────────────────────────────────────────
     const handleWheel = useCallback((e: React.WheelEvent) => {
         e.stopPropagation();
         if (e.ctrlKey || e.metaKey) {
-            // Zoom
             const delta = e.deltaY > 0 ? 0.9 : 1.1;
             setViewport(v => {
                 const newZoom = Math.max(0.1, Math.min(5, v.zoom * delta));
@@ -548,12 +534,10 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                 };
             });
         } else {
-            // Pan
             setViewport(v => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }));
         }
     }, []);
 
-    // ─── Keyboard shortcuts ────────────────────────────────────
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === ' ') {
@@ -568,7 +552,6 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                 e.preventDefault();
                 handleRedo();
             }
-            // Tool shortcuts
             if (!e.ctrlKey && !e.metaKey && !textInput.visible) {
                 switch (e.key) {
                     case 'p': setTool('pen'); break;
@@ -595,15 +578,15 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
         };
     }, [handleUndo, handleRedo, textInput.visible]);
 
-
-
-    // ─── Render ────────────────────────────────────────────────
     return (
         <div
             ref={containerRef}
-            className="absolute inset-0 bg-[#1A1825] select-none"
+            className="absolute inset-0 bg-[#060810] select-none"
             style={{ touchAction: 'none' }}
         >
+            {/* Vignette depth backdrop overlay */}
+            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_40%,rgba(6,8,16,0.6)_100%)] z-10" />
+
             <canvas
                 ref={canvasRef}
                 className="absolute inset-0"
@@ -627,28 +610,28 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                         if (e.key === 'Escape') setTextInput(v => ({ ...v, visible: false }));
                     }}
                     onBlur={commitText}
-                    className="absolute bg-transparent border border-primary/60 rounded px-2 py-1 text-white text-sm outline-none"
+                    className="absolute bg-[#0c0d16] border border-cyan-500/30 rounded px-2 py-1 text-white text-xs outline-none font-mono"
                     style={{ left: textInput.x, top: textInput.y, minWidth: 120, zIndex: 60 }}
                     autoFocus
                 />
             )}
 
-            {/* ─── Bottom Toolbar ─────────────────────────── */}
+            {/* Bottom Toolbar */}
             {!readOnly && (
-                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-3 py-2 bg-[#0f0e17]/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-3 py-1.5 bg-[#0c0d16]/90 backdrop-blur-xl rounded-2xl border border-white/[0.05] shadow-2xl font-mono text-[9px] uppercase tracking-wider">
                     {/* Drawing Tools */}
-                    <ToolBtn t="pen" icon="draw" label="Pen (P)" currentTool={tool} setTool={setTool} />
-                    <ToolBtn t="line" icon="pen_size_1" label="Line (L)" currentTool={tool} setTool={setTool} />
-                    <ToolBtn t="arrow" icon="arrow_right_alt" label="Arrow (A)" currentTool={tool} setTool={setTool} />
-                    <ToolBtn t="rect" icon="rectangle" label="Rectangle (R)" currentTool={tool} setTool={setTool} />
-                    <ToolBtn t="circle" icon="circle" label="Circle (C)" currentTool={tool} setTool={setTool} />
-                    <ToolBtn t="text" icon="title" label="Text (T)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="pen" icon="draw" label="Pen" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="line" icon="pen_size_1" label="Line" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="arrow" icon="arrow_right_alt" label="Arrow" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="rect" icon="rectangle" label="Rectangle" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="circle" icon="circle" label="Circle" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="text" icon="title" label="Text" currentTool={tool} setTool={setTool} />
 
-                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <div className="w-px h-5 bg-white/[0.05] mx-1" />
 
-                    <ToolBtn t="eraser" icon="ink_eraser" label="Eraser (E)" currentTool={tool} setTool={setTool} />
+                    <ToolBtn t="eraser" icon="ink_eraser" label="Eraser" currentTool={tool} setTool={setTool} />
 
-                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <div className="w-px h-5 bg-white/[0.05] mx-1" />
 
                     {/* Color Palette */}
                     <div className="flex items-center gap-1">
@@ -657,15 +640,15 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                                 key={c}
                                 onClick={() => setColor(c)}
                                 title={c}
-                                className={`size-5 rounded-full border-2 transition-all ${
-                                    color === c ? 'border-primary scale-125' : 'border-transparent hover:scale-110'
+                                className={`size-4.5 rounded-full border transition-all cursor-pointer ${
+                                    color === c ? 'border-cyan-400 scale-125' : 'border-transparent hover:scale-110'
                                 }`}
                                 style={{ backgroundColor: c }}
                             />
                         ))}
                     </div>
 
-                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <div className="w-px h-5 bg-white/[0.05] mx-1" />
 
                     {/* Stroke Width */}
                     <div className="flex items-center gap-1">
@@ -674,52 +657,52 @@ export default function WhiteboardClient({ initialData, onSave, readOnly = false
                                 key={w}
                                 onClick={() => setStrokeWidth(w)}
                                 title={`${w}px`}
-                                className={`flex items-center justify-center size-7 rounded-lg transition-all ${
+                                className={`flex items-center justify-center size-7 rounded-lg transition-all cursor-pointer ${
                                     strokeWidth === w
-                                        ? 'bg-primary/20 ring-1 ring-primary/40'
-                                        : 'hover:bg-white/10'
+                                        ? 'bg-white/10 ring-1 ring-white/20'
+                                        : 'hover:bg-white/5'
                                 }`}
                             >
                                 <div
                                     className="rounded-full bg-white"
-                                    style={{ width: Math.min(w + 2, 14), height: Math.min(w + 2, 14) }}
+                                    style={{ width: Math.min(w + 1, 10), height: Math.min(w + 1, 10) }}
                                 />
                             </button>
                         ))}
                     </div>
 
-                    <div className="w-px h-6 bg-white/10 mx-1" />
+                    <div className="w-px h-5 bg-white/[0.05] mx-1" />
 
                     {/* Undo / Redo / Clear */}
                     <button
                         onClick={handleUndo}
                         disabled={history.length === 0}
-                        title="Undo (Ctrl+Z)"
-                        className={`size-9 flex items-center justify-center rounded-lg transition-all ${
-                            history.length > 0 ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 cursor-not-allowed'
+                        title="Undo"
+                        className={`size-8 flex items-center justify-center rounded-lg transition-all ${
+                            history.length > 0 ? 'text-white/40 hover:text-white hover:bg-white/5' : 'text-white/15 cursor-not-allowed'
                         }`}
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>undo</span>
+                        <span className="material-symbols-outlined text-[16px]">undo</span>
                     </button>
                     <button
                         onClick={handleRedo}
                         disabled={future.length === 0}
-                        title="Redo (Ctrl+Y)"
-                        className={`size-9 flex items-center justify-center rounded-lg transition-all ${
-                            future.length > 0 ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-600 cursor-not-allowed'
+                        title="Redo"
+                        className={`size-8 flex items-center justify-center rounded-lg transition-all ${
+                            future.length > 0 ? 'text-white/40 hover:text-white hover:bg-white/5' : 'text-white/15 cursor-not-allowed'
                         }`}
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>redo</span>
+                        <span className="material-symbols-outlined text-[16px]">redo</span>
                     </button>
                     <button
                         onClick={handleClear}
                         disabled={elements.length === 0}
-                        title="Clear Canvas"
-                        className={`size-9 flex items-center justify-center rounded-lg transition-all ${
-                            elements.length > 0 ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-slate-600 cursor-not-allowed'
+                        title="Clear"
+                        className={`size-8 flex items-center justify-center rounded-lg transition-all ${
+                            elements.length > 0 ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-white/15 cursor-not-allowed'
                         }`}
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>delete_sweep</span>
+                        <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
                     </button>
                 </div>
             )}

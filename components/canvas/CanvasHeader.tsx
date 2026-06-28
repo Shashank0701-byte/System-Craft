@@ -12,13 +12,17 @@ interface CanvasHeaderProps {
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onTitleChange?: (newTitle: string) => void;
   onRunAIReview?: () => void;
+  onAIReview?: () => void;
+  onBack?: () => void;
 }
 
 export function CanvasHeader({
   title = 'Untitled Design',
   saveStatus = 'idle',
   onTitleChange,
-  onRunAIReview
+  onRunAIReview,
+  onAIReview,
+  onBack
 }: CanvasHeaderProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -93,7 +97,7 @@ export function CanvasHeader({
         // Invalid URL, fall through to default
       }
     }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=4725f4&color=fff&size=36`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=0c0d16&color=fff&size=36`;
   };
 
   const avatarUrl = getSafeAvatarUrl();
@@ -157,23 +161,23 @@ export function CanvasHeader({
     switch (saveStatus) {
       case 'saving':
         return (
-          <span className="ml-2 text-xs text-yellow-500 flex items-center gap-1">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-            Saving...
+          <span className="text-[11px] font-mono text-white/40 flex items-center gap-2 select-none">
+            <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-pulse" />
+            Syncing...
           </span>
         );
       case 'saved':
         return (
-          <span className="ml-2 text-xs text-green-500 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">check_circle</span>
-            Saved
+          <span className="text-[11px] font-mono text-white/40 flex items-center gap-2 select-none">
+            <span className="w-1.5 h-1.5 bg-white/40 rounded-full" />
+            Saved to cloud
           </span>
         );
       case 'error':
         return (
-          <span className="ml-2 text-xs text-red-500 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">error</span>
-            Save failed
+          <span className="text-[11px] font-mono text-red-400/80 flex items-center gap-2 select-none">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+            Offline
           </span>
         );
       default:
@@ -182,34 +186,37 @@ export function CanvasHeader({
   };
 
   return (
-    <header className="relative h-14 md:h-16 flex items-center justify-between px-3 md:px-6 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark shrink-0 z-20">
+    <header className="relative h-12 flex items-center justify-between px-4 border-b border-white/[0.04] bg-[#060810] shrink-0 z-20">
+      {/* Noise background */}
+      <div className="noise-overlay absolute inset-0 pointer-events-none opacity-[0.02]" />
+
       {/* Left: Mobile components toggle + Logo & Breadcrumb */}
-      <div className="flex items-center gap-2 md:gap-6">
+      <div className="flex items-center gap-4 z-10">
         {/* Mobile: Components toggle */}
         <button
           onClick={toggleLeft}
-          className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dashboard-card transition-colors cursor-pointer"
+          className="md:hidden flex-shrink-0 p-1 rounded-lg text-white/30 hover:text-white/80 hover:bg-white/[0.02] transition-colors cursor-pointer"
           aria-label="Toggle components"
           title="Components"
         >
-          <span className="material-symbols-outlined text-[20px]">widgets</span>
+          <span className="material-symbols-outlined text-[18px]">widgets</span>
         </button>
-        <Link href="/dashboard" className="flex items-center gap-2 text-primary dark:text-white group">
-          <div className="p-1.5 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-            <span className="material-symbols-outlined text-primary" style={{ fontSize: '24px' }}>hub</span>
-          </div>
-          <h2 className="text-lg font-bold tracking-tight hidden md:block">SystemCraft</h2>
-        </Link>
-        <div className="h-6 w-px bg-slate-200 dark:bg-border-dark hidden md:block"></div>
-        <div className="flex items-center gap-2 text-sm">
-          <Link href="/dashboard" className="text-slate-400 font-medium hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-            Projects
-          </Link>
-          <span className="text-slate-600 dark:text-slate-600">/</span>
+
+        <div className="flex items-center gap-2">
+          {onBack ? (
+            <button onClick={onBack} className="text-white/40 hover:text-white/80 transition-colors select-none text-[13px] font-mono font-bold tracking-wider">
+              Workspace
+            </button>
+          ) : (
+            <Link href="/dashboard" className="text-white/40 hover:text-white/80 transition-colors select-none text-[13px] font-mono font-bold tracking-wider">
+              Workspace
+            </Link>
+          )}
+          <span className="text-white/20 select-none text-[13px] font-mono">/</span>
 
           {/* Editable Title */}
           {isEditing ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <input
                 ref={inputRef}
                 type="text"
@@ -217,99 +224,103 @@ export function CanvasHeader({
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
-                className="bg-slate-100 dark:bg-surface-highlight-dark text-slate-900 dark:text-white font-medium px-2 py-1 rounded border border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[150px] max-w-[300px]"
+                className="bg-transparent text-white focus:outline-none focus:ring-0 border-none p-0 text-[13px] font-mono font-bold tracking-wider w-[150px]"
                 maxLength={100}
               />
             </div>
           ) : (
             <button
               onClick={handleStartEditing}
-              className="group/title flex items-center gap-1 text-slate-900 dark:text-white font-medium hover:text-primary dark:hover:text-primary transition-colors"
+              className="group/title flex items-center gap-1.5 text-white/90 hover:text-white transition-colors cursor-pointer text-[13px] font-mono font-bold tracking-wider"
               title="Click to rename"
             >
               <span className="max-w-[200px] truncate">{title}</span>
-              <span className="material-symbols-outlined text-[16px] opacity-0 group-hover/title:opacity-60 transition-opacity">
-                edit
-              </span>
             </button>
           )}
-
-          {renderSaveStatus()}
         </div>
+
+        {renderSaveStatus() && (
+          <div className="hidden md:flex items-center ml-4">
+            {renderSaveStatus()}
+          </div>
+        )}
       </div>
 
       {/* Right: Mobile properties toggle + Actions */}
-      <div className="flex items-center gap-1 md:gap-3">
+      <div className="flex items-center gap-2 z-10">
         {/* Mobile: Properties toggle */}
         <button
           onClick={toggleRight}
-          className="md:hidden flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dashboard-card transition-colors cursor-pointer"
+          className="md:hidden flex-shrink-0 p-1 rounded-lg text-white/30 hover:text-white/80 hover:bg-white/[0.02] transition-colors cursor-pointer"
           aria-label="Toggle properties"
           title="Properties"
         >
-          <span className="material-symbols-outlined text-[20px]">tune</span>
+          <span className="material-symbols-outlined text-[18px]">tune</span>
         </button>
-        <button
-          onClick={onRunAIReview}
-          className="hidden md:flex h-9 items-center justify-center rounded-lg px-4 bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors shadow-lg shadow-primary/20 cursor-pointer"
-        >
-          <span className="material-symbols-outlined mr-2" style={{ fontSize: '18px' }}>auto_awesome</span>
-          <span>Run AI Review</span>
+
+        {(onRunAIReview || onAIReview) && (
+          <button
+            onClick={onAIReview || onRunAIReview}
+            className="hidden md:flex h-[26px] items-center justify-center px-3 bg-white text-black font-mono text-[12px] font-bold tracking-wider hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,255,255,0.1)] active:translate-y-[0px] active:scale-[0.98] transition-all cursor-pointer select-none rounded-[4px] border border-transparent"
+          >
+            <span>AI Architecture Review</span>
+          </button>
+        )}
+
+        <div className="h-5 w-px bg-white/[0.06] mx-1 hidden md:block"></div>
+
+        <button className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer">
+          <span className="material-symbols-outlined text-[16px]">share</span>
         </button>
-        <div className="h-9 w-px bg-slate-200 dark:bg-border-dark mx-1 hidden md:block"></div>
-        <button className="flex items-center justify-center size-9 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400 transition-colors cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>share</span>
-        </button>
-        <button className="flex items-center justify-center size-9 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2b2839] text-slate-600 dark:text-slate-400 transition-colors cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>save</span>
+        <button className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer">
+          <span className="material-symbols-outlined text-[16px]">save</span>
         </button>
 
         {/* User Dropdown */}
-        <div className="ml-2 relative" ref={dropdownRef}>
+        <div className="ml-1 relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="relative cursor-pointer"
+            className="relative cursor-pointer flex items-center justify-center size-7 rounded-full overflow-hidden border border-white/[0.08] hover:border-white/20 transition-colors"
           >
             <div
-              className="bg-center bg-no-repeat bg-cover rounded-full size-9 border-2 border-white dark:border-[#2b2839] ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
+              className="bg-center bg-no-repeat bg-cover rounded-full size-full"
               style={{ backgroundImage: `url("${avatarUrl}")` }}
             />
-            <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white dark:border-sidebar-bg-dark rounded-full"></div>
           </button>
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dashboard-card rounded-xl shadow-xl border border-slate-200 dark:border-border-dark overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 top-full mt-2 w-52 bg-[#0c0d16] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-white/[0.06] overflow-hidden z-50 p-1 animate-in fade-in slide-in-from-top-1 duration-150">
               {/* User Info */}
-              <div className="p-3 border-b border-slate-200 dark:border-border-dark">
-                <p className="font-medium text-slate-900 dark:text-white truncate text-sm">
+              <div className="p-2.5 border-b border-white/[0.04]">
+                <p className="text-[10px] font-mono tracking-wider uppercase text-white/80 truncate">
                   {user?.displayName || 'User'}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-text-muted-dark truncate">
+                <p className="text-[9px] font-mono text-white/30 truncate mt-0.5">
                   {user?.email || ''}
                 </p>
               </div>
 
               {/* Menu Items */}
-              <div className="py-1">
+              <div className="py-0.5">
                 <Link
                   href="/dashboard"
                   onClick={() => setIsDropdownOpen(false)}
-                  className="w-full px-3 py-2 flex items-center gap-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-surface-highlight-dark transition-colors"
+                  className="w-full px-2.5 py-1.5 flex items-center gap-2 rounded-lg text-left text-[10px] font-mono uppercase tracking-wider text-white/50 hover:bg-white/[0.02] hover:text-white/80 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  <span className="material-symbols-outlined text-[15px]">dashboard</span>
                   <span>Dashboard</span>
                 </Link>
               </div>
 
               {/* Logout */}
-              <div className="border-t border-slate-200 dark:border-border-dark py-1">
+              <div className="border-t border-white/[0.04] py-0.5 mt-0.5">
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="w-full px-3 py-2 flex items-center gap-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
+                  className="w-full px-2.5 py-1.5 flex items-center gap-2 rounded-lg text-left text-[10px] font-mono uppercase tracking-wider text-red-400 hover:bg-red-500/[0.06] transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[18px]">logout</span>
+                  <span className="material-symbols-outlined text-[15px]">logout</span>
                   <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
                 </button>
               </div>

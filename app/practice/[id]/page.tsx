@@ -149,18 +149,18 @@ export default function PracticePage() {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-background-dark">
+            <div className="flex h-screen items-center justify-center bg-[#060810]">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    <p className="text-slate-400">Loading exercise...</p>
+                    <div className="w-10 h-10 border border-white/[0.06] border-t-cyan-400 rounded-full animate-spin" />
+                    <p className="text-white/40 text-xs font-mono tracking-widest uppercase">Initializing Sandbox...</p>
                 </div>
             </div>
         );
     }
     if (error || !template) {
         return (
-            <div className="flex h-screen items-center justify-center bg-background-dark">
-                <p className="text-red-500">Error: {error}</p>
+            <div className="flex h-screen items-center justify-center bg-[#060810]">
+                <p className="text-red-400 font-mono text-xs uppercase tracking-widest">Error: {error}</p>
             </div>
         );
     }
@@ -174,35 +174,40 @@ export default function PracticePage() {
 
     return (
         <CanvasPanelsProvider>
-            <div className="flex h-screen w-full flex-col bg-background-dark text-white overflow-hidden">
+            <div className="flex h-screen w-full flex-col bg-[#060810] text-white overflow-hidden">
                 {/* Header */}
-                <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-dark bg-sidebar-bg px-6 z-10">
-                    <div className="flex items-center gap-3">
-                        <span className="text-slate-400 cursor-pointer hover:text-white transition" onClick={() => router.push('/practice')}>←</span>
+                <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.04] bg-[#0c0d16] px-6 z-10 select-none">
+                    <div className="flex items-center gap-4">
+                        <div 
+                           className="flex items-center justify-center size-8 rounded-lg border border-white/[0.05] bg-white/[0.02] text-white/40 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer" 
+                           onClick={() => router.push('/practice')}
+                        >
+                            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                        </div>
                         <div>
-                            <h1 className="text-base font-semibold text-white flex items-center gap-2">
+                            <h1 className="text-[13px] font-mono font-bold tracking-wider text-white flex items-center gap-2 uppercase">
                                {template.title}
                                {solved && (
-                                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
-                                       <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check_circle</span>
+                                   <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[8px] font-mono font-semibold text-emerald-400 uppercase tracking-widest">
+                                       <span className="material-symbols-outlined text-[10px]">check_circle</span>
                                        Solved
                                    </span>
                                )}
                             </h1>
-                            <p className="text-xs text-slate-500">{template.category} • {template.difficulty.toUpperCase()}</p>
+                            <p className="text-[9px] font-mono tracking-widest text-white/30 uppercase mt-0.5">{template.category} • {template.difficulty}</p>
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-3 font-mono text-[9px] tracking-wider uppercase">
                         <button 
                            onClick={handleReset}
-                           className="rounded-lg px-3 py-2 text-sm text-slate-500 hover:text-slate-300 transition cursor-pointer"
+                           className="rounded px-3 py-1.5 text-white/40 hover:text-white hover:bg-white/[0.02] transition cursor-pointer"
                            title="Reset to original template"
                         >
                             Reset
                         </button>
                         <button 
                            onClick={handleToggleSolution}
-                           className="rounded-lg px-4 py-2 border border-border-dark text-sm hover:bg-sidebar-bg transition text-slate-300 cursor-pointer"
+                           className="rounded px-3 py-1.5 border border-white/[0.06] hover:bg-white/[0.02] transition text-white/60 cursor-pointer"
                         >
                             {showSolution ? 'Back to Your Work' : 'View Solution'}
                         </button>
@@ -210,14 +215,14 @@ export default function PracticePage() {
                             <button 
                                onClick={handleSubmit}
                                disabled={showSolution}
-                               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition shadow-sm disabled:opacity-50 cursor-pointer"
+                               className="rounded bg-cyan-500 text-black px-4 py-1.5 font-bold hover:bg-cyan-400 transition shadow-sm disabled:opacity-50 cursor-pointer"
                             >
                                 Submit Fix
                             </button>
                         ) : (
                             <button 
                                onClick={() => router.push('/practice')}
-                               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/80 transition shadow-sm cursor-pointer"
+                               className="rounded border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 font-bold text-cyan-400 hover:bg-cyan-500/20 transition shadow-sm cursor-pointer"
                             >
                                 Practice More
                             </button>
@@ -242,29 +247,29 @@ export default function PracticePage() {
                     {/* Problem Card overlay */}
                     <div className="absolute top-6 z-[60] w-80 flex flex-col gap-4 pointer-events-none" style={{ left: showSolution ? '24px' : '280px' }}>
                         
-                        <div className="bg-black/90 backdrop-blur-md rounded-xl p-5 border border-border-dark shadow-xl pointer-events-auto">
-                            <h3 className="font-semibold text-white mb-2">Problem Statement</h3>
-                            <p className="text-sm text-slate-400 leading-relaxed">
+                        <div className="bg-[#0c0d16]/95 backdrop-blur-xl rounded-xl p-4 border border-white/[0.08] shadow-2xl pointer-events-auto">
+                            <h3 className="text-[10px] font-mono font-bold tracking-widest text-white/80 uppercase mb-2">Problem Statement</h3>
+                            <p className="text-[11px] font-mono text-white/50 leading-relaxed">
                                 {template.description}
                             </p>
                         </div>
 
                         {showSolution && (
-                             <div className="bg-indigo-950/95 backdrop-blur-md rounded-xl p-5 border border-indigo-800 shadow-xl pointer-events-auto">
-                                <h3 className="font-semibold text-indigo-300 mb-2">Model Solution</h3>
-                                <p className="text-sm text-indigo-200 leading-relaxed">
+                             <div className="bg-[#1e1b4b]/95 backdrop-blur-xl rounded-xl p-4 border border-indigo-500/30 shadow-2xl pointer-events-auto">
+                                <h3 className="text-[10px] font-mono font-bold tracking-widest text-indigo-300 uppercase mb-2">Model Solution</h3>
+                                <p className="text-[11px] font-mono text-indigo-200/80 leading-relaxed">
                                     {template.solutionExplanation}
                                 </p>
                             </div>
                         )}
                         
                         {feedback && !showSolution && (
-                            <div className={`backdrop-blur-md rounded-xl p-4 border shadow-xl pointer-events-auto ${
+                            <div className={`backdrop-blur-xl rounded-xl p-4 border shadow-2xl pointer-events-auto ${
                                 feedback.type === 'success' 
-                                    ? 'bg-emerald-950/95 border-emerald-800 text-emerald-300'
-                                    : 'bg-red-950/95 border-red-800 text-red-300'
+                                    ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-300'
+                                    : 'bg-red-950/90 border-red-500/30 text-red-300'
                             }`}>
-                                <p className="text-sm font-medium leading-relaxed">
+                                <p className="text-[11px] font-mono font-medium leading-relaxed uppercase tracking-wider">
                                     {feedback.text}
                                 </p>
                             </div>

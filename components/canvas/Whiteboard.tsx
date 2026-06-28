@@ -8,8 +8,8 @@ const DynamicWhiteboard = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="flex items-center justify-center w-full h-full bg-[#1A1825]">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center w-full h-full bg-[#060810]">
+                <div className="w-8 h-8 border-4 border-white/20 border-t-cyan-400 rounded-full animate-spin" />
             </div>
         ),
     }

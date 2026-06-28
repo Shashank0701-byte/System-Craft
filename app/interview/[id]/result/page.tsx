@@ -158,9 +158,9 @@ export default function InterviewResultPage({ params }: PageProps) {
                 <p className="text-slate-400 mb-8 text-center max-w-md">
                     {error || 'Evaluation data is missing for this session.'}
                 </p>
-                <Link href="/interview" className="px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl font-bold transition-all">
-                    Back to Interviews
-                </Link>
+            <Link href="/interview" className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black rounded font-mono text-xs font-bold uppercase tracking-widest transition-all">
+                Back to Interviews
+            </Link>
             </div>
         );
     }
@@ -175,31 +175,31 @@ export default function InterviewResultPage({ params }: PageProps) {
             <div className="max-w-6xl mx-auto mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <Link href="/interview" className="flex items-center gap-1 text-primary hover:underline text-sm font-medium">
-                            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        <Link href="/interview" className="flex items-center gap-1 text-white/40 hover:text-cyan-400 text-[10px] font-mono uppercase tracking-widest transition-colors">
+                            <span className="material-symbols-outlined text-[15px]">arrow_back</span>
                             Back
                         </Link>
-                        <span className="text-slate-600">•</span>
-                        <span className="text-slate-400 text-sm">Interview Result</span>
+                        <span className="text-white/10">•</span>
+                        <span className="text-white/30 text-[10px] font-mono uppercase tracking-widest">Interview Result</span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight">{question.prompt.split('.')[0]}</h1>
-                    <p className="text-slate-400 mt-1 max-w-2xl text-sm leading-relaxed truncate">
+                    <h1 className="text-xl md:text-2xl font-bold font-mono tracking-wider text-white uppercase">{question.prompt.split('.')[0]}</h1>
+                    <p className="text-white/40 mt-1.5 max-w-2xl text-[10px] font-mono tracking-wide leading-relaxed truncate">
                         {question.prompt}
                     </p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     <button
                         disabled
                         aria-disabled="true"
-                        className="flex items-center gap-2 px-5 py-2.5 bg-sidebar-bg-dark border border-border-dark opacity-50 cursor-not-allowed rounded-xl text-sm font-bold transition-all"
+                        className="flex items-center gap-2 px-4 py-2 border border-white/[0.04] bg-[#0c0d16]/30 text-white/30 opacity-50 cursor-not-allowed rounded-lg font-mono text-[10px] uppercase tracking-wider"
                     >
-                        <span className="material-symbols-outlined text-[20px]">download</span>
+                        <span className="material-symbols-outlined text-[16px]">download</span>
                         Export PDF (Soon)
                     </button>
                     <Link
                         href={`/interview`}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-hover rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20"
+                        className="flex items-center gap-2 px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-black rounded font-mono text-[10px] uppercase tracking-widest font-bold transition-all shadow-md shadow-cyan-500/10"
                     >
                         Try Another
                     </Link>
@@ -208,10 +208,10 @@ export default function InterviewResultPage({ params }: PageProps) {
 
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Score Summary Overview */}
-                <div className="lg:col-span-3 bg-sidebar-bg-dark border border-border-dark rounded-3xl p-8 flex flex-col md:flex-row items-center gap-10 overflow-hidden relative group">
+                <div className="lg:col-span-3 bg-[#0c0d16]/60 backdrop-blur-md border border-white/[0.06] rounded-3xl p-8 flex flex-col md:flex-row items-center gap-10 overflow-hidden relative group shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                     {/* Background glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -mr-20 -mt-20 group-hover:bg-primary/20 transition-all duration-700" />
-
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full -mr-20 -mt-20 group-hover:bg-cyan-500/10 transition-all duration-700" />
+ 
                     <div className="relative shrink-0 flex flex-col items-center">
                         <div className="relative size-40 flex items-center justify-center">
                             {/* Circular progress with SVG */}
@@ -221,8 +221,8 @@ export default function InterviewResultPage({ params }: PageProps) {
                                     cy="80"
                                     r="70"
                                     fill="transparent"
-                                    stroke="rgba(255,255,255,0.05)"
-                                    strokeWidth="12"
+                                    stroke="rgba(255,255,255,0.03)"
+                                    strokeWidth="10"
                                 />
                                 <circle
                                     cx="80"
@@ -230,7 +230,7 @@ export default function InterviewResultPage({ params }: PageProps) {
                                     r="70"
                                     fill="transparent"
                                     stroke="url(#scoreGradient)"
-                                    strokeWidth="12"
+                                    strokeWidth="10"
                                     strokeDasharray={440}
                                     strokeDashoffset={440 - (440 * finalScore) / 100}
                                     strokeLinecap="round"
@@ -238,14 +238,14 @@ export default function InterviewResultPage({ params }: PageProps) {
                                 />
                                 <defs>
                                     <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#4725f4" />
-                                        <stop offset="100%" stopColor="#9f85ff" />
+                                        <stop offset="0%" stopColor="#22d3ee" />
+                                        <stop offset="100%" stopColor="#0891b2" />
                                     </linearGradient>
                                 </defs>
                             </svg>
                             <div className="absolute flex flex-col items-center">
-                                <span className="text-5xl font-black text-white">{finalScore}</span>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">out of 100</span>
+                                <span className="text-5xl font-extrabold font-mono text-white tracking-tighter">{finalScore}</span>
+                                <span className="text-[8px] font-bold font-mono text-white/30 uppercase tracking-[0.2em] mt-1.5">OUT OF 100</span>
                             </div>
                         </div>
                         <div className="mt-4 flex gap-1">
@@ -261,41 +261,41 @@ export default function InterviewResultPage({ params }: PageProps) {
                             })}
                         </div>
                     </div>
-
+                    
                     <div className="flex-1 space-y-6 relative">
                         <div>
-                            <h2 className="text-xl font-bold mb-2">Architectural Assessment</h2>
-                            <p className="text-slate-400 text-sm leading-relaxed">
+                            <h2 className="text-base font-bold font-mono uppercase tracking-wider text-white mb-2">Architectural Assessment</h2>
+                            <p className="text-white/60 text-xs font-mono tracking-wide leading-relaxed">
                                 Your design was evaluated against both deterministic structural rules and qualitative AI-driven reasoning.
-                                A score of <span className="text-white font-bold">{finalScore}</span> indicates a
+                                A score of <span className="text-cyan-400 font-bold font-mono">{finalScore}</span> indicates a
                                 {finalScore >= 80 ? ' robust, production-ready' : (finalScore >= 60 ? ' solid foundation with minor' : ' basic attempt with significant')} architectural
                                 {finalScore >= 80 ? ' strategy.' : ' gaps.'}
                             </p>
                         </div>
-
+ 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl bg-dashboard-bg border border-border-dark flex items-center justify-between">
+                            <div className="p-4 rounded-xl bg-[#060810]/50 border border-white/[0.04] flex items-center justify-between shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
                                 <div>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Structural Rules</p>
-                                    <div className="flex items-end gap-2 text-2xl font-black text-white">
+                                    <p className="text-[8px] font-bold font-mono text-white/40 uppercase tracking-[0.2em] mb-1.5">Structural Rules</p>
+                                    <div className="flex items-end gap-1.5 text-xl font-bold font-mono text-white/90">
                                         {structural.score}
-                                        <span className="text-xs text-slate-500 font-bold mb-1.5">/ 100</span>
+                                        <span className="text-[10px] text-white/30 font-bold mb-1">/ 100</span>
                                     </div>
                                 </div>
-                                <div className="size-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                    <span className="material-symbols-outlined text-[24px]">architecture</span>
+                                <div className="size-10 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-400">
+                                    <span className="material-symbols-outlined text-[20px]">architecture</span>
                                 </div>
                             </div>
-                            <div className="p-4 rounded-2xl bg-dashboard-bg border border-border-dark flex items-center justify-between">
+                            <div className="p-4 rounded-xl bg-[#060810]/50 border border-white/[0.04] flex items-center justify-between shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]">
                                 <div>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">AI Reasoning</p>
-                                    <div className="flex items-end gap-2 text-2xl font-black text-white">
+                                    <p className="text-[8px] font-bold font-mono text-white/40 uppercase tracking-[0.2em] mb-1.5">AI Reasoning</p>
+                                    <div className="flex items-end gap-1.5 text-xl font-bold font-mono text-white/90">
                                         {reasoning.score}
-                                        <span className="text-xs text-slate-500 font-bold mb-1.5">/ 100</span>
+                                        <span className="text-[10px] text-white/30 font-bold mb-1">/ 100</span>
                                     </div>
                                 </div>
-                                <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                    <span className="material-symbols-outlined text-[24px]">psychology</span>
+                                <div className="size-10 rounded-lg bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-center text-cyan-400">
+                                    <span className="material-symbols-outlined text-[20px]">psychology</span>
                                 </div>
                             </div>
                         </div>
@@ -305,25 +305,25 @@ export default function InterviewResultPage({ params }: PageProps) {
                 {/* Left Column: Structural Analysis */}
                 <div className="lg:col-span-2 space-y-8">
                     {constraintChanges.length > 0 && (
-                        <section className="bg-sidebar-bg-dark border border-border-dark rounded-3xl p-6">
+                        <section className="bg-[#0c0d16]/60 backdrop-blur-md border border-white/[0.06] rounded-3xl p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="material-symbols-outlined text-amber-400 text-[22px]">bolt</span>
-                                <h3 className="text-lg font-bold">Live Constraint Changes</h3>
+                                <span className="material-symbols-outlined text-amber-400 text-[18px]">bolt</span>
+                                <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-white">Live Constraint Changes</h3>
                             </div>
                             <div className="space-y-3">
                                 {constraintChanges.map((change) => (
-                                    <div key={change.id} className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-                                        <div className="flex items-center justify-between gap-3 mb-1.5">
-                                            <h4 className="font-semibold text-white">{change.title}</h4>
-                                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${change.severity === 'high'
+                                    <div key={change.id} className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                                        <div className="flex items-center justify-between gap-3 mb-1.5 font-mono">
+                                            <h4 className="text-xs font-bold uppercase tracking-wider text-white">{change.title}</h4>
+                                            <span className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest ${change.severity === 'high'
                                                 ? 'bg-red-500/15 text-red-400 border border-red-500/20'
                                                 : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
                                                 }`}>
                                                 {change.severity}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-slate-300">{change.description}</p>
-                                        <p className="mt-2 text-[11px] text-slate-500">
+                                        <p className="text-xs font-mono tracking-wide text-white/60">{change.description}</p>
+                                        <p className="mt-2 text-[9px] font-mono text-white/30">
                                             Introduced {change.introducedAtMinute} minutes into the interview
                                         </p>
                                     </div>
@@ -379,32 +379,32 @@ export default function InterviewResultPage({ params }: PageProps) {
                     </section>
                 </div>
 
-                {/* Right Column: AI Feedback */}
-                <div className="lg:col-span-1 space-y-8">
-                    <section className="bg-gradient-to-br from-sidebar-bg-dark to-dashboard-bg border border-border-dark rounded-3xl p-6 h-full">
-                        <div className="flex items-center gap-2 mb-6 border-b border-border-dark pb-4">
-                            <span className="material-symbols-outlined text-primary text-[24px]">auto_awesome</span>
-                            <h3 className="text-lg font-bold">AI Insights</h3>
+                {/* Right Column: AI Insights */}
+                <div className="lg:col-span-1">
+                    <section className="bg-[#0c0d16]/60 backdrop-blur-md border border-white/[0.06] rounded-3xl p-6 h-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
+                        <div className="flex items-center gap-2 mb-6 border-b border-white/[0.04] pb-4 font-mono">
+                            <span className="material-symbols-outlined text-cyan-400 text-[20px]">auto_awesome</span>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-white">AI Insights</h3>
                         </div>
-
-                        <div className="space-y-8">
+ 
+                        <div className="space-y-8 font-mono">
                             {constraintChanges.length > 0 && (
                                 <div>
-                                    <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-[16px]">bolt</span>
+                                    <h4 className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[14px]">bolt</span>
                                         Adaptability
                                     </h4>
-                                    <div className="p-4 bg-white/5 border border-white/5 rounded-2xl text-sm text-slate-300 leading-relaxed">
+                                    <div className="p-4 bg-white/[0.02] border border-white/[0.04] rounded-2xl text-[10px] tracking-wide leading-relaxed text-white/70">
                                         {reasoning.adaptationSummary || 'The interview included live requirement changes, but no adaptation summary was generated.'}
                                     </div>
                                     {(reasoning.addressedConstraintChanges?.length || reasoning.missedConstraintChanges?.length) ? (
                                         <div className="mt-3 grid grid-cols-1 gap-3">
                                             {reasoning.addressedConstraintChanges && reasoning.addressedConstraintChanges.length > 0 && (
                                                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                                                    <p className="text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2">Addressed</p>
+                                                    <p className="text-[8px] font-black uppercase tracking-widest text-emerald-400 mb-2">Addressed</p>
                                                     <ul className="space-y-2">
                                                         {reasoning.addressedConstraintChanges.map((item, i) => (
-                                                            <li key={`${item}-${i}`} className="text-sm text-slate-300 flex items-start gap-2">
+                                                            <li key={`${item}-${i}`} className="text-[10px] tracking-wide text-white/70 flex items-start gap-2">
                                                                 <span className="mt-1.5 size-1.5 rounded-full bg-emerald-500 shrink-0" />
                                                                 {item}
                                                             </li>
@@ -414,10 +414,10 @@ export default function InterviewResultPage({ params }: PageProps) {
                                             )}
                                             {reasoning.missedConstraintChanges && reasoning.missedConstraintChanges.length > 0 && (
                                                 <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                                                    <p className="text-[11px] font-black uppercase tracking-widest text-red-400 mb-2">Missed</p>
+                                                    <p className="text-[8px] font-black uppercase tracking-widest text-red-400 mb-2">Missed</p>
                                                     <ul className="space-y-2">
                                                         {reasoning.missedConstraintChanges.map((item, i) => (
-                                                            <li key={`${item}-${i}`} className="text-sm text-slate-300 flex items-start gap-2">
+                                                            <li key={`${item}-${i}`} className="text-[10px] tracking-wide text-white/70 flex items-start gap-2">
                                                                 <span className="mt-1.5 size-1.5 rounded-full bg-red-500 shrink-0" />
                                                                 {item}
                                                             </li>
@@ -429,56 +429,56 @@ export default function InterviewResultPage({ params }: PageProps) {
                                     ) : null}
                                 </div>
                             )}
-
+ 
                             {/* Strengths */}
                             <div>
-                                <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[16px]">thumb_up</span>
+                                <h4 className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[14px]">thumb_up</span>
                                     Key Strengths
                                 </h4>
                                 {reasoning.strengths.length > 0 ? (
                                     <ul className="space-y-3">
                                         {reasoning.strengths.map((s: string, i: number) => (
-                                            <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
+                                            <li key={i} className="text-[10px] tracking-wide text-white/70 flex items-start gap-2">
                                                 <span className="mt-1.5 size-1.5 rounded-full bg-emerald-500 shrink-0" />
                                                 {s}
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-sm text-slate-500 italic px-4">No strengths identified.</p>
+                                    <p className="text-[10px] text-white/30 italic px-4">No strengths identified.</p>
                                 )}
                             </div>
-
+ 
                             {/* Weaknesses */}
                             <div>
-                                <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[16px]">heart_broken</span>
+                                <h4 className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[14px]">heart_broken</span>
                                     Gaps & Weaknesses
                                 </h4>
                                 {reasoning.weaknesses.length > 0 ? (
                                     <ul className="space-y-3">
                                         {reasoning.weaknesses.map((w: string, i: number) => (
-                                            <li key={i} className="text-sm text-slate-300 flex items-start gap-2.5">
+                                            <li key={i} className="text-[10px] tracking-wide text-white/70 flex items-start gap-2">
                                                 <span className="mt-1.5 size-1.5 rounded-full bg-red-500 shrink-0" />
                                                 {w}
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-sm text-slate-500 italic px-4">No significant weaknesses found.</p>
+                                    <p className="text-[10px] text-white/30 italic px-4">No significant weaknesses found.</p>
                                 )}
                             </div>
-
+ 
                             {/* Suggestions */}
-                            <div className="pt-4 border-t border-border-dark/30">
-                                <h4 className="text-xs font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[16px]">lightbulb</span>
+                            <div className="pt-4 border-t border-white/[0.04]">
+                                <h4 className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[14px]">lightbulb</span>
                                     Actionable Steps
                                 </h4>
                                 <div className="space-y-2">
                                     {reasoning.suggestions.map((s: string, i: number) => (
-                                        <div key={i} className="p-3 bg-white/5 border border-white/5 rounded-xl text-sm text-slate-300 leading-relaxed italic">
+                                        <div key={i} className="p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl text-[10px] tracking-wide text-white/70 leading-relaxed italic">
                                             <q>{s}</q>
                                         </div>
                                     ))}
@@ -492,27 +492,27 @@ export default function InterviewResultPage({ params }: PageProps) {
             {/* AI Conversation History (if any) */}
             {session.aiMessages && session.aiMessages.length > 0 && (
                 <div className="max-w-6xl mx-auto mt-8">
-                    <section className="bg-sidebar-bg-dark border border-border-dark rounded-3xl p-6 lg:p-8 relative overflow-hidden">
-                        <div className="flex items-center gap-2 mb-6">
-                            <span className="material-symbols-outlined text-indigo-400 text-[24px]">forum</span>
-                            <h3 className="text-lg font-bold">Interview Transcript</h3>
+                    <section className="bg-[#0c0d16]/60 backdrop-blur-md border border-white/[0.06] rounded-3xl p-6 lg:p-8 relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
+                        <div className="flex items-center gap-2 mb-6 font-mono">
+                            <span className="material-symbols-outlined text-cyan-400 text-[20px]">forum</span>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-white">Interview Transcript</h3>
                         </div>
-                        <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-4">
+                        <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 pr-4 font-mono">
                             {session.aiMessages.map((msg, i) => {
                                 const isAI = msg.role === 'interviewer';
                                 return (
                                     <div key={i} className={`flex gap-3 max-w-[80%] ${isAI ? 'self-start' : 'self-end ml-auto flex-row-reverse'}`}>
                                         {isAI && (
-                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center mt-1 border border-indigo-500/30">
-                                                <span className="material-symbols-outlined text-[14px] text-indigo-400">robot_2</span>
+                                            <div className="w-8 h-8 rounded-full bg-cyan-500/5 flex-shrink-0 flex items-center justify-center mt-1 border border-cyan-500/20">
+                                                <span className="material-symbols-outlined text-[14px] text-cyan-400">robot_2</span>
                                             </div>
                                         )}
-                                        <div className={`p-4 rounded-2xl text-[14px] leading-relaxed relative ${isAI
-                                                ? 'bg-dashboard-bg border border-border-dark text-slate-300 rounded-tl-sm shadow-md'
-                                                : 'bg-indigo-600/20 border border-indigo-500/30 text-white rounded-tr-sm'
+                                        <div className={`p-4 rounded-xl text-[10px] tracking-wide leading-relaxed relative ${isAI
+                                                ? 'bg-[#060810]/50 border border-white/[0.04] text-white/70 rounded-tl-sm shadow-md'
+                                                : 'bg-cyan-500/5 border border-cyan-500/20 text-cyan-400 rounded-tr-sm'
                                             }`}>
                                             {msg.content}
-                                            <span className="block mt-2 text-[10px] text-slate-500 font-medium">
+                                            <span className="block mt-2 text-[8px] text-white/30 font-medium">
                                                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
@@ -527,35 +527,35 @@ export default function InterviewResultPage({ params }: PageProps) {
             {/* Wide Column: Design Preview */}
             <div className="max-w-6xl mx-auto mt-8">
                 <section>
-                    <div className="flex items-center justify-between mb-4 px-2">
-                        <h3 className="text-lg font-bold flex items-center gap-2">
-                            <span className="material-symbols-outlined text-teal-400 text-[22px]">hub</span>
+                    <div className="flex items-center justify-between mb-4 px-2 font-mono">
+                        <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-white">
+                            <span className="material-symbols-outlined text-teal-400 text-[18px]">hub</span>
                             Submitted Architecture
                         </h3>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-800/50 px-2 py-1 rounded">
+                        <span className="text-[9px] font-bold tracking-widest text-white/40 bg-white/[0.02] border border-white/[0.04] px-2 py-0.5 rounded">
                             READ-ONLY SNAPSHOT
                         </span>
                     </div>
-                    <div className="flex h-[600px] bg-sidebar-bg-dark border border-border-dark rounded-3xl overflow-hidden relative shadow-2xl shadow-black/50">
+                    <div className="flex h-[600px] bg-[#0c0d16]/60 backdrop-blur-md border border-white/[0.06] rounded-3xl overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                         <DesignCanvas
                             initialNodes={session.canvasSnapshot?.nodes || []}
                             initialConnections={session.canvasSnapshot?.connections || []}
                             readOnly={true}
                         />
-                        <div className="absolute bottom-6 left-6 bg-background-dark/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-xl pointer-events-none">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Architecture Snapshot</p>
+                        <div className="absolute bottom-6 left-6 bg-[#060810]/90 backdrop-blur-md border border-white/[0.04] px-4 py-2 rounded-xl pointer-events-none font-mono">
+                            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Architecture Snapshot</p>
                         </div>
                     </div>
                 </section>
             </div>
 
             {/* Footer */}
-            <div className="max-w-6xl mx-auto mt-16 pt-10 border-t border-border-dark text-center">
-                <p className="text-slate-500 text-sm mb-4">Want to improve your score? Analyze the weaknesses and try the same challenge again.</p>
-                <div className="flex items-center justify-center gap-4">
-                    <Link href={`/interview`} className="text-primary hover:underline font-bold text-sm">Start New Interview</Link>
-                    <span className="text-slate-700">•</span>
-                    <Link href="/dashboard" className="text-slate-400 hover:text-white font-medium text-sm">Return to Dashboard</Link>
+            <div className="max-w-6xl mx-auto mt-16 pt-10 border-t border-white/[0.04] text-center font-mono">
+                <p className="text-white/40 text-xs mb-4">Want to improve your score? Analyze the weaknesses and try the same challenge again.</p>
+                <div className="flex items-center justify-center gap-4 text-xs">
+                    <Link href={`/interview`} className="text-cyan-400 hover:text-cyan-300 font-bold uppercase tracking-wider">Start New Interview</Link>
+                    <span className="text-white/10">•</span>
+                    <Link href="/dashboard" className="text-white/40 hover:text-white font-medium uppercase tracking-wider">Return to Dashboard</Link>
                 </div>
             </div>
         </div>

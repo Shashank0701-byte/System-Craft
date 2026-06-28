@@ -1,16 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useCanvasPanels } from './CanvasPanelsContext';
 
 type ComponentItem = {
   name: string;
   icon: string;
-  color: string;
-  bgClass: string;
-  textClass: string;
-  darkTextClass: string;
-  groupHoverBg: string;
 };
 
 type Section = {
@@ -22,126 +18,202 @@ const SECTIONS: Section[] = [
   {
     title: 'Compute',
     items: [
-      { name: 'Client', icon: 'smartphone', color: 'blue', bgClass: 'bg-blue-500/10', textClass: 'text-blue-500', darkTextClass: 'dark:text-blue-400', groupHoverBg: 'group-hover:bg-blue-500' },
-      { name: 'Server', icon: 'dns', color: 'purple', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', darkTextClass: 'dark:text-purple-400', groupHoverBg: 'group-hover:bg-purple-500' },
-      { name: 'Function', icon: 'functions', color: 'indigo', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', darkTextClass: 'dark:text-indigo-400', groupHoverBg: 'group-hover:bg-indigo-500' },
-      { name: 'Worker', icon: 'precision_manufacturing', color: 'violet', bgClass: 'bg-violet-500/10', textClass: 'text-violet-500', darkTextClass: 'dark:text-violet-400', groupHoverBg: 'group-hover:bg-violet-500' },
-      { name: 'Container', icon: 'inventory_2', color: 'sky', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500', darkTextClass: 'dark:text-sky-400', groupHoverBg: 'group-hover:bg-sky-500' },
-      { name: 'Gateway', icon: 'router', color: 'amber', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500', darkTextClass: 'dark:text-amber-400', groupHoverBg: 'group-hover:bg-amber-500' },
+      { name: 'Client', icon: 'smartphone' },
+      { name: 'Server', icon: 'dns' },
+      { name: 'Function', icon: 'functions' },
+      { name: 'Worker', icon: 'precision_manufacturing' },
+      { name: 'Container', icon: 'inventory_2' },
+      { name: 'Gateway', icon: 'router' },
     ]
   },
   {
     title: 'Networking',
     items: [
-      { name: 'LB', icon: 'alt_route', color: 'orange', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500', darkTextClass: 'dark:text-orange-400', groupHoverBg: 'group-hover:bg-orange-500' },
-      { name: 'CDN', icon: 'public', color: 'teal', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500', darkTextClass: 'dark:text-teal-400', groupHoverBg: 'group-hover:bg-teal-500' },
-      { name: 'DNS', icon: 'language', color: 'lime', bgClass: 'bg-lime-500/10', textClass: 'text-lime-500', darkTextClass: 'dark:text-lime-400', groupHoverBg: 'group-hover:bg-lime-500' },
-      { name: 'Firewall', icon: 'local_fire_department', color: 'rose', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500', darkTextClass: 'dark:text-rose-400', groupHoverBg: 'group-hover:bg-rose-500' },
-      { name: 'Proxy', icon: 'vpn_lock', color: 'fuchsia', bgClass: 'bg-fuchsia-500/10', textClass: 'text-fuchsia-500', darkTextClass: 'dark:text-fuchsia-400', groupHoverBg: 'group-hover:bg-fuchsia-500' },
+      { name: 'LB', icon: 'alt_route' },
+      { name: 'CDN', icon: 'public' },
+      { name: 'DNS', icon: 'language' },
+      { name: 'Firewall', icon: 'local_fire_department' },
+      { name: 'Proxy', icon: 'vpn_lock' },
     ]
   },
   {
     title: 'Storage',
     items: [
-      { name: 'SQL', icon: 'database', color: 'emerald', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500', darkTextClass: 'dark:text-emerald-400', groupHoverBg: 'group-hover:bg-emerald-500' },
-      { name: 'NoSQL', icon: 'view_cozy', color: 'green', bgClass: 'bg-green-500/10', textClass: 'text-green-500', darkTextClass: 'dark:text-green-400', groupHoverBg: 'group-hover:bg-green-500' },
-      { name: 'Cache', icon: 'bolt', color: 'red', bgClass: 'bg-red-500/10', textClass: 'text-red-500', darkTextClass: 'dark:text-red-400', groupHoverBg: 'group-hover:bg-red-500' },
-      { name: 'Blob', icon: 'folder_zip', color: 'yellow', bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600', darkTextClass: 'dark:text-yellow-400', groupHoverBg: 'group-hover:bg-yellow-500' },
-      { name: 'Search', icon: 'saved_search', color: 'orange', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500', darkTextClass: 'dark:text-orange-400', groupHoverBg: 'group-hover:bg-orange-500' },
-      { name: 'GraphDB', icon: 'share', color: 'indigo', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500', darkTextClass: 'dark:text-indigo-400', groupHoverBg: 'group-hover:bg-indigo-500' },
+      { name: 'SQL', icon: 'database' },
+      { name: 'NoSQL', icon: 'view_cozy' },
+      { name: 'Cache', icon: 'bolt' },
+      { name: 'Blob', icon: 'folder_zip' },
+      { name: 'Search', icon: 'saved_search' },
+      { name: 'GraphDB', icon: 'share' },
     ]
   },
   {
     title: 'Messaging',
     items: [
-      { name: 'Queue', icon: 'mail', color: 'pink', bgClass: 'bg-pink-500/10', textClass: 'text-pink-500', darkTextClass: 'dark:text-pink-400', groupHoverBg: 'group-hover:bg-pink-500' },
-      { name: 'Kafka', icon: 'hub', color: 'cyan', bgClass: 'bg-cyan-500/10', textClass: 'text-cyan-500', darkTextClass: 'dark:text-cyan-400', groupHoverBg: 'group-hover:bg-cyan-500' },
-      { name: 'PubSub', icon: 'cell_tower', color: 'purple', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500', darkTextClass: 'dark:text-purple-400', groupHoverBg: 'group-hover:bg-purple-500' },
-      { name: 'WebSocket', icon: 'sync_alt', color: 'teal', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500', darkTextClass: 'dark:text-teal-400', groupHoverBg: 'group-hover:bg-teal-500' },
+      { name: 'Queue', icon: 'mail' },
+      { name: 'Kafka', icon: 'hub' },
+      { name: 'PubSub', icon: 'cell_tower' },
+      { name: 'WebSocket', icon: 'sync_alt' },
     ]
   },
   {
     title: 'Observability',
     items: [
-      { name: 'Logger', icon: 'receipt_long', color: 'slate', bgClass: 'bg-slate-500/10', textClass: 'text-slate-400', darkTextClass: 'dark:text-slate-300', groupHoverBg: 'group-hover:bg-slate-500' },
-      { name: 'Metrics', icon: 'monitoring', color: 'emerald', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500', darkTextClass: 'dark:text-emerald-400', groupHoverBg: 'group-hover:bg-emerald-500' },
-      { name: 'Tracer', icon: 'timeline', color: 'amber', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500', darkTextClass: 'dark:text-amber-400', groupHoverBg: 'group-hover:bg-amber-500' },
+      { name: 'Logger', icon: 'receipt_long' },
+      { name: 'Metrics', icon: 'monitoring' },
+      { name: 'Tracer', icon: 'timeline' },
     ]
   },
   {
     title: 'Security',
     items: [
-      { name: 'Auth', icon: 'passkey', color: 'sky', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500', darkTextClass: 'dark:text-sky-400', groupHoverBg: 'group-hover:bg-sky-500' },
-      { name: 'WAF', icon: 'shield', color: 'rose', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500', darkTextClass: 'dark:text-rose-400', groupHoverBg: 'group-hover:bg-rose-500' },
-      { name: 'Vault', icon: 'lock', color: 'violet', bgClass: 'bg-violet-500/10', textClass: 'text-violet-500', darkTextClass: 'dark:text-violet-400', groupHoverBg: 'group-hover:bg-violet-500' },
+      { name: 'Auth', icon: 'passkey' },
+      { name: 'WAF', icon: 'shield' },
+      { name: 'Vault', icon: 'lock' },
     ]
   }
 ];
 
 export function ComponentPalette() {
-  const { leftOpen, closeAll } = useCanvasPanels();
+  const { leftOpen, closeAll, activeView } = useCanvasPanels();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Keep track of collapsed states for sections
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  
+  // Track recently used components (limit to 3)
+  const [recentlyUsed, setRecentlyUsed] = useState<ComponentItem[]>([
+    { name: 'Client', icon: 'smartphone' },
+    { name: 'LB', icon: 'alt_route' },
+    { name: 'Server', icon: 'dns' }
+  ]);
+
+  if (activeView === 'whiteboard') return null;
+
+  const toggleSection = (title: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [title]: !prev[title]
+    }));
+  };
+
+  const handleDragStart = (item: ComponentItem, e: React.DragEvent) => {
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      type: item.name,
+      icon: item.icon,
+      color: 'cyan',
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+
+    // Add to recently used
+    setRecentlyUsed(prev => {
+      const filtered = prev.filter(p => p.name !== item.name);
+      return [item, ...filtered].slice(0, 3);
+    });
+  };
+
+  const filteredSections = SECTIONS.map(section => {
+    const items = section.items.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    return { ...section, items };
+  }).filter(section => section.items.length > 0);
 
   const paletteContent = (
-    <>
-      {/* Search */}
-      <div className="p-4 border-b border-slate-200 dark:border-border-dark">
-        <div className="relative group">
-          <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 group-focus-within:text-primary transition-colors" style={{ fontSize: '20px' }}>search</span>
+    <div className="flex flex-col h-full bg-[#060810] border-r border-white/[0.04] select-none relative">
+      {/* Noise background */}
+      <div className="noise-overlay absolute inset-0 pointer-events-none opacity-[0.02]" />
+
+      {/* Header Info */}
+      <div className="p-3.5 border-b border-white/[0.04] z-10 flex items-center justify-between">
+        <span className="text-[10px] font-mono tracking-widest uppercase text-white/50">Component Catalog</span>
+        <span className="text-[8px] font-mono tracking-wider text-cyan-400 bg-cyan-400/5 px-1 py-0.5 rounded border border-cyan-400/10 uppercase">READY</span>
+      </div>
+
+      {/* Command Search */}
+      <div className="p-3 border-b border-white/[0.04] z-10">
+        <div className="relative flex items-center">
+          <span className="material-symbols-outlined absolute left-3 text-white/30 text-[16px] pointer-events-none">search</span>
           <input
-            className="w-full bg-slate-50 dark:bg-[#121118] border border-slate-200 dark:border-[#2b2839] text-sm text-slate-900 dark:text-white rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-slate-400 dark:placeholder-slate-600 transition-all"
-            placeholder="Search components..."
+            className="w-full bg-black/40 border border-white/[0.05] focus:border-white/20 shadow-[inset_0_1px_4px_rgba(0,0,0,0.5)] text-[11px] font-mono tracking-wide text-white rounded-md pl-9 pr-3 py-1.5 placeholder-white/40 outline-none transition-all duration-200"
+            placeholder="Search catalog..."
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Components List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {SECTIONS.map((section) => (
-          <div key={section.title} className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
-              {section.title}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {section.items.map((item) => (
+      {/* Main List */}
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4 z-10">
+        
+        {/* Recently Used (only show if no search query) */}
+        {!searchQuery && recentlyUsed.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-white/30 px-2 py-1.5">RECENTLY USED</p>
+            <div className="flex flex-col space-y-0.5">
+              {recentlyUsed.map((item) => (
                 <div
-                  key={item.name}
+                  key={`recent-${item.name}`}
                   draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('application/json', JSON.stringify({
-                      type: item.name,
-                      icon: item.icon,
-                      color: item.color,
-                    }));
-                    e.dataTransfer.effectAllowed = 'copy';
-                  }}
-                  className="group flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-[#2b2839] border border-transparent hover:border-slate-200 dark:hover:border-[#3f3b54] cursor-grab active:cursor-grabbing transition-all"
+                  onDragStart={(e) => handleDragStart(item, e)}
+                  className="group flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-white/[0.02] text-white/40 hover:text-white cursor-grab active:cursor-grabbing transition-colors duration-200"
                 >
-                  <div className={`size-8 flex items-center justify-center rounded ${item.bgClass} ${item.textClass} ${item.darkTextClass} ${item.groupHoverBg} group-hover:text-white transition-colors`}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{item.icon}</span>
-                  </div>
-                  <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 text-center leading-tight">{item.name}</span>
+                  <span className="material-symbols-outlined text-[14px]">{item.icon}</span>
+                  <span className="text-[10px] font-mono tracking-wide">{item.name}</span>
                 </div>
               ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Catalog Sections */}
+        {filteredSections.map((section) => {
+          const isCollapsed = !!collapsedSections[section.title];
+          return (
+            <div key={section.title} className="space-y-1">
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="w-full flex items-center justify-between text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-white/30 px-2 py-1.5 hover:text-white/60 transition-colors text-left"
+              >
+                <span>{section.title}</span>
+                <span className="material-symbols-outlined text-[12px] transform transition-transform duration-200" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
+                  expand_more
+                </span>
+              </button>
+              
+              {!isCollapsed && (
+                <div className="flex flex-col space-y-0.5 animate-in fade-in duration-200">
+                  {section.items.map((item) => (
+                    <div
+                      key={item.name}
+                      draggable
+                      onDragStart={(e) => handleDragStart(item, e)}
+                      className="group flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-white/[0.02] text-white/40 hover:text-white cursor-grab active:cursor-grabbing transition-colors duration-200"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">{item.icon}</span>
+                      <span className="text-[10px] font-mono tracking-wide">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* Sidebar Footer */}
-      <div className="p-4 border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-[#121118]">
-        <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs">
-          <span>Library v2.4</span>
-          <Link href="/docs" className="hover:text-primary transition-colors">Docs</Link>
-        </div>
+      {/* Footer */}
+      <div className="p-3 border-t border-white/[0.04] bg-[#080a12] flex items-center justify-between text-[7px] font-mono tracking-widest text-white/25 uppercase z-10">
+        <span>CATALOG v2.4</span>
+        <Link href="/docs" className="hover:text-white transition-colors">DOCS</Link>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
       {/* Desktop: Fixed sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-border-dark bg-white dark:bg-sidebar-bg-dark z-10 shadow-xl flex-shrink-0">
+      <aside className="hidden md:flex w-48 flex-col border-r border-white/[0.04] bg-[#060810] z-10 flex-shrink-0">
         {paletteContent}
       </aside>
 
@@ -156,7 +228,7 @@ export function ComponentPalette() {
             tabIndex={0}
             aria-label="Close panel"
           />
-          <aside className="md:hidden fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-white dark:bg-sidebar-bg-dark border-r border-slate-200 dark:border-border-dark shadow-2xl animate-slide-in-left">
+          <aside className="md:hidden fixed inset-y-0 left-0 z-40 w-48 flex flex-col bg-[#060810] border-r border-white/[0.04] shadow-2xl animate-slide-in-left">
             {paletteContent}
           </aside>
         </>
