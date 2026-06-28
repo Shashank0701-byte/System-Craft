@@ -29,7 +29,9 @@ export function AchievementToast({ achievement, onDismiss }: AchievementToastPro
   const colors = TIER_COLORS[achievement.tier];
 
   const dismissRef = useRef(onDismiss);
-  dismissRef.current = onDismiss;
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     // Animate in
