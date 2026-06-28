@@ -1,0 +1,114 @@
+<summary>Copilot/.frontendskills/Achivements.md-1-1 (1)</summary><blockquote>
+**Fix filename typo: `Achivements.md` → `Achievements.md`**
+---
+<summary>app/dashboard/reference-architectures/[id]/page.tsx-37-72 (1)</summary><blockquote>
+**Render `quizError` instead of spinning forever.**
+---
+<summary>app/dashboard/reference-architectures/[id]/page.tsx-42-51 (1)</summary><blockquote>
+**Only mark the quiz completed after tracking succeeds.**
+---
+<summary>components/dashboard/KnowledgeCheck.tsx-22-23 (1)</summary><blockquote>
+**Guard empty quizzes and derive the pass threshold.**
+---
+<summary>app/api/reference-architectures/quiz/route.ts-101-122 (1)</summary><blockquote>
+**Validate the LLM quiz schema before returning it.**
+---
+<summary>components/achievements/AchievementBadgeCard.tsx-37-44 (1)</summary><blockquote>
+**Only hide secret achievements while they are still locked.**
+---
+<summary>app/achievements/page.tsx-27-28 (1)</summary><blockquote>
+**Surface hook fetch failures instead of rendering an empty dashboard.**
+---
+<summary>app/dashboard/profile/page.tsx-13-16 (1)</summary><blockquote>
+**Replace the `any` escape hatch with the real metrics contract.**
+---
+<summary>app/dashboard/profile/page.tsx-23-23 (1)</summary><blockquote>
+**Don't make the first fetch failure permanent.**
+---
+<summary>components/dashboard/profile/BadgeShowcase.tsx-39-43 (1)</summary><blockquote>
+**Show unlocked secret badges.**
+---
+<summary>src/hooks/useAchievementNotifications.ts-21-24 (1)</summary><blockquote>
+**Reset notification session state per authenticated user.**
+---
+<summary>src/hooks/useMetrics.ts-54-77 (1)</summary><blockquote>
+**Discard stale metrics across auth changes.**
+---
+<summary>src/hooks/useAchievements.ts-56-75 (1)</summary><blockquote>
+**Discard stale achievement data across auth changes.**
+---
+<summary>src/hooks/useTrackEvent.ts-41-46 (1)</summary><blockquote>
+**Handle HTTP failures from `/api/user/track`.**
+---
+<summary>src/lib/achievements/engine.ts-94-97 (1)</summary><blockquote>
+**Re-run evaluation after derived metrics change.**
+---
+<summary>src/lib/achievements/engine.ts-115-126 (1)</summary><blockquote>
+**Count all scalability achievements for `planet_scale`.**
+---
+<summary>app/api/achievements/route.ts-30-45 (1)</summary><blockquote>
+**Return a stable metrics DTO instead of the raw Mongo document.**
+---
+<summary>src/lib/achievements/trackMetric.ts-16-39 (1)</summary><blockquote>
+**Restrict `MetricPatch` to incrementable counters only.** `keyof IUserMetricsData` includes engine-managed fields like `totalXP`, `level`, streak state, and other derived unlock fields, so callers can `$inc` them through this API and corrupt metrics ownership. Narrow the key union to the counters that `trackMetric()` is meant to accept.
+---
+<summary>app/api/user/metrics/route.ts-55-55 (1)</summary><blockquote>
+**Normalize `activityHeatmap` before serializing.** `findOne().lean()` returns a plain object here, so `Object.fromEntries(metrics.activityHeatmap ?? new Map())` can throw when `activityHeatmap` isn’t a `Map`, turning this endpoint into a 500 for users with metrics.
+---
+<summary>src/lib/achievements/trackMetric.ts-57-65 (1)</summary><blockquote>
+**Make max-metric updates atomic.** `setMetricIfHigher()` reads the current value and then writes with `$set`, so concurrent requests can still overwrite a higher value with a lower one. Use a single atomic `$max` update and only run the achievement evaluation when the stored value changes.
+---
+<summary>app/api/user/achievements/route.ts-58-80 (1)</summary><blockquote>
+**Validate pinned achievement IDs before persisting.**
+---
+<summary>app/api/user/track/route.ts-89-93 (1)</summary><blockquote>
+**`ai_review_completed` is a no-op for activity tracking.**
+---
+<summary>app/api/user/track/route.ts-59-117 (1)</summary><blockquote>
+**Don’t let the client mint authoritative XP/achievement events.**
+---
+<summary>app/api/interview/[id]/evaluate/route.ts-186-223 (1)</summary><blockquote>
+**Don’t feed absolute snapshot metrics into `trackMetric()`.**
+---
+<summary>app/api/interview/[id]/evaluate/route.ts-125-225 (1)</summary><blockquote>
+**Skip achievement/XP writes on re-evaluation.**
+---
+<summary>Copilot/.frontendskills/Achivements.md-146-157 (1)</summary><blockquote>
+**Avoid naming collision: "Architect" as both level title and secret achievement**
+---
+<summary>app/api/reference-architectures/quiz/route.ts-116-118 (1)</summary><blockquote>
+**Use or remove the unused catch binding.**
+---
+<summary>app/api/reference-architectures/quiz/route.ts-27-31 (1)</summary><blockquote>
+**Return 400 for malformed or non-string request bodies.**
+---
+<summary>components/achievements/AchievementToast.tsx-117-121 (1)</summary><blockquote>
+**Keep `onDismiss` stable for mounted toasts.**
+---
+<summary>src/hooks/useAchievements.ts-86-92 (1)</summary><blockquote>
+**Surface `updatePinned` failures to callers.**
+---
+<summary>src/lib/achievements/engine.ts-15-15 (1)</summary><blockquote>
+**Remove the unused `AchievementDef` import.**
+---
+<summary>src/lib/achievements/definitions.ts-691-699 (1)</summary><blockquote>
+**Align the “System Whisperer” requirement with its threshold.**
+---
+<summary>app/api/interview/[id]/evaluate/route.ts-209-215 (1)</summary><blockquote>
+**Tighten the HA rule matcher.**
+---
+<summary>Copilot/.frontendskills/Achivements.md (1)</summary><blockquote>
+**Clarify tier progression requirement vs. implementation**
+---
+<summary>⚙️ Run configuration</summary>
+**Configuration used**: defaults
+---
+<summary>⚙️ Run configuration</summary>
+**Review profile**: CHILL
+---
+<summary>⚙️ Run configuration</summary>
+**Plan**: Pro
+---
+<summary>⚙️ Run configuration</summary>
+**Run ID**: `ae960ca5-e123-4a9d-9c9c-e5ba21b9df39`
+---

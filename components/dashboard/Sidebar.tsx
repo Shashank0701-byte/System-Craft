@@ -21,6 +21,7 @@ export function Sidebar() {
   ];
 
   const systemItems = [
+    { id: 'profile', href: '/dashboard/profile', label: 'Engineer Profile', icon: 'badge', filled: true },
     { id: 'analytics', href: '/dashboard/analytics', label: 'Analytics', icon: 'bar_chart', filled: true },
     { id: 'report-card', href: '/dashboard/report-card', label: 'Performance Report', icon: 'workspace_premium', filled: true },
     { id: 'interview', href: '/interview', label: 'Interview Mode', icon: 'play_circle', filled: false },
