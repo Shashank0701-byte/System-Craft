@@ -52,7 +52,15 @@ export function useMetrics(): UseMetricsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setXP(null);
+      setStreaks(null);
+      setHeatmap({});
+      setSkills([]);
+      setPinnedAchievements([]);
+      setLevels([]);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {

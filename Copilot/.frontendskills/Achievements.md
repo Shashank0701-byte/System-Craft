@@ -153,7 +153,7 @@ Examples:
 * Blackout
 * Distributed Mind
 * Planet Scale
-* Architect
+* The Architect
 * System Whisperer
 
 Hidden achievements create discovery without cluttering the UI.
@@ -162,7 +162,7 @@ Hidden achievements create discovery without cluttering the UI.
 
 # Badge Progression
 
-Every badge should support progression tiers.
+Most badges should support progression tiers.
 
 Bronze
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import type { AchievementTier } from '@/src/lib/achievements/definitions';
 
 export interface ToastAchievement {
@@ -28,24 +28,27 @@ export function AchievementToast({ achievement, onDismiss }: AchievementToastPro
   const [visible, setVisible] = useState(false);
   const colors = TIER_COLORS[achievement.tier];
 
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+
   useEffect(() => {
     // Animate in
     const showTimer = setTimeout(() => setVisible(true), 50);
     // Auto-dismiss after 5s
     const hideTimer = setTimeout(() => {
       setVisible(false);
-      setTimeout(onDismiss, 300);
+      setTimeout(() => dismissRef.current(), 300);
     }, 5000);
     return () => {
       clearTimeout(showTimer);
       clearTimeout(hideTimer);
     };
-  }, [onDismiss]);
+  }, []);
 
   const handleDismiss = useCallback(() => {
     setVisible(false);
-    setTimeout(onDismiss, 300);
-  }, [onDismiss]);
+    setTimeout(() => dismissRef.current(), 300);
+  }, []);
 
   return (
     <div

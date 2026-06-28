@@ -696,7 +696,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDef[] = [
     icon: 'tips_and_updates',
     metricKey: 'highScoreAcrossDifficulties',
     hidden: true,
-    tiers: [{ tier: 'platinum', threshold: 3, xpReward: 1500 }],
+    tiers: [{ tier: 'platinum', threshold: 5, xpReward: 1500 }],
   },
 ];
 

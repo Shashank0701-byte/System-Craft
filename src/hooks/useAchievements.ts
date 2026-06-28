@@ -54,7 +54,11 @@ export function useAchievements(): UseAchievementsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setAchievements([]);
+      setRecentlyUnlocked([]);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -85,10 +89,13 @@ export function useAchievements(): UseAchievementsReturn {
 
   const updatePinned = useCallback(
     async (ids: string[]) => {
-      await authFetch('/api/user/achievements', {
+      const res = await authFetch('/api/user/achievements', {
         method: 'PATCH',
         body: JSON.stringify({ pinnedAchievements: ids }),
       });
+      if (!res.ok) {
+        throw new Error('Failed to update pinned achievements');
+      }
     },
     []
   );

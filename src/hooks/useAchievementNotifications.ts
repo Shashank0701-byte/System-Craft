@@ -23,6 +23,12 @@ export function useAchievementNotifications() {
   const sessionStartRef = useRef(new Date().toISOString());
   const seenKeysRef = useRef(new Set<string>());
 
+  useEffect(() => {
+    sessionStartRef.current = new Date().toISOString();
+    seenKeysRef.current.clear();
+    setQueue([]);
+  }, [user?.uid]);
+
   const poll = useCallback(async () => {
     if (!user) return;
     try {

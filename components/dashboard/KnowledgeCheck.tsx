@@ -19,8 +19,16 @@ export function KnowledgeCheck({ questions, onPass }: KnowledgeCheckProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   
+  if (questions.length === 0) {
+    return (
+      <div className="rounded-xl border border-white/[0.05] bg-[#0c0d16] p-6 text-center text-white/50 font-mono text-xs uppercase tracking-widest">
+        No knowledge-check questions are available.
+      </div>
+    );
+  }
+
   const currentQuestion = questions[currentQuestionIndex];
-  const PASS_THRESHOLD = 4; // 80% of 5
+  const PASS_THRESHOLD = Math.ceil(questions.length * 0.8);
 
   const handleSelect = (optionIndex: number) => {
     if (isSubmitted) return;

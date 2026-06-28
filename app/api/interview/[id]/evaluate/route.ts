@@ -123,7 +123,7 @@ export const POST = withMetrics('/api/interview/[id]/evaluate', async (request: 
             );
 
             // Track achievement metrics from this evaluation (fire-and-forget)
-            if (updated?.evaluation) {
+            if (updated?.evaluation && session.status !== 'evaluated') {
                 const finalScore = updated.evaluation.finalScore ?? 0;
                 const passedRules = updated.evaluation.structural?.passedRules ?? [];
                 const nodeTypes = new Set((nodes as { type: string }[]).map((n) => n.type));
@@ -187,8 +187,6 @@ export const POST = withMetrics('/api/interview/[id]/evaluate', async (request: 
                     interviewsCompleted: 1,
                     ...(highAverageUnlocked ? { highAverageUnlocked: 1 } : {}),
                     ...(comebackUnlocked ? { comebackUnlocked: 1 } : {}),
-                    consistentPerformerStreak: streakCount,
-                    highScoreAcrossDifficulties: difficultiesWithHighScore.size,
                 };
 
                 if (finalScore === 100) metricPatch.perfectScores = 1;
@@ -212,13 +210,15 @@ export const POST = withMetrics('/api/interview/[id]/evaluate', async (request: 
                 if (passedRules.some((r: string) => /rate.limit/i.test(r)))       metricPatch.rateLimitingApplications = 1;
                 if (passedRules.some((r: string) => /circuit/i.test(r)))          metricPatch.circuitBreakerApplications = 1;
                 if (passedRules.some((r: string) => /fault|tolerance/i.test(r)))  metricPatch.faultToleranceImplementations = 1;
-                if (passedRules.some((r: string) => /ha|high.avail/i.test(r)))    metricPatch.highAvailabilityDesigns = 1;
+                if (passedRules.some((r: string) => /\bha\b|high.avail/i.test(r)))    metricPatch.highAvailabilityDesigns = 1;
 
                 const bonusXP = finalScore >= 100 ? 50 : finalScore >= 90 ? 25 : 0;
 
                 await Promise.all([
-                    trackMetric(user._id, metricPatch),
+                    trackMetric(user._id, metricPatch as any),
                     awardXP(user._id, 'INTERVIEW_COMPLETED', bonusXP),
+                    setMetricIfHigher(user._id, 'consistentPerformerStreak', streakCount),
+                    setMetricIfHigher(user._id, 'highScoreAcrossDifficulties', difficultiesWithHighScore.size),
                     setMetricIfHigher(user._id, 'maxNodesInSingleDesign', nodeCount),
                 ]).catch((err) =>
                     console.error('Achievement tracking failed (interview evaluate):', err)

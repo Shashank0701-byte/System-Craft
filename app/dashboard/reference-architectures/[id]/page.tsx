@@ -35,16 +35,21 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[] | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [isQuizCompleted, setIsQuizCompleted] = useState(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
   const handleQuizPass = useCallback(async () => {
-    setIsQuizCompleted(true);
     try {
-      await authFetch('/api/user/track', {
+      const response = await authFetch('/api/user/track', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event: 'reference_architecture_completed' }),
       });
+      if (!response.ok) {
+        throw new Error(`Failed to track completion (${response.status})`);
+      }
+      setIsQuizCompleted(true);
     } catch (err) {
       console.error('Failed to track completion:', err);
     }
@@ -52,6 +57,7 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
 
   const triggerQuizGeneration = useCallback(async (analysisText: string) => {
     if (!arch) return;
+    setQuizError(null);
     try {
       const response = await fetch('/api/reference-architectures/quiz', {
         method: 'POST',
@@ -65,9 +71,11 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
         }
       } else {
         console.error('Failed to generate knowledge check');
+        setQuizError('Failed to generate knowledge check');
       }
     } catch (err) {
       console.error(err);
+      setQuizError('Failed to generate knowledge check');
     }
   }, [arch]);
 
@@ -266,6 +274,7 @@ export default function ReferenceArchitectureDetailPage({ params }: PageProps) {
                   setShowQuiz={setShowQuiz}
                   onQuizPass={handleQuizPass}
                   isQuizCompleted={isQuizCompleted}
+                  quizError={quizError}
                 />
               )}
             </div>
@@ -352,7 +361,8 @@ function AnalysisPanel({
   showQuiz,
   setShowQuiz,
   onQuizPass,
-  isQuizCompleted
+  isQuizCompleted,
+  quizError
 }: {
   content: string;
   isLoading: boolean;
@@ -363,6 +373,7 @@ function AnalysisPanel({
   setShowQuiz: (v: boolean) => void;
   onQuizPass: () => void;
   isQuizCompleted: boolean;
+  quizError: string | null;
 }) {
   // Empty state — not yet triggered
   if (!content && !isLoading && !error) {
@@ -458,6 +469,17 @@ function AnalysisPanel({
                 Take Knowledge Check
               </button>
             </>
+          ) : quizError ? (
+            <div className="flex flex-col items-center gap-3 text-rose-400">
+              <span className="material-symbols-outlined text-[18px]">error</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest">{quizError}</span>
+              <button
+                onClick={() => setShowQuiz(false)}
+                className="px-4 py-2 rounded border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-[10px] font-mono font-bold uppercase tracking-widest transition-colors"
+              >
+                Back to Analysis
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2 text-white/40">
               <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>

@@ -58,9 +58,14 @@ export async function PATCH(request: NextRequest) {
         const body = await request.json();
         const { pinnedAchievements } = body;
 
-        if (!Array.isArray(pinnedAchievements) || pinnedAchievements.length > 6) {
+        if (
+            !Array.isArray(pinnedAchievements) ||
+            pinnedAchievements.length > 6 ||
+            !pinnedAchievements.every((id) => typeof id === 'string') ||
+            new Set(pinnedAchievements).size !== pinnedAchievements.length
+        ) {
             return NextResponse.json(
-                { error: 'pinnedAchievements must be an array of up to 6 achievement IDs' },
+                { error: 'pinnedAchievements must be a unique array of up to 6 achievement IDs' },
                 { status: 400 }
             );
         }
@@ -70,6 +75,20 @@ export async function PATCH(request: NextRequest) {
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid }).select('_id').lean();
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const unlockedIds = new Set(
+            await UserAchievement.distinct('achievementId', {
+                userId: user._id,
+                achievementId: { $in: pinnedAchievements },
+            })
+        );
+
+        if (!pinnedAchievements.every((id) => unlockedIds.has(id))) {
+            return NextResponse.json(
+                { error: 'Pinned achievements must be unlocked by the current user' },
+                { status: 400 }
+            );
         }
 
         const UserMetrics = (await import('@/src/lib/achievements/metrics')).default;

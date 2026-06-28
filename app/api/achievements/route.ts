@@ -39,10 +39,23 @@ export async function GET(request: NextRequest) {
             pinnedAchievements: [],
         };
 
+        const safeMetrics: Record<string, unknown> = { ...baseMetrics };
+        delete safeMetrics._id;
+        delete safeMetrics.userId;
+        delete safeMetrics.__v;
+        delete safeMetrics.createdAt;
+        delete safeMetrics.updatedAt;
+
+        if (safeMetrics.activityHeatmap instanceof Map) {
+            safeMetrics.activityHeatmap = Object.fromEntries(safeMetrics.activityHeatmap);
+        } else if (!safeMetrics.activityHeatmap) {
+            safeMetrics.activityHeatmap = {};
+        }
+
         return NextResponse.json({
             success: true,
             achievements,
-            metrics: baseMetrics
+            metrics: safeMetrics
         });
 
     } catch (error) {

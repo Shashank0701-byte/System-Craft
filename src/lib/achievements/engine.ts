@@ -31,6 +31,23 @@ export interface UnlockedAchievement {
 export async function evaluateAchievements(
   userId: Types.ObjectId | string
 ): Promise<UnlockedAchievement[]> {
+  const allNewlyUnlocked: UnlockedAchievement[] = [];
+  let passCount = 0;
+  const maxPasses = 3;
+
+  while (passCount < maxPasses) {
+    const newlyUnlocked = await _evaluateAchievementsPass(userId);
+    if (newlyUnlocked.length === 0) break;
+    allNewlyUnlocked.push(...newlyUnlocked);
+    passCount++;
+  }
+
+  return allNewlyUnlocked;
+}
+
+async function _evaluateAchievementsPass(
+  userId: Types.ObjectId | string
+): Promise<UnlockedAchievement[]> {
   const metrics = await UserMetrics.findOne({ userId }).lean();
   if (!metrics) return [];
 
@@ -112,7 +129,9 @@ async function updateDerivedMetrics(userId: Types.ObjectId | string): Promise<vo
   const unlockedIds = new Set(allUnlocked.map((u) => u.achievementId));
   const categoriesUnlocked = new Set<string>();
   let scalabilityCompleted = 0;
-  const scalabilityAchievements = new Set(['horizontal_hero', 'million_user_ready']);
+  const scalabilityAchievements = new Set(
+    ACHIEVEMENT_DEFINITIONS.filter((d) => d.category === 'scalability').map((d) => d.id)
+  );
 
   for (const id of unlockedIds) {
     const def = ACHIEVEMENT_DEFINITIONS.find((d) => d.id === id);
