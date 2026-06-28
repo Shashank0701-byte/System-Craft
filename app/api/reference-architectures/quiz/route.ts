@@ -113,7 +113,7 @@ Do not include markdown blocks (\`\`\`json) around the response, just the raw JS
         cleanContent = cleanContent.replace(/^\`\`\`json\n?/, '').replace(/\n?\`\`\`$/, '');
       }
       parsedContent = JSON.parse(cleanContent);
-    } catch (e) {
+    } catch {
       console.error('Failed to parse AI response as JSON:', content);
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }

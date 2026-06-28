@@ -12,7 +12,7 @@ import { LEVELS } from '@/src/lib/achievements/levels';
 
 interface ProfileData {
     achievements: AchievementState[];
-    metrics: Record<string, any>;
+    metrics: Record<string, unknown>;
 }
 
 export default function ProfilePage() {

@@ -68,6 +68,7 @@ export function useAchievementNotifications() {
 
   // Poll on mount and every 30 seconds
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     poll();
     const interval = setInterval(poll, 30_000);
     return () => clearInterval(interval);

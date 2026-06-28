@@ -13,7 +13,6 @@ export function ActivityHeatmap({ heatmap }: HeatmapProps) {
         const today = new Date();
         
         // Find how many days to pad so the grid starts on Sunday
-        const endDayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
         const totalDaysToShow = 140; // 20 weeks
         
         // We want the last cell to be `today`.
