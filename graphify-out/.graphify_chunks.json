@@ -1,0 +1,133 @@
+[
+  {
+    "chunk_num": 1,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\file.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_01.json"
+  },
+  {
+    "chunk_num": 2,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\github.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_02.json"
+  },
+  {
+    "chunk_num": 3,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\globe.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_03.json"
+  },
+  {
+    "chunk_num": 4,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\google.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_04.json"
+  },
+  {
+    "chunk_num": 5,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\next.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_05.json"
+  },
+  {
+    "chunk_num": 6,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\vercel.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_06.json"
+  },
+  {
+    "chunk_num": 7,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\public\\window.svg"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_07.json"
+  },
+  {
+    "chunk_num": 8,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\DESIGN.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\DOCKER.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\DOCKER_INSTRUCTIONS.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\KUBERNETES.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\README.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\coderabbit_summary.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\coderabbit_titles.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\docker-compose.yml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\git_status.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\recent_changes.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\recent_diff.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\tsc_output.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\tsc_output_2.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\Chart.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\NOTES.txt",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\deployment.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\hpa.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\ingress.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\network-policy.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\redis-deployment.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\redis-service.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\service.yaml"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_08.json"
+  },
+  {
+    "chunk_num": 9,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\templates\\servicemonitor.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\values-dev.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\values-prod.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\helm\\systemcraft\\values.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\argocd\\systemcraft-app.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\deployment.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\hpa.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\ingress.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\metrics-server-patch.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\network-policy.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\redis-deployment.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\redis-service.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\service.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\kubernetes\\servicemonitor.yaml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.errors\\coderabbit.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.frontendskills\\Achievements.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.frontendskills\\Agents.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.frontendskills\\Auth.design.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.frontendskills\\Canvas.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.frontendskills\\SystemCraft Landing Page Creative Direction.pdf",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\Copilot\\.frontendskills\\Updates.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\monitoring\\alertmanager\\alertmanager.yml"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_09.json"
+  },
+  {
+    "chunk_num": 10,
+    "total_chunks": 10,
+    "files": [
+      "D:\\vertex-club\\System-Craft\\System-Craft\\monitoring\\grafana\\provisioning\\dashboards\\dashboard.yml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\monitoring\\grafana\\provisioning\\datasources\\prometheus.yml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\monitoring\\prometheus\\alert-rules.yml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\monitoring\\prometheus\\prometheus.yml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\.agents\\skills\\superdesign\\INIT.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\.agents\\skills\\superdesign\\SKILL.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\.agents\\skills\\superdesign\\SUPERDESIGN.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\.claude\\skills\\superdesign\\SKILL.md",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\.github\\workflows\\ci.yml",
+      "D:\\vertex-club\\System-Craft\\System-Craft\\linear.app\\DESIGN.md"
+    ],
+    "chunk_path": "D:\\vertex-club\\System-Craft\\System-Craft\\graphify-out\\.graphify_chunk_10.json"
+  }
+]
