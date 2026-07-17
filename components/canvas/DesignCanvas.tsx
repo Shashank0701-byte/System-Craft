@@ -779,6 +779,7 @@ export function DesignCanvas({
 
   return (
     <main
+      id="design-canvas-container"
       ref={canvasRef}
       tabIndex={0}
       className={`relative flex-1 bg-[#060810] overflow-hidden focus:outline-none select-none ${toolMode === 'pan' ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : toolMode === 'erase' ? 'cursor-crosshair' : 'cursor-default'

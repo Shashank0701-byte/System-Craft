@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { toJpeg } from 'html-to-image';
 import { InterviewTimer } from './InterviewTimer';
 import { ChaosTimer } from './ChaosTimer';
 import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
@@ -49,6 +51,49 @@ export function InterviewHeader({
 }: InterviewHeaderProps) {
     const diffConfig = DIFFICULTY_LABELS[difficulty] || DIFFICULTY_LABELS.medium;
     const isInProgress = status === 'in_progress';
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportImage = async () => {
+        const canvasElement = document.getElementById('design-canvas-container');
+        if (!canvasElement) return;
+        
+        try {
+            setIsExporting(true);
+            const originalError = console.error;
+            console.error = (...args) => {
+                if (args[0]?.name === 'SecurityError' || (typeof args[0] === 'string' && args[0].includes('cssRules'))) return;
+                originalError.apply(console, args);
+            };
+
+            canvasElement.classList.add('exporting-canvas');
+
+            const dataUrl = await toJpeg(canvasElement, { 
+                quality: 0.9,
+                cacheBust: true, 
+                backgroundColor: '#060810',
+                pixelRatio: window.devicePixelRatio ? window.devicePixelRatio * 2 : 2,
+                filter: (node) => {
+                    if (node instanceof HTMLElement) {
+                        if (node.classList.contains('absolute') && node.classList.contains('z-50')) return false;
+                    }
+                    return true;
+                }
+            });
+
+            canvasElement.classList.remove('exporting-canvas');
+
+            const link = document.createElement('a');
+            link.download = `interview-design-${new Date().toISOString().split('T')[0]}.jpg`;
+            link.href = dataUrl;
+            link.click();
+            
+            console.error = originalError;
+        } catch (err) {
+            console.error('Failed to export image', err);
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const renderSaveStatus = () => {
         switch (saveStatus) {
@@ -160,6 +205,19 @@ export function InterviewHeader({
                         )}
                     </div>
                 )}
+
+                <button
+                    onClick={handleExportImage}
+                    disabled={isExporting}
+                    className="flex items-center justify-center size-9 rounded-lg hover:bg-dashboard-card text-slate-400 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                    title="Export Canvas Image"
+                >
+                    {isExporting ? (
+                        <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>image</span>
+                    )}
+                </button>
 
                 <Link
                     href="/interview"

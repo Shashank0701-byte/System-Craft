@@ -208,3 +208,11 @@ html {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
+
+/* Fixes for html-to-image rendering bugs */
+.exporting-canvas * {
+  will-change: auto !important;
+  transition: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+}
