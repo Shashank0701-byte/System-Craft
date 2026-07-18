@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/lib/firebase/AuthContext';
 import { logout } from '@/src/lib/firebase/auth';
 import { useCanvasPanels } from './CanvasPanelsContext';
+import { toJpeg } from 'html-to-image';
 
 interface CanvasHeaderProps {
   title?: string;
@@ -34,6 +35,52 @@ export function CanvasHeader({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isCancellingRef = useRef(false);
   const { toggleLeft, toggleRight } = useCanvasPanels();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportImage = async () => {
+    const canvasElement = document.getElementById('design-canvas-container');
+    if (!canvasElement) return;
+    
+    try {
+      setIsExporting(true);
+      // Temporarily mock console.error to suppress harmless SecurityError from cross-origin stylesheets in html-to-image
+      const originalError = console.error;
+      console.error = (...args) => {
+        if (args[0]?.name === 'SecurityError' || (typeof args[0] === 'string' && args[0].includes('cssRules'))) return;
+        originalError.apply(console, args);
+      };
+
+      // Add class to disable animations and backdrop-filters that break html-to-image
+      canvasElement.classList.add('exporting-canvas');
+
+      const dataUrl = await toJpeg(canvasElement, { 
+        quality: 0.9,
+        cacheBust: true, 
+        backgroundColor: '#060810',
+        pixelRatio: window.devicePixelRatio ? window.devicePixelRatio * 2 : 2,
+        filter: (node) => {
+          // Skip UI elements like toolbars and absolute positioned panels that might pollute the canvas
+          if (node instanceof HTMLElement) {
+             if (node.classList.contains('absolute') && node.classList.contains('z-50')) return false;
+          }
+          return true;
+        }
+      });
+
+      canvasElement.classList.remove('exporting-canvas');
+
+      const link = document.createElement('a');
+      link.download = `system-design-${new Date().toISOString().split('T')[0]}.jpg`;
+      link.href = dataUrl;
+      link.click();
+      
+      console.error = originalError; // Restore original console.error
+    } catch (err) {
+      console.error('Failed to export image', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Sync editValue when title prop changes
   useEffect(() => {
@@ -269,10 +316,22 @@ export function CanvasHeader({
 
         <div className="h-5 w-px bg-white/[0.06] mx-1 hidden md:block"></div>
 
-        <button className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer">
+        <button 
+          onClick={handleExportImage}
+          disabled={isExporting}
+          className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer disabled:opacity-50"
+          title="Export as Image"
+        >
+          {isExporting ? (
+            <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <span className="material-symbols-outlined text-[16px]">image</span>
+          )}
+        </button>
+        <button className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer" title="Share">
           <span className="material-symbols-outlined text-[16px]">share</span>
         </button>
-        <button className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer">
+        <button className="flex items-center justify-center size-7 rounded-lg hover:bg-white/[0.02] text-white/40 hover:text-white/70 transition-colors cursor-pointer" title="Save">
           <span className="material-symbols-outlined text-[16px]">save</span>
         </button>
 

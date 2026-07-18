@@ -174,7 +174,7 @@ export default function InterviewResultPage({ params }: PageProps) {
             {/* Header */}
             <div className="max-w-6xl mx-auto mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 print:hidden">
                         <Link href="/interview" className="flex items-center gap-1 text-white/40 hover:text-cyan-400 text-[10px] font-mono uppercase tracking-widest transition-colors">
                             <span className="material-symbols-outlined text-[15px]">arrow_back</span>
                             Back
@@ -190,16 +190,15 @@ export default function InterviewResultPage({ params }: PageProps) {
 
                 <div className="flex items-center gap-3">
                     <button
-                        disabled
-                        aria-disabled="true"
-                        className="flex items-center gap-2 px-4 py-2 border border-white/[0.04] bg-[#0c0d16]/30 text-white/30 opacity-50 cursor-not-allowed rounded-lg font-mono text-[10px] uppercase tracking-wider"
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 px-4 py-2 border border-white/[0.04] bg-[#0c0d16]/30 text-white/70 hover:text-white hover:bg-white/[0.05] transition-colors rounded-lg font-mono text-[10px] uppercase tracking-wider cursor-pointer print:hidden"
                     >
                         <span className="material-symbols-outlined text-[16px]">download</span>
-                        Export PDF (Soon)
+                        Export PDF
                     </button>
                     <Link
                         href={`/interview`}
-                        className="flex items-center gap-2 px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-black rounded font-mono text-[10px] uppercase tracking-widest font-bold transition-all shadow-md shadow-cyan-500/10"
+                        className="flex items-center gap-2 px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-black rounded font-mono text-[10px] uppercase tracking-widest font-bold transition-all shadow-md shadow-cyan-500/10 print:hidden"
                     >
                         Try Another
                     </Link>
@@ -550,7 +549,7 @@ export default function InterviewResultPage({ params }: PageProps) {
             </div>
 
             {/* Footer */}
-            <div className="max-w-6xl mx-auto mt-16 pt-10 border-t border-white/[0.04] text-center font-mono">
+            <div className="max-w-6xl mx-auto mt-16 pt-10 border-t border-white/[0.04] text-center font-mono print:hidden">
                 <p className="text-white/40 text-xs mb-4">Want to improve your score? Analyze the weaknesses and try the same challenge again.</p>
                 <div className="flex items-center justify-center gap-4 text-xs">
                     <Link href={`/interview`} className="text-cyan-400 hover:text-cyan-300 font-bold uppercase tracking-wider">Start New Interview</Link>
