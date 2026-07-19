@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect, { isValidObjectId } from '@/src/lib/db/mongoose';
-import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import InterviewSession, { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 import User from '@/src/lib/db/models/User';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
 import { evaluateStructure } from '@/src/lib/evaluation/structuralRules';
 import { generateJSON } from '@/src/lib/ai/geminiClient';
 import { ICanvasNode, IConnection } from '@/src/lib/db/models/Design';
-import { IConstraintChange } from '@/src/lib/db/models/InterviewSession';
 import { checkRateLimit } from '@/src/lib/rateLimit';
+import {
+    resolveConstraintCanvas,
+    shouldTriggerConstraintChange,
+} from '@/src/lib/interview/constraintTrigger';
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -18,13 +21,6 @@ interface HintResponse {
     severity: 'question' | 'nudge' | 'praise';
 }
 
-interface ConstraintTriggerSession {
-    difficulty: 'easy' | 'medium' | 'hard';
-    constraintChanges?: IConstraintChange[];
-    startedAt: Date | string;
-    timeLimit: number;
-}
-
 interface ConstraintCandidateContext {
     prompt: string;
     difficulty: 'easy' | 'medium' | 'hard';
@@ -33,10 +29,6 @@ interface ConstraintCandidateContext {
     connections: IConnection[];
     failedRuleMessages: string[];
 }
-
-const LIVE_CHANGE_MIN_PROGRESS = 0.25;
-const LIVE_CHANGE_MAX_PROGRESS = 0.75;
-const LIVE_CHANGE_MIN_NODES = 3;
 
 function generateConstraintChange(
     {
@@ -117,37 +109,6 @@ function generateConstraintChange(
     };
 }
 
-function shouldTriggerConstraintChange(
-    session: ConstraintTriggerSession,
-    nodeCount: number
-): { shouldTrigger: boolean; introducedAtMinute: number } {
-    if (!['medium', 'hard'].includes(session.difficulty)) {
-        return { shouldTrigger: false, introducedAtMinute: 0 };
-    }
-
-    if ((session.constraintChanges || []).length > 0) {
-        return { shouldTrigger: false, introducedAtMinute: 0 };
-    }
-
-    if (nodeCount < LIVE_CHANGE_MIN_NODES) {
-        return { shouldTrigger: false, introducedAtMinute: 0 };
-    }
-
-    const startedAt = new Date(session.startedAt).getTime();
-    if (isNaN(startedAt)) {
-        return { shouldTrigger: false, introducedAtMinute: 0 };
-    }
-
-    const elapsedMinutes = Math.max(0, Math.floor((Date.now() - startedAt) / (1000 * 60)));
-    const progress = session.timeLimit > 0 ? elapsedMinutes / session.timeLimit : 0;
-
-    if (progress < LIVE_CHANGE_MIN_PROGRESS || progress > LIVE_CHANGE_MAX_PROGRESS) {
-        return { shouldTrigger: false, introducedAtMinute: elapsedMinutes };
-    }
-
-    return { shouldTrigger: true, introducedAtMinute: elapsedMinutes };
-}
-
 export const POST = async (request: NextRequest, { params }: RouteParams) => {
     try {
         const authHeader = request.headers.get('Authorization');
@@ -215,9 +176,15 @@ export const POST = async (request: NextRequest, { params }: RouteParams) => {
             ? sanitizeMessage(candidateReply.trim())
             : null;
 
+        const {
+            nodes: canvasNodes,
+            connections: canvasConnections,
+            nodeCount,
+        } = resolveConstraintCanvas(nodes, connections, session.canvasSnapshot);
+
         const structuralResults = evaluateStructure(
-            nodes,
-            connections,
+            canvasNodes,
+            canvasConnections,
             session.question.requirements || [],
             session.question.constraints || []
         );
@@ -226,15 +193,15 @@ export const POST = async (request: NextRequest, { params }: RouteParams) => {
             .filter((detail) => detail.status === 'fail')
             .map((detail) => detail.message);
 
-        const liveChangeDecision = shouldTriggerConstraintChange(session, nodes.length);
+        const liveChangeDecision = shouldTriggerConstraintChange(session, nodeCount);
 
         if (liveChangeDecision.shouldTrigger) {
             const constraintChange = generateConstraintChange({
                 prompt: session.question.prompt,
                 difficulty: session.difficulty,
                 introducedAtMinute: liveChangeDecision.introducedAtMinute,
-                nodes,
-                connections,
+                nodes: canvasNodes,
+                connections: canvasConnections,
                 failedRuleMessages
             });
 
@@ -269,8 +236,8 @@ export const POST = async (request: NextRequest, { params }: RouteParams) => {
 
         const formatNode = (n: ICanvasNode) => ({ type: n.type, label: n.label });
         const formatConn = (c: IConnection) => {
-            const from = nodes.find((n: ICanvasNode) => n.id === c.from);
-            const to = nodes.find((n: ICanvasNode) => n.id === c.to);
+            const from = canvasNodes.find((n: ICanvasNode) => n.id === c.from);
+            const to = canvasNodes.find((n: ICanvasNode) => n.id === c.to);
             return { fromType: from?.type, fromLabel: from?.label, toType: to?.type, toLabel: to?.label, label: c.label };
         };
 
@@ -281,10 +248,10 @@ export const POST = async (request: NextRequest, { params }: RouteParams) => {
 Question: ${session.question.prompt}
 
 Current Canvas Nodes:
-${JSON.stringify(nodes.map(formatNode), null, 2)}
+${JSON.stringify(canvasNodes.map(formatNode), null, 2)}
 
 Current Canvas Connections:
-${JSON.stringify(connections.map(formatConn), null, 2)}
+${JSON.stringify(canvasConnections.map(formatConn), null, 2)}
 
 Current Structural Rule Failures:
 ${failedRules.length > 0 ? failedRules.join('\n') : 'None! Architecture looks structurally sound so far.'}

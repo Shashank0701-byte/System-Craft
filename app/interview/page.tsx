@@ -36,6 +36,7 @@ const DIFFICULTY_CONFIG = {
         borderColor: 'border-emerald-500/30',
         icon: 'trending_flat',
         description: 'Basic CRUD, single database, client-server',
+        chaosNote: 'Live chaos constraints are off on Easy',
     },
     medium: {
         label: 'Medium',
@@ -46,6 +47,7 @@ const DIFFICULTY_CONFIG = {
         borderColor: 'border-amber-500/30',
         icon: 'trending_up',
         description: 'Caching, load balancing, replication',
+        chaosNote: 'Live constraint arms after ~25% of the timer',
     },
     hard: {
         label: 'Hard',
@@ -56,6 +58,7 @@ const DIFFICULTY_CONFIG = {
         borderColor: 'border-rose-500/30',
         icon: 'rocket_launch',
         description: 'Multi-region, sharding, consensus protocols',
+        chaosNote: 'Live constraint arms after ~25% of the timer',
     },
 };
 
@@ -275,8 +278,11 @@ export default function InterviewPage() {
                                                 </span>
                                             </div>
 
-                                            <p className="text-[10px] font-mono text-white/40 mb-6 leading-relaxed">
+                                            <p className="text-[10px] font-mono text-white/40 mb-2 leading-relaxed">
                                                 {config.description}
+                                            </p>
+                                            <p className="text-[10px] font-mono text-white/25 mb-6 leading-relaxed">
+                                                {config.chaosNote}
                                             </p>
 
                                             <div className={`flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase font-bold transition-colors ${isStarting === key ? config.textColor : 'text-white/30 group-hover:text-white'}`}>
