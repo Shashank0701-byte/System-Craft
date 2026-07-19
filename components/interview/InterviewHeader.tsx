@@ -141,6 +141,21 @@ export function InterviewHeader({
                     <span className={`text-xs font-bold ${diffConfig.color}`}>
                         • {diffConfig.label}
                     </span>
+                    {isInProgress && difficulty === 'easy' && (
+                        <span className="hidden xl:inline text-[10px] font-mono text-white/30">
+                            Chaos off
+                        </span>
+                    )}
+                    {isInProgress && (difficulty === 'medium' || difficulty === 'hard') && constraintChangeCount === 0 && timer.progress < 0.25 && (
+                        <span className="hidden xl:inline text-[10px] font-mono text-white/30">
+                            Chaos arms ~25%
+                        </span>
+                    )}
+                    {isInProgress && (difficulty === 'medium' || difficulty === 'hard') && constraintChangeCount === 0 && timer.progress >= 0.25 && (
+                        <span className="hidden xl:inline text-[10px] font-mono text-white/30">
+                            Chaos live
+                        </span>
+                    )}
                 </div>
 
                 {constraintChangeCount > 0 && (
