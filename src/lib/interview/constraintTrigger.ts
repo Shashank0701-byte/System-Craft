@@ -12,8 +12,8 @@ export interface ConstraintTriggerSession {
 }
 
 /**
- * Prefer the richer canvas when the client payload is empty/stale
- * relative to the auto-saved session snapshot.
+ * Fall back to the snapshot only when the client canvas is truly empty.
+ * Otherwise, prefer the live client canvas to respect deletions.
  */
 export function resolveConstraintCanvas(
     clientNodes: ICanvasNode[],
@@ -23,7 +23,7 @@ export function resolveConstraintCanvas(
     const snapshotNodes = snapshot?.nodes ?? [];
     const snapshotConnections = snapshot?.connections ?? [];
 
-    if (snapshotNodes.length > clientNodes.length) {
+    if (clientNodes.length === 0 && snapshotNodes.length > 0) {
         return {
             nodes: snapshotNodes,
             connections: snapshotConnections,
@@ -34,7 +34,7 @@ export function resolveConstraintCanvas(
     return {
         nodes: clientNodes,
         connections: clientConnections,
-        nodeCount: Math.max(clientNodes.length, snapshotNodes.length),
+        nodeCount: clientNodes.length,
     };
 }
 
