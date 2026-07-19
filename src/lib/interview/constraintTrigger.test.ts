@@ -100,7 +100,7 @@ describe('shouldTriggerConstraintChange', () => {
 });
 
 describe('resolveConstraintCanvas', () => {
-    it('uses client canvas when it has equal or more nodes', () => {
+    it('uses client canvas when it has nodes', () => {
         const clientNodes = [node('a'), node('b'), node('c')];
         const clientConnections: IConnection[] = [];
         const snapshot = { nodes: [node('x'), node('y')], connections: [] as IConnection[] };
@@ -110,7 +110,7 @@ describe('resolveConstraintCanvas', () => {
         expect(resolved.nodeCount).toBe(3);
     });
 
-    it('falls back to snapshot when client has fewer nodes', () => {
+    it('prefers live client canvas over a larger snapshot (respects deletions)', () => {
         const clientNodes = [node('a')];
         const clientConnections: IConnection[] = [];
         const snapshotNodes = [node('x'), node('y'), node('z'), node('w')];
@@ -123,17 +123,25 @@ describe('resolveConstraintCanvas', () => {
             connections: snapshotConnections,
         });
 
+        expect(resolved.nodes).toEqual(clientNodes);
+        expect(resolved.connections).toEqual(clientConnections);
+        expect(resolved.nodeCount).toBe(1);
+    });
+
+    it('falls back to snapshot only when client canvas is empty', () => {
+        const snapshotNodes = [node('x'), node('y'), node('z'), node('w')];
+        const snapshotConnections: IConnection[] = [
+            { id: 'c1', from: 'x', to: 'y' },
+        ];
+
+        const resolved = resolveConstraintCanvas([], [], {
+            nodes: snapshotNodes,
+            connections: snapshotConnections,
+        });
+
         expect(resolved.nodes).toEqual(snapshotNodes);
         expect(resolved.connections).toEqual(snapshotConnections);
         expect(resolved.nodeCount).toBe(4);
-    });
-
-    it('reports max node count when preferring client but snapshot is larger count-wise only via max', () => {
-        // Equal length prefers client; nodeCount is max of both
-        const clientNodes = [node('a'), node('b')];
-        const snapshot = { nodes: [node('x'), node('y')], connections: [] as IConnection[] };
-        const resolved = resolveConstraintCanvas(clientNodes, [], snapshot);
-        expect(resolved.nodeCount).toBe(2);
     });
 
     it('handles missing snapshot', () => {
