@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ICanvasNode, IConnection } from '../lib/db/models/Design';
 import { IConstraintChange } from '../lib/db/models/InterviewSession';
 import { authFetch } from '../lib/firebase/authClient';
+import { LIVE_CHANGE_MIN_PROGRESS } from '../lib/interview/constraintTrigger';
 
 export interface AIMessage {
     role: 'interviewer' | 'candidate';
@@ -27,6 +28,13 @@ interface UseInterviewAIProps {
     timeRemaining: number;
     initialMessages?: AIMessage[];
     onConstraintChange?: (change: IConstraintChange) => void;
+    /** Session start time — used to arm chaos at 25% elapsed */
+    startedAt?: string | Date;
+    /** Interview length in minutes */
+    timeLimit?: number;
+    difficulty?: 'easy' | 'medium' | 'hard';
+    /** Whether a live constraint has already been injected */
+    hasConstraintChange?: boolean;
 }
 
 export function useInterviewAI({
@@ -34,7 +42,11 @@ export function useInterviewAI({
     stateRef,
     timeRemaining,
     initialMessages = [],
-    onConstraintChange
+    onConstraintChange,
+    startedAt,
+    timeLimit,
+    difficulty,
+    hasConstraintChange = false,
 }: UseInterviewAIProps) {
     const [messages, setMessages] = useState<AIMessage[]>(() => initialMessages);
     const [isThinking, setIsThinking] = useState(false);
@@ -58,8 +70,14 @@ export function useInterviewAI({
         timeRemainingRef.current = timeRemaining;
     }, [timeRemaining]);
 
+    const hasConstraintChangeRef = useRef(hasConstraintChange);
+    useEffect(() => {
+        hasConstraintChangeRef.current = hasConstraintChange;
+    }, [hasConstraintChange]);
+
     const hasStartedRef = useRef(false);
     const lastHintTimeRef = useRef(Date.now());
+    const chaosArmScheduledRef = useRef(false);
 
     // Trigger an AI analysis
     const requestHint = useCallback(async (candidateReply?: string) => {
@@ -104,6 +122,7 @@ export function useInterviewAI({
             });
 
             if (data.constraintChange) {
+                hasConstraintChangeRef.current = true;
                 onConstraintChange?.(data.constraintChange);
             }
 
@@ -141,6 +160,41 @@ export function useInterviewAI({
             if (startTimeout) clearTimeout(startTimeout);
         };
     }, [requestHint]);
+
+    // Dedicated chaos arm: one attempt at 25% elapsed + one safety retry ~60s later
+    useEffect(() => {
+        if (chaosArmScheduledRef.current) return;
+        if (!startedAt || !timeLimit || timeLimit <= 0) return;
+        if (!difficulty || !['medium', 'hard'].includes(difficulty)) return;
+        if (hasConstraintChange) return;
+
+        const startedMs = new Date(startedAt).getTime();
+        if (isNaN(startedMs)) return;
+
+        chaosArmScheduledRef.current = true;
+
+        const armAtMs = startedMs + LIVE_CHANGE_MIN_PROGRESS * timeLimit * 60 * 1000;
+        const delayMs = Math.max(0, armAtMs - Date.now());
+
+        const armTimeout = setTimeout(() => {
+            if (!hasConstraintChangeRef.current) {
+                requestHint();
+            }
+        }, delayMs);
+
+        const retryTimeout = setTimeout(() => {
+            if (!hasConstraintChangeRef.current) {
+                requestHint();
+            }
+        }, delayMs + 60_000);
+
+        return () => {
+            clearTimeout(armTimeout);
+            clearTimeout(retryTimeout);
+            // Allow reschedule if session metadata changes before arming
+            chaosArmScheduledRef.current = false;
+        };
+    }, [startedAt, timeLimit, difficulty, hasConstraintChange, requestHint]);
 
     const sendReply = useCallback((text: string) => {
         return requestHint(text);

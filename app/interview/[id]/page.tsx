@@ -100,7 +100,11 @@ export default function InterviewCanvasPage({ params }: PageProps) {
         stateRef: canvasStateRef,
         timeRemaining: timer.minutes,
         initialMessages: session?.aiMessages || [],
-        onConstraintChange: handleConstraintChange
+        onConstraintChange: handleConstraintChange,
+        startedAt: session?.startedAt,
+        timeLimit: session?.timeLimit,
+        difficulty: session?.difficulty,
+        hasConstraintChange: (session?.constraintChanges?.length || 0) > 0,
     });
 
     const { setMessages } = ai;
