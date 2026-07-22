@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from './SidebarContext';
 import { ProfileSettingsModal } from './ProfileSettingsModal';
+import Image from "next/image";
 
 export function Sidebar() {
   const { isOpen, close } = useSidebar();
@@ -117,12 +118,27 @@ export function Sidebar() {
       {/* Header section */}
       <div className="p-4 flex items-center justify-between z-10">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded bg-cyan-300/[0.03] text-cyan-300 border border-cyan-300/10">
-            <span className="material-symbols-outlined text-[15px]">hub</span>
-          </div>
+          <Image
+            src="/favicon.png"
+            alt="SystemCraft"
+            width={32}
+            height={32}
+            priority
+            unoptimized
+            className="shrink-0"
+          />
+
           <div className="flex flex-col">
-            <h1 id="sidebar-title" className="text-xs font-bold tracking-tight text-white/90 font-display">SYSTEMCRAFT</h1>
-            <p className="text-white/20 text-[8px] font-mono tracking-wider uppercase mt-0.5">Control Panel</p>
+            <h1
+              id="sidebar-title"
+              className="text-xs font-bold tracking-tight text-white/90 font-display"
+            >
+              SYSTEMCRAFT
+            </h1>
+
+            <p className="mt-0.5 text-[8px] font-mono uppercase tracking-wider text-white/20">
+              Control Panel
+            </p>
           </div>
         </Link>
         {/* Close button (mobile only) */}

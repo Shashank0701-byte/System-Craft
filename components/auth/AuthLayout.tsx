@@ -1,20 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import SystemStatusPanel from "./SystemStatusPanel";
 
 /**
  * AuthLayout — Shared layout for login and signup pages.
- *
- * Left: Decorative atmosphere panel (hidden on mobile).
- * Right: Centered auth form with mobile logo fallback.
- *
- * Ambient Bridge:
- *   - Soft cyan glow emanating from the left (infrastructure)
- *   - Deep indigo glow behind the authentication card (right)
- *   - Faint gradients that meet naturally in the center
- *
- * Spatial Composition:
- *   - Centered inside the right panel (justify-center) to avoid excess empty space on the right
  */
 
 interface AuthLayoutProps {
@@ -29,31 +19,38 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       <div className="pointer-events-none fixed inset-0 z-0">
         {/* Shared noise texture overlay */}
         <div className="noise-overlay absolute inset-0" />
-        
-        {/* Soft cyan glow on the left (NOC / infrastructure side) */}
+
+        {/* Soft cyan glow on the left */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_50%,rgba(34,211,238,0.035),transparent_45%)]" />
-        
-        {/* Deep indigo glow on the right (Auth card side) */}
+
+        {/* Deep indigo glow on the right */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(99,102,241,0.025),transparent_40%)]" />
-        
-        {/* Faint vignette for depth */}
+
+        {/* Vignette */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
       </div>
 
-      {/* ── Left Atmosphere Panel (Observability) ─────────── */}
-      <div className="hidden lg:flex w-[30%] min-w-[300px] max-w-[400px] relative z-10 border-r border-white/[0.03]">
+      {/* ── Left Panel ─────────────────────────────────────── */}
+      <div className="relative z-10 hidden w-[30%] min-w-[300px] max-w-[400px] border-r border-white/[0.03] lg:flex">
         <SystemStatusPanel />
       </div>
 
-      {/* ── Right Form Panel (Access Card - Centered) ──────── */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 overflow-y-auto relative z-10">
+      {/* ── Right Form Panel ───────────────────────────────── */}
+      <div className="relative z-10 flex flex-1 items-center justify-center overflow-y-auto px-6 py-12">
         <div className="relative w-full max-w-md">
-          {/* Mobile logo — only visible below lg */}
-          <div className="flex lg:hidden items-center gap-2.5 mb-10">
-            <div className="flex size-8 items-center justify-center rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] text-cyan-200">
-              <span className="material-symbols-outlined text-[17px]">hub</span>
-            </div>
-            <span className="text-sm font-semibold tracking-[-0.02em] text-white/90 font-display">
+
+          {/* Mobile Logo */}
+          <div className="mb-10 flex items-center gap-3 lg:hidden">
+            <Image
+              src="/favicon.png"
+              alt="SystemCraft"
+              width={38}
+              height={38}
+              priority
+              unoptimized
+            />
+
+            <span className="font-display text-sm font-semibold tracking-[-0.02em] text-white/90">
               SystemCraft
             </span>
           </div>
