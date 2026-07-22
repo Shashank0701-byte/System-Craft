@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useInView, useScroll, useTransform, useMotionValueEvent, type Variants } from "framer-motion";
@@ -1033,28 +1033,49 @@ function FaqSection() {
 // ── Footer ──────────────────────────────────────────────────
 function Footer() {
   return (
-    <footer className="border-t border-white/[0.04] bg-[#030407] py-12 relative z-10">
-      <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-10">
-        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-          <div className="flex items-center gap-3">
-            <div className="flex size-7 items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/8 text-cyan-200">
-              <span className="material-symbols-outlined text-[16px]">hub</span>
-            </div>
-            <div className="text-sm font-semibold tracking-wide text-white/90">SystemCraft</div>
-          </div>
-          <div className="flex items-center gap-8 text-sm text-white/45">
-            <Link href="/practice" className="transition-colors hover:text-white">Practice</Link>
-            <Link href="/dashboard" className="transition-colors hover:text-white">Dashboard</Link>
-            <Link href="/login" className="transition-colors hover:text-white">Login</Link>
-          </div>
-          <div className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} SystemCraft. All rights reserved.
-          </div>
+    <footer className="relative z-10 border-t border-white/[0.04] bg-[#030407] py-12">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:px-8 lg:flex-row lg:px-10">
+        
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/favicon.png"
+            alt="SystemCraft"
+            width={32}
+            height={32}
+            priority
+          />
+          <span className="text-sm font-semibold tracking-wide text-white/90">
+            SystemCraft
+          </span>
+        </Link>
+
+        {/* Navigation */}
+        <div className="flex items-center gap-8 text-sm text-white/45">
+          <Link href="/practice" className="transition-colors hover:text-white">
+            Practice
+          </Link>
+
+          <Link href="/dashboard" className="transition-colors hover:text-white">
+            Dashboard
+          </Link>
+
+          <Link href="/login" className="transition-colors hover:text-white">
+            Login
+          </Link>
         </div>
+
+        {/* Copyright */}
+        <div className="text-xs text-white/30">
+          &copy; {new Date().getFullYear()} SystemCraft. All rights reserved.
+        </div>
+
       </div>
     </footer>
   );
 }
+
+
 
 
 
@@ -1132,11 +1153,22 @@ export default function SystemCraftLanding() {
 
       {/* ── BESPOKE FLOATING NAVIGATION ─────────────────────────── */}
       <nav className="fixed left-1/2 top-5 z-50 flex w-[calc(100%-2rem)] max-w-6xl -translate-x-1/2 items-center justify-between rounded-full border border-white/[0.035] bg-[#05060a]/35 px-4 py-2 backdrop-blur-2xl sm:px-5">
-        <Link href="/" className="flex items-center gap-3 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50">
-          <div className="flex size-8 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/[0.07] text-cyan-200">
-            <span className="material-symbols-outlined select-none text-[17px]">hub</span>
-          </div>
-          <span className="text-sm font-semibold tracking-[-0.02em] text-white/95">SystemCraft</span>
+        <Link
+          href="/"
+          className="flex items-center gap-3 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
+        >
+          <Image
+            src="/favicon.png"
+            alt="SystemCraft"
+            width={38}
+            height={38}
+            priority
+            className="rounded-lg"
+          />
+
+          <span className="text-sm font-semibold tracking-[-0.02em] text-white/95">
+            SystemCraft
+          </span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
