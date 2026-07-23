@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 /**
  * SystemStatusPanel — Decorative left-panel for auth pages.
  *
@@ -50,11 +50,18 @@ export default function SystemStatusPanel() {
       <div className="flex w-full max-w-[340px] flex-col items-center">
 
         {/* ── Brand mark ──────────────────────────────────── */}
-        <div className="mb-8 flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03]">
-            <span className="material-symbols-outlined text-cyan-400 text-[18px]">hub</span>
-          </div>
-          <span className="text-sm font-semibold tracking-tight text-white/80 font-display">
+        <div className="mb-8 flex items-center gap-3">
+          <Image
+            src="/favicon.png"
+            alt="SystemCraft"
+            width={36}
+            height={36}
+            priority
+            unoptimized
+            className="shrink-0"
+          />
+
+          <span className="font-display text-sm font-semibold tracking-tight text-white/80">
             SystemCraft
           </span>
         </div>

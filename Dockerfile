@@ -1,10 +1,10 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 FROM base AS deps
 
 ARG ALLOW_LOCKFILE_REGEN=false
 
-RUN apk add --no-cache libc6-compat
+RUN apk upgrade --no-cache && apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
 # Use --prefer-offline and retries to handle flaky registry connections in CI
@@ -42,7 +42,25 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-RUN apk add --no-cache wget
+# Upgrade Alpine packages in the final image (this is what Trivy scans) and
+# install wget for the compose/K8s healthcheck.
+RUN apk upgrade --no-cache && apk add --no-cache wget
+
+# Remove package managers from the production image (runtime only needs `node`).
+# This shrinks the attack surface and clears Trivy findings on npm/yarn deps
+# (e.g. tar). Clean the npm cache *before* deleting npm — reversing that order
+# fails with exit 127 because `npm` is already gone.
+RUN npm cache clean --force \
+    && rm -rf \
+      /usr/local/lib/node_modules/npm \
+      /usr/local/lib/node_modules/corepack \
+      /usr/local/bin/npm \
+      /usr/local/bin/npx \
+      /usr/local/bin/corepack \
+      /usr/local/bin/yarn \
+      /usr/local/bin/yarnpkg \
+      /opt/yarn-v* \
+      /root/.npm
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
