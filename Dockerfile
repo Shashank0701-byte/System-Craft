@@ -1,10 +1,10 @@
-FROM node:22.18.0-alpine AS base
+FROM node:22-alpine AS base
 
 FROM base AS deps
 
 ARG ALLOW_LOCKFILE_REGEN=false
 
-RUN apk add --no-cache libc6-compat
+RUN apk upgrade --no-cache && apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
 # Use --prefer-offline and retries to handle flaky registry connections in CI
@@ -43,6 +43,9 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 RUN apk add --no-cache wget
+
+# Remove npm from production image to reduce attack surface and eliminate bundled CVEs (e.g., tar)
+RUN rm -rf /usr/local/lib/node_modules/npm && npm cache clean --force
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
