@@ -32,10 +32,11 @@ function node(id: string): ICanvasNode {
 describe('shouldTriggerConstraintChange', () => {
     const startedAt = new Date('2026-07-19T10:00:00.000Z').getTime();
 
-    it('never triggers on easy', () => {
+    it('triggers on easy after 25% progress (chaos is enabled for all difficulties)', () => {
+        // 20/45 ≈ 0.444, well past the 25% threshold
         const now = startedAt + 20 * 60 * 1000;
         const result = shouldTriggerConstraintChange(session({ difficulty: 'easy' }), 5, now);
-        expect(result.shouldTrigger).toBe(false);
+        expect(result.shouldTrigger).toBe(true);
     });
 
     it('does not trigger before 25% progress', () => {
