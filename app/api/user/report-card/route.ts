@@ -35,19 +35,6 @@ function getLevel(avgScore: number, totalInterviews: number): { label: string; c
     return { label: 'Beginner', color: '#94a3b8' };
 }
 
-const greetings = [
-    "Hey there!",
-    "Hello! How can I assist you today?",
-    "Hi! What's on your mind?",
-    "Greetings! What are we working on?",
-    "Good day! Let's make this productive.",
-    "Welcome back! What have you been up to?",
-    "Hi, how can I help you with your work?",
-    "Hey! What's the plan for today?",
-    "Hello! What's keeping you busy?",
-    "Greetings! How can I support you?"
-];
-
 export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('Authorization');
@@ -56,19 +43,6 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Select a random greeting
-        const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
-
-        // Ask for the user's agenda or work for the day
-        const response = await request.text();
-        const formData = new URLSearchParams(response);
-        const agenda = formData.get('agenda');
-
-        if (!agenda) {
-            return NextResponse.json({ error: 'Please provide your agenda or work for the day' }, { status: 400 });
-        }
-
-        // Proceed with the rest of the logic
         await dbConnect();
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -189,7 +163,6 @@ export async function GET(request: NextRequest) {
             topStrength,
             topWeakness,
             level,
-            message: `${randomGreeting} Your agenda is ${agenda}`
         });
     } catch (err) {
         console.error('Report card error:', err);

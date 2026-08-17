@@ -8,6 +8,7 @@ import { authFetch } from '@/src/lib/firebase/authClient';
 import { Header } from '@/components/dashboard/Header';
 import { SidebarProvider } from '@/components/dashboard/SidebarContext';
 import { Sidebar } from '@/components/dashboard/Sidebar';
+import { InterviewSessionCardSkeleton } from '@/components/ui/Skeleton';
 
 interface InterviewSession {
     id: string;
@@ -323,7 +324,7 @@ export default function InterviewPage() {
                                 {isLoadingSessions ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {[1, 2, 3, 4].map((i) => (
-                                            <div key={i} className="h-32 rounded-xl bg-white/[0.01] border border-white/[0.04] animate-pulse" />
+                                            <InterviewSessionCardSkeleton key={i} />
                                         ))}
                                     </div>
                                 ) : sessions.length === 0 ? (
