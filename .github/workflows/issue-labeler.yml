@@ -1,0 +1,80 @@
+name: Auto-label Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply labels based on title and body
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = (context.payload.issue.title || '').toLowerCase();
+            const body  = (context.payload.issue.body  || '').toLowerCase();
+            const text  = `${title} ${body}`;
+
+            const labelsToAdd = new Set();
+
+            // bug
+            if (/\b(bug|fix|broken|error|crash|fail|not working|regression)\b/.test(text)) {
+              labelsToAdd.add('bug');
+            }
+
+            // enhancement / feature
+            if (/\b(feat|feature|add|enhance|improve|new|request)\b/.test(text)) {
+              labelsToAdd.add('enhancement');
+            }
+
+            // documentation
+            if (/\b(docs?|documentation|readme|guide|comment|typo)\b/.test(text)) {
+              labelsToAdd.add('documentation');
+            }
+
+            // interview / chaos
+            if (/\b(interview|chaos|constraint|difficulty|easy|medium|hard|timer|hint|scoring|rubric)\b/.test(text)) {
+              labelsToAdd.add('interview');
+            }
+
+            // ui
+            if (/\b(ui|ux|design|layout|style|css|skeleton|animation|visual|loading|dark mode|responsive)\b/.test(text)) {
+              labelsToAdd.add('ui');
+            }
+
+            // performance
+            if (/\b(performance|perf|slow|speed|latency|memory|optimi[sz]e|bundle|cache)\b/.test(text)) {
+              labelsToAdd.add('performance');
+            }
+
+            // security
+            if (/\b(security|auth|token|xss|injection|vulnerability|cve|exploit)\b/.test(text)) {
+              labelsToAdd.add('security');
+            }
+
+            // architecture
+            if (/\b(architecture|canvas|node|connection|graph|topology|system design)\b/.test(text)) {
+              labelsToAdd.add('Architecture');
+            }
+
+            // question
+            if (/\b(question|how|why|what|unclear|confused|help)\b/.test(text) || title.endsWith('?')) {
+              labelsToAdd.add('question');
+            }
+
+            // always add needs-triage
+            labelsToAdd.add('needs-triage');
+
+            if (labelsToAdd.size === 0) return;
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: [...labelsToAdd],
+            });

@@ -98,7 +98,8 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
       - name: Lowercase repository name
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+        id: repo
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Build Docker image (load locally for scanning)
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
@@ -107,8 +108,8 @@ jobs:
           load: true
           pull: true
           tags: |
-            ghcr.io/${{ env.REPO }}/systemcraft-web:latest
-            ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
+            ghcr.io/${{ steps.repo.outputs.name }}/systemcraft-web:latest
+            ghcr.io/${{ steps.repo.outputs.name }}/systemcraft-web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -123,7 +124,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
-          image-ref: 'ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}'
+          image-ref: 'ghcr.io/${{ steps.repo.outputs.name }}/systemcraft-web:${{ github.sha }}'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -140,7 +141,7 @@ jobs:
         run: |
           docker run -d --name systemcraft-e2e --network e2e-network -p 3000:3000 \
             -e REDIS_URL=redis://redis-e2e:6379 \
-            ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
+            ghcr.io/${{ steps.repo.outputs.name }}/systemcraft-web:${{ github.sha }}
           # Wait for container to be ready
           echo "Waiting for container to be ready on port 3000..."
           timeout 60 bash -c 'until curl -fsS http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
@@ -173,8 +174,8 @@ jobs:
       - name: Push Docker image
         if: github.event_name != 'pull_request'
         run: |
-          docker push ghcr.io/${{ env.REPO }}/systemcraft-web:latest
-          docker push ghcr.io/${{ env.REPO }}/systemcraft-web:${{ github.sha }}
+          docker push ghcr.io/${{ steps.repo.outputs.name }}/systemcraft-web:latest
+          docker push ghcr.io/${{ steps.repo.outputs.name }}/systemcraft-web:${{ github.sha }}
 
   deploy:
     name: Deploy to Production
