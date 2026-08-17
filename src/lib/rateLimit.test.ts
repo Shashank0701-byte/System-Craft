@@ -19,14 +19,16 @@ describe('checkRateLimit', () => {
         vi.useRealTimers();
     });
 
-    it('fails open (allows request) if Redis is unavailable', async () => {
+    it('falls back to in-memory limiter if Redis is unavailable', async () => {
         vi.mocked(getRedisClient).mockReturnValue(null);
 
         const result = await checkRateLimit('user1', 'action', 5, 60);
 
+        // In-memory fallback counts the request (limit - 1 remaining) and
+        // uses the current window's remaining seconds as resetIn.
         expect(result.allowed).toBe(true);
-        expect(result.remaining).toBe(5);
-        expect(result.resetIn).toBe(0);
+        expect(result.remaining).toBe(4);
+        expect(result.resetIn).toBe(60);
     });
 
     it('allows request when under the limit', async () => {
@@ -69,7 +71,7 @@ describe('checkRateLimit', () => {
         expect(result.resetIn).toBe(60);
     });
 
-    it('fails open if Redis pipeline throws an error', async () => {
+    it('falls back to in-memory limiter if Redis pipeline throws an error', async () => {
         const mockPipeline = {
             incr: vi.fn().mockReturnThis(),
             expire: vi.fn().mockReturnThis(),
@@ -83,12 +85,12 @@ describe('checkRateLimit', () => {
 
         const result = await checkRateLimit('user4', 'test-action', 5, 60);
 
-        // Should fall back to allowing the request
+        // Falls back to in-memory limiter — request is allowed and counted.
         expect(result.allowed).toBe(true);
-        expect(result.remaining).toBe(5);
+        expect(result.remaining).toBe(4);
     });
 
-    it('fails open if Redis INCR returns an error inside pipeline results', async () => {
+    it('falls back to in-memory limiter if Redis INCR returns an error inside pipeline results', async () => {
         const mockPipeline = {
             incr: vi.fn().mockReturnThis(),
             expire: vi.fn().mockReturnThis(),
@@ -102,7 +104,8 @@ describe('checkRateLimit', () => {
 
         const result = await checkRateLimit('user5', 'test-action', 5, 60);
 
+        // Falls back to in-memory limiter — request is allowed and counted.
         expect(result.allowed).toBe(true);
-        expect(result.remaining).toBe(5);
+        expect(result.remaining).toBe(4);
     });
 });
