@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { SidebarProvider } from '@/components/dashboard/SidebarContext';
 import { getSolvedIds } from '@/src/lib/practice/storage';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
+import { PracticeTemplateSkeleton } from '@/components/ui/Skeleton';
 
 import { useSidebar } from '@/components/dashboard/SidebarContext';
 
@@ -129,9 +130,9 @@ function PracticeDirectoryContent({
 
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {[1, 2, 3].map(i => (
-                   <div key={i} className="h-64 rounded-xl bg-white/[0.01] border border-white/[0.04] animate-pulse"></div>
-                 ))}
+                {[1, 2, 3].map(i => (
+                  <PracticeTemplateSkeleton key={i} />
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

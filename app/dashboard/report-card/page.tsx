@@ -55,7 +55,9 @@ export default function ReportCardPage() {
             .catch(err => {
                 if (err.name !== 'AbortError') setError('Failed to load report card');
             })
-            .finally(() => setIsLoading(false));
+            .finally(() => {
+                if (!controller.signal.aborted) setIsLoading(false);
+            });
 
         return () => controller.abort();
     }, [isAuthenticated, user?.uid]);
