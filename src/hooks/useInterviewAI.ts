@@ -165,7 +165,7 @@ export function useInterviewAI({
     useEffect(() => {
         if (chaosArmScheduledRef.current) return;
         if (!startedAt || !timeLimit || timeLimit <= 0) return;
-        if (!difficulty || !['medium', 'hard'].includes(difficulty)) return;
+        if (!difficulty) return;
         if (hasConstraintChange) return;
 
         const startedMs = new Date(startedAt).getTime();

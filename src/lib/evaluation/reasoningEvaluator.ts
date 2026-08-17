@@ -53,6 +53,9 @@ ${structuralResults.map(r => `- ${r.rule}: ${r.status.toUpperCase()} (${r.messag
 3. Are there hidden bottlenecks that the deterministic checks missed?
 4. Is the overall architecture coherent and justified?
 5. If live constraint changes were introduced, did the candidate adapt the design appropriately?
+   - **Full credit** (+15 pts): constraint is clearly addressed with the right components and reasoning.
+   - **Partial credit** (+5–10 pts): candidate acknowledged the constraint and made some adjustments but the solution is incomplete or has gaps.
+   - **No credit** (0 pts): constraint was ignored or the design shows no response to it.
 
 ### OUTPUT FORMAT
 Return your evaluation as a structured JSON object with the following exact keys:

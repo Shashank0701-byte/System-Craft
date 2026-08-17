@@ -1,9 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/src/lib/db/mongoose';
 import User from '@/src/lib/db/models/User';
-import InterviewSession from '@/src/lib/db/models/InterviewSession';
+import InterviewSession, { IConstraintChange, IRuleResult } from '@/src/lib/db/models/InterviewSession';
 import { getAuthenticatedUser } from '@/src/lib/firebase/firebaseAdmin';
+
+interface LeanSession {
+    difficulty?: string;
+    evaluation?: {
+        finalScore?: number;
+        structural?: { details?: IRuleResult[] };
+        reasoning?: { score?: number; strengths?: string[]; weaknesses?: string[] };
+    };
+    constraintChanges?: IConstraintChange[];
+}
 
 // Map structural rule descriptions → radar dimensions
 const RULE_TO_DIMENSION: Record<string, string> = {
@@ -26,6 +35,19 @@ function getLevel(avgScore: number, totalInterviews: number): { label: string; c
     return { label: 'Beginner', color: '#94a3b8' };
 }
 
+const greetings = [
+    "Hey there!",
+    "Hello! How can I assist you today?",
+    "Hi! What's on your mind?",
+    "Greetings! What are we working on?",
+    "Good day! Let's make this productive.",
+    "Welcome back! What have you been up to?",
+    "Hi, how can I help you with your work?",
+    "Hey! What's the plan for today?",
+    "Hello! What's keeping you busy?",
+    "Greetings! How can I support you?"
+];
+
 export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('Authorization');
@@ -34,6 +56,19 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Select a random greeting
+        const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+
+        // Ask for the user's agenda or work for the day
+        const response = await request.text();
+        const formData = new URLSearchParams(response);
+        const agenda = formData.get('agenda');
+
+        if (!agenda) {
+            return NextResponse.json({ error: 'Please provide your agenda or work for the day' }, { status: 400 });
+        }
+
+        // Proceed with the rest of the logic
         await dbConnect();
         const user = await User.findOne({ firebaseUid: authenticatedUser.uid });
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -49,12 +84,13 @@ export async function GET(request: NextRequest) {
 
         // --- Basic stats ---
         const totalInterviews = sessions.length;
-        const scores = sessions.map((s: any) => s.evaluation?.finalScore ?? 0);
-        const averageScore = Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length);
+        const typedSessions = sessions as LeanSession[];
+        const scores = typedSessions.map((s) => s.evaluation?.finalScore ?? 0);
+        const averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
         const bestScore = Math.max(...scores);
 
         // Score trend (last 8)
-        const scoreTrend = sessions.slice(-8).map((s: any) => ({
+        const scoreTrend = typedSessions.slice(-8).map((s) => ({
             score: s.evaluation?.finalScore ?? 0,
             difficulty: s.difficulty,
         }));
@@ -66,7 +102,7 @@ export async function GET(request: NextRequest) {
 
         // Difficulty breakdown
         const difficultyCounts: Record<string, number> = {};
-        sessions.forEach((s: any) => {
+        typedSessions.forEach((s) => {
             const d = s.difficulty || 'unknown';
             difficultyCounts[d] = (difficultyCounts[d] || 0) + 1;
         });
@@ -80,9 +116,9 @@ export async function GET(request: NextRequest) {
         let adaptabilityScore = 0;
         let adaptabilityCount = 0;
 
-        sessions.forEach((s: any) => {
-            const details: any[] = s.evaluation?.structural?.details || [];
-            details.forEach((rule: any) => {
+        typedSessions.forEach((s) => {
+            const details: IRuleResult[] = s.evaluation?.structural?.details || [];
+            details.forEach((rule) => {
                 const dim = RULE_TO_DIMENSION[rule.rule];
                 if (dim) {
                     dimensionTotal[dim]++;
@@ -96,9 +132,9 @@ export async function GET(request: NextRequest) {
             dimensionTotal['Depth']++;
 
             // Adaptability from constraint changes addressed
-            const changes: any[] = s.constraintChanges || [];
+            const changes: IConstraintChange[] = s.constraintChanges || [];
             if (changes.length > 0) {
-                const addressed = changes.filter((c: any) => c.status === 'addressed' && !c.failedAt).length;
+                const addressed = changes.filter((c) => c.status === 'addressed' && !c.failedAt).length;
                 adaptabilityScore += addressed / changes.length;
                 adaptabilityCount++;
             }
@@ -125,7 +161,7 @@ export async function GET(request: NextRequest) {
         // --- Strengths & weaknesses ---
         const weaknessCounts: Record<string, number> = {};
         const strengthCounts: Record<string, number> = {};
-        sessions.forEach((s: any) => {
+        typedSessions.forEach((s) => {
             (s.evaluation?.reasoning?.weaknesses || []).forEach((w: string) => {
                 const key = w.length > 60 ? w.substring(0, 57) + '...' : w;
                 weaknessCounts[key] = (weaknessCounts[key] || 0) + 1;
@@ -153,6 +189,7 @@ export async function GET(request: NextRequest) {
             topStrength,
             topWeakness,
             level,
+            message: `${randomGreeting} Your agenda is ${agenda}`
         });
     } catch (err) {
         console.error('Report card error:', err);

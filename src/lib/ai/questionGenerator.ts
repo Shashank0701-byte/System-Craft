@@ -76,8 +76,12 @@ const DIFFICULTY_CONFIG: Record<InterviewDifficulty, {
  * Pick N random items from an array without replacement.
  */
 function pickRandom<T>(arr: T[], count: number): T[] {
-    const shuffled = [...arr].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count);
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / 0x100000000) * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, count);
 }
 
 /**
@@ -90,7 +94,7 @@ function buildQuestionPrompt(difficulty: InterviewDifficulty): string {
     // Pick a random subset of 6 topics — prevents the AI from clustering around the same ones
     const selectedTopics = pickRandom(config.exampleTopics, 6);
     // Random seed so repeated calls with the same prompt still vary
-    const seed = Math.random().toString(36).substring(2, 8);
+    const seed = crypto.randomUUID().substring(0, 8);
 
     return `You are a senior system design interviewer at a top tech company.
 
