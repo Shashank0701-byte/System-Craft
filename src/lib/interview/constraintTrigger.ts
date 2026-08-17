@@ -48,10 +48,6 @@ export function shouldTriggerConstraintChange(
     nodeCount: number,
     nowMs: number = Date.now()
 ): { shouldTrigger: boolean; introducedAtMinute: number } {
-    if (!['medium', 'hard'].includes(session.difficulty)) {
-        return { shouldTrigger: false, introducedAtMinute: 0 };
-    }
-
     if ((session.constraintChanges || []).length > 0) {
         return { shouldTrigger: false, introducedAtMinute: 0 };
     }

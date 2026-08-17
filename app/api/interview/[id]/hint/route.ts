@@ -97,7 +97,7 @@ function generateConstraintChange(
         };
     }
 
-    const interviewerMessage = `Let's add a new constraint: ${selected.description} How would you adjust your design to handle that?`;
+    const interviewerMessage = `Hold on — before we continue, a new constraint just hit: **${selected.title}**. ${selected.description} This is the top priority right now. Walk me through how you'd address this in your current design.`;
 
     return {
         id: `cc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -243,7 +243,12 @@ export const POST = async (request: NextRequest, { params }: RouteParams) => {
 
         const failedRules = failedRuleMessages;
 
-        const prompt = `You are an expert systems design interviewer evaluating a candidate in a real-time system design interview. 
+        const activeConstraints = session.constraintChanges.filter(
+            (c) => c.status === 'active' || c.status === 'acknowledged'
+        );
+        const hasActiveConstraint = activeConstraints.length > 0;
+
+        const prompt = `You are an expert systems design interviewer evaluating a candidate in a real-time system design interview.
 
 Question: ${session.question.prompt}
 
@@ -260,7 +265,7 @@ Time Remaining: ${timeRemaining || 'unknown'} minutes.
 
 Live Constraint Changes:
 ${session.constraintChanges.length > 0
-                ? session.constraintChanges.map(change => `- [${change.type}] ${change.title}: ${change.description}`).join('\n')
+                ? session.constraintChanges.map(change => `- [${change.type}] ${change.title}: ${change.description} (status: ${change.status})`).join('\n')
                 : 'None yet.'}
 
 Conversation History (oldest to newest):
@@ -269,15 +274,18 @@ ${session.aiMessages.length > 0
                 : 'No messages yet.'}
 ${sanitizedCandidateReply ? `<CANDIDATE> ${sanitizedCandidateReply} </CANDIDATE>` : ''}
 
+${hasActiveConstraint ? `IMPORTANT: There is an unresolved live constraint that the candidate has NOT yet addressed: ${activeConstraints.map(c => `"${c.title}" — ${c.description}`).join('; ')}. Your response MUST remind them to address this constraint. Do not praise unrelated work or move on to other topics until they acknowledge how they will handle it. Keep the pressure focused on this constraint.` : ''}
+
 Generate a short, conversational response (1-2 sentences max) to send to the candidate right now. Do not be overly verbose. Act like a real interviewer guiding them.
-- If the candidate just replied, acknowledge their point or ask a follow-up.
-- If they are missing components, gently nudge them ("How will you handle caching?").
+- If there is an active unresolved constraint, your FIRST priority is reminding the candidate to address it.
+- If the candidate just replied about the constraint, acknowledge it and probe deeper.
+- If they are missing components unrelated to any active constraint, gently nudge them.
 - Ask 'question' severity for probing questions, 'nudge' for hints/corrections, or 'praise' for good choices.
 
 Respond strictly in JSON:
-{ 
-  "message": "...", 
-  "severity": "question" | "nudge" | "praise" 
+{
+  "message": "...",
+  "severity": "question" | "nudge" | "praise"
 }`;
 
         const response = await generateJSON<HintResponse>(prompt);

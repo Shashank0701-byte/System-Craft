@@ -141,6 +141,28 @@ export default function InterviewCanvasPage({ params }: PageProps) {
             });
     }, [timer.minutes, finalValidationTriggered, session?.status, id, setMessages]);
 
+    // Fire a chaos reminder when 2 minutes of the interview remain and chaos is unresolved
+    const chaosReminderFiredRef = useRef(false);
+    useEffect(() => {
+        if (chaosReminderFiredRef.current) return;
+        if (timer.minutes === undefined || timer.minutes > 2) return;
+        if (session?.status !== 'in_progress') return;
+
+        const activeConstraint = session?.constraintChanges?.find(
+            (c) => c.status === 'active' || c.status === 'acknowledged'
+        );
+        if (!activeConstraint) return;
+
+        chaosReminderFiredRef.current = true;
+        const reminder = {
+            role: 'interviewer' as const,
+            content: `Two minutes left — you still haven't fully addressed the **${activeConstraint.title}** constraint. This will be evaluated. Can you quickly walk me through how your design handles it?`,
+            timestamp: new Date(),
+        };
+        setMessages((prev: import('@/src/hooks/useInterviewAI').AIMessage[]) => [...prev, reminder]);
+        setIsInterviewPanelOpen(true);
+    }, [timer.minutes, session?.status, session?.constraintChanges, setMessages]);
+
     // Fetch session data
     const fetchSession = useCallback(async () => {
         if (!user?.uid || !id) return;
