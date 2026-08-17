@@ -8,6 +8,7 @@ import { Header } from '@/components/dashboard/Header';
 import { Hero } from '@/components/dashboard/Hero';
 import { DesignCard } from '@/components/dashboard/DesignCard';
 import { CreateDesignCard } from '@/components/dashboard/CreateDesignCard';
+import { DesignCardSkeleton } from '@/components/ui/Skeleton';
 
 interface Design {
   id: string;
@@ -344,7 +345,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <CreateDesignCard onClick={handleCreateDesign} isLoading={isCreating} />
               {[1, 2, 3].map((i) => (
-                <div key={i} className="aspect-[4/3] rounded-xl bg-white/[0.01] border border-white/[0.04] animate-pulse" />
+                <DesignCardSkeleton key={i} />
               ))}
             </div>
           ) : (
