@@ -31,11 +31,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Sync the redirect-returned user with DB
                 try {
                     const token = await result.user.getIdToken();
-                    await fetch('/api/user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ displayName: result.user.displayName, photoURL: result.user.photoURL, provider: result.providerId === 'github.com' ? 'github' : 'google' }),
-                    });
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 10_000);
+                    try {
+                        await fetch('/api/user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ displayName: result.user.displayName, photoURL: result.user.photoURL, provider: result.providerId === 'github.com' ? 'github' : 'google' }),
+                            signal: controller.signal,
+                        });
+                    } finally {
+                        clearTimeout(timer);
+                    }
                 } catch {
                     // best-effort sync
                 }

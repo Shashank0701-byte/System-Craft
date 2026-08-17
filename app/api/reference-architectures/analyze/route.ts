@@ -34,23 +34,41 @@ export const POST = withMetrics('/api/reference-architectures/analyze', async (r
       return NextResponse.json({ error: 'Malformed nodes or connections — expected arrays' }, { status: 400 });
     }
 
+    // Validate and filter to well-shaped items only — rejects malformed entries at the API boundary
+    type ValidNode = { id: string; type: string; label?: string };
+    type ValidConnection = { from: string; to: string; label?: string };
+    type ValidAnnotation = { title: string; body: string };
+
+    const validNodes = nodes.filter(
+      (n): n is ValidNode =>
+        typeof n === 'object' && n !== null && typeof n.type === 'string' && typeof n.id === 'string'
+    );
+    const validConnections = connections.filter(
+      (c): c is ValidConnection =>
+        typeof c === 'object' && c !== null && typeof c.from === 'string' && typeof c.to === 'string'
+    );
+    const validAnnotations = ((annotations ?? []) as unknown[]).filter(
+      (a): a is ValidAnnotation =>
+        typeof a === 'object' && a !== null && typeof (a as ValidAnnotation).title === 'string' && typeof (a as ValidAnnotation).body === 'string'
+    );
+
     // Build a compact text representation of the architecture
-    const nodeList = nodes
-      .map((n: { type: string; label?: string }) => `${n.label || n.type} (${n.type})`)
+    const nodeList = validNodes
+      .map((n) => `${n.label || n.type} (${n.type})`)
       .join(', ');
 
-    const connList = connections
-      .map((c: { from: string; to: string; label?: string }) => {
-        const fromNode = nodes.find((n: { id: string }) => n.id === c.from);
-        const toNode = nodes.find((n: { id: string }) => n.id === c.to);
+    const connList = validConnections
+      .map((c) => {
+        const fromNode = validNodes.find((n) => n.id === c.from);
+        const toNode = validNodes.find((n) => n.id === c.to);
         const fromLabel = fromNode?.label || fromNode?.type || c.from;
         const toLabel = toNode?.label || toNode?.type || c.to;
         return `${fromLabel} → ${toLabel}${c.label ? ` (${c.label})` : ''}`;
       })
       .join('\n');
 
-    const annotationText = annotations
-      ?.map((a: { title: string; body: string }) => `${a.title}: ${a.body}`)
+    const annotationText = validAnnotations
+      .map((a) => `${a.title}: ${a.body}`)
       .join('\n') || '';
 
     const prompt = `You are a senior system design expert. Analyze this architecture concisely.
