@@ -1,0 +1,110 @@
+name: PR Review Bot
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post PR checklist comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const branch = pr.head.ref.toLowerCase();
+            const title  = pr.title.toLowerCase();
+
+            // Detect type from branch name or PR title
+            const isFix      = /^fix\/|^hotfix\/|\bfix\b|\bbug\b/.test(branch + title);
+            const isFeat      = /^feat\/|^feature\/|\bfeat\b|\bfeature\b/.test(branch + title);
+            const isInterview = /interview|chaos|constraint|scoring/.test(branch + title);
+            const isUI        = /ui|ux|skeleton|style|design|layout/.test(branch + title);
+
+            let typeNote = '';
+            if (isFeat)      typeNote = '> This looks like a **feature PR**. Make sure any new behaviour is covered by tests.\n\n';
+            else if (isFix)  typeNote = '> This looks like a **bug fix**. A regression test that reproduces the original issue would be ideal.\n\n';
+
+            let interviewNote = '';
+            if (isInterview) {
+              interviewNote = `
+            ### Interview / Chaos mode checklist
+            - [ ] Chaos triggers correctly for all difficulties (easy, medium, hard)
+            - [ ] Interviewer chat messages are urgent when chaos is active
+            - [ ] Scoring reflects partial credit where applicable
+            - [ ] \`constraintTrigger.test.ts\` passes
+            `;
+            }
+
+            let uiNote = '';
+            if (isUI) {
+              uiNote = `
+            ### UI checklist
+            - [ ] Skeleton loaders in place for any new loading states
+            - [ ] Dark mode tested
+            - [ ] No layout shift on load
+            `;
+            }
+
+            const body = `## 👋 Thanks for the PR!
+
+            ${typeNote}Please run through this checklist before requesting a review:
+
+            ### Core
+            - [ ] Linked the related issue below (use \`Closes #<number>\` or \`Fixes #<number>\`)
+            - [ ] \`npm run lint\` passes with no errors
+            - [ ] \`npm run typecheck\` (or \`tsc --noEmit\`) passes
+            - [ ] Existing tests still pass (\`npm test\`)
+            - [ ] New behaviour has a test (or explain why one isn't needed)
+
+            ### Docs / changelog
+            - [ ] Updated any affected inline comments or JSDoc if the API changed
+            - [ ] If a public-facing behaviour changed, noted it in the PR description
+            ${interviewNote}${uiNote}
+            ---
+            _This comment is posted automatically by \`github-actions[bot]\`. Tick the boxes as you go — reviewers will use this as a quick sanity check._`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+
+      - name: Auto-label PR from branch name
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branch = context.payload.pull_request.head.ref.toLowerCase();
+            const title  = (context.payload.pull_request.title || '').toLowerCase();
+            const text   = `${branch} ${title}`;
+
+            const labels = new Set();
+
+            if (/^fix\/|^hotfix\/|\bfix\b|\bbug\b/.test(text))          labels.add('bug');
+            if (/^feat\/|^feature\/|\bfeat\b|\bfeature\b/.test(text))    labels.add('enhancement');
+            if (/^docs?\/|\bdoc\b|\bdocs\b|\bdocumentation\b/.test(text)) labels.add('documentation');
+            if (/interview|chaos|constraint|scoring|difficulty/.test(text)) labels.add('interview');
+            if (/ui|ux|skeleton|style|design|layout|visual/.test(text))  labels.add('ui');
+            if (/perf|performance|optim|speed|bundle/.test(text))         labels.add('performance');
+            if (/security|auth|token|vuln/.test(text))                    labels.add('security');
+
+            if (labels.size === 0) return;
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [...labels],
+            });
